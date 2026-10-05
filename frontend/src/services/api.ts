@@ -1,0 +1,623 @@
+// ===========================================================================
+// StyleSphere frontend API client — Neon PostgreSQL via FastAPI ONLY.
+// ---------------------------------------------------------------------------
+// The browser NEVER talks to the database directly. All persistent
+// application data flows through these endpoints (JWT in HttpOnly cookie).
+// No localStorage / sessionStorage / IndexedDB persistence is used here.
+// ===========================================================================
+import {
+  ClothingItem,
+  Collection,
+  Notification,
+  Outfit,
+  Post,
+  Recommendation,
+  User,
+  Weather,
+  Occasion,
+} from '../types';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    credentials: 'include', // send the HttpOnly session cookie
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    let errorDetail = `${response.status} ${response.statusText}`;
+    try {
+      const errorJson = await response.json();
+      errorDetail = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
+      if (Array.isArray(errorDetail)) {
+        errorDetail = errorDetail.map((e: any) => e.msg || JSON.stringify(e)).join('; ');
+      }
+    } catch {
+      // keep the status text fallback
+    }
+    throw new ApiError(response.status, String(errorDetail));
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
+}
+
+export const api = {
+  // --- AUTH ---
+  auth: {
+    async register(data: { username: string; email: string; password: string; display_name?: string }): Promise<{ access_token: string; user_id: string; username: string }> {
+      return request<{ access_token: string; user_id: string; username: string }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async login(data: { username_or_email: string; password: string }): Promise<{ access_token: string; user_id: string; username: string }> {
+      return request<{ access_token: string; user_id: string; username: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getMe(): Promise<User> {
+      const raw = await request<any>('/auth/me');
+      return {
+        id: String(raw.id),
+        name: raw.display_name || raw.username,
+        username: raw.username,
+        email: raw.email,
+        avatar: raw.profile_image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        bio: raw.bio || '',
+        location: raw.location || '',
+        followersCount: raw.followers_count || 0,
+        followingCount: raw.following_count || 0,
+        postsCount: raw.posts_count || 0,
+        wardrobeCount: raw.wardrobe_count || 0,
+        isVerified: raw.is_verified,
+        joinedDate: raw.created_at ? new Date(raw.created_at).toLocaleDateString() : '2026',
+        preferences: {
+          styles: raw.preferences?.styles || ['Minimal', 'Casual'],
+          staplePieces: ['Trench Coat', 'Tailored Trousers'],
+          lifestyle: 'Creative Professional',
+          favoriteColors: raw.preferences?.favorite_colors || ['Beige', 'Black', 'Cream'],
+          climatePreference: raw.preferences?.climate_preference || 'Moderate',
+          fitPreference: 'Tailored / Slim',
+        },
+      };
+    },
+
+    async logout(): Promise<void> {
+      try {
+        await request<void>('/auth/logout', { method: 'POST' });
+      } catch {
+        // Session may already be expired; logout is idempotent client-side.
+      }
+    },
+  },
+
+  // --- WARDROBE ---
+  wardrobe: {
+    async list(): Promise<ClothingItem[]> {
+      const items = await request<any[]>('/wardrobe');
+      return items.map((item) => ({
+        id: String(item.id),
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        secondaryColor: item.secondary_color,
+        pattern: item.pattern,
+        style: item.occasion || 'Casual',
+        season: item.season || 'All-Season',
+        brand: item.brand,
+        image: item.image_url,
+        material: item.material,
+        createdAt: item.created_at || new Date().toISOString(),
+        timesWorn: item.wear_count || 0,
+        lastWorn: item.last_worn,
+        tags: item.style_tags || [],
+        isFavorite: item.is_favorite || false,
+      }));
+    },
+
+    async create(item: Omit<ClothingItem, 'id' | 'createdAt' | 'timesWorn'>): Promise<ClothingItem> {
+      const payload = {
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        secondary_color: item.secondaryColor,
+        pattern: item.pattern || 'Solid',
+        material: item.material,
+        fit: 'Regular',
+        brand: item.brand,
+        season: item.season || 'All-Season',
+        occasion: item.style || 'Casual Daily',
+        style_tags: item.tags || [],
+        image_url: item.image,
+        description: item.notes,
+      };
+      const res = await request<any>('/wardrobe', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return {
+        id: String(res.id),
+        name: res.name,
+        category: res.category,
+        color: res.color,
+        secondaryColor: res.secondary_color,
+        pattern: res.pattern,
+        style: res.occasion,
+        season: res.season,
+        brand: res.brand,
+        image: res.image_url,
+        material: res.material,
+        createdAt: res.created_at,
+        timesWorn: res.wear_count || 0,
+        tags: res.style_tags || [],
+        isFavorite: res.is_favorite || false,
+      };
+    },
+
+    async update(id: string, updates: Partial<ClothingItem>): Promise<ClothingItem> {
+      const payload: any = {};
+      if (updates.name) payload.name = updates.name;
+      if (updates.category) payload.category = updates.category;
+      if (updates.color) payload.color = updates.color;
+      if (updates.image) payload.image_url = updates.image;
+      if (updates.isFavorite !== undefined) payload.is_favorite = updates.isFavorite;
+      if (updates.timesWorn !== undefined) payload.wear_count = updates.timesWorn;
+
+      const res = await request<any>(`/wardrobe/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      return {
+        id: String(res.id),
+        name: res.name,
+        category: res.category,
+        color: res.color,
+        secondaryColor: res.secondary_color,
+        pattern: res.pattern,
+        style: res.occasion,
+        season: res.season,
+        brand: res.brand,
+        image: res.image_url,
+        material: res.material,
+        createdAt: res.created_at,
+        timesWorn: res.wear_count || 0,
+        tags: res.style_tags || [],
+        isFavorite: res.is_favorite || false,
+      };
+    },
+
+    async delete(id: string): Promise<void> {
+      await request<void>(`/wardrobe/${id}`, { method: 'DELETE' });
+    },
+
+    async analyzeImage(file?: File, imageUrl?: string): Promise<any> {
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_BASE}/clothing-ai/analyze`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+        return res.json();
+      }
+      return request<any>('/clothing-ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ image_url: imageUrl || '' }),
+      });
+    },
+  },
+
+  // --- POSTS / SOCIAL FEED ---
+  posts: {
+    async listFeed(): Promise<Post[]> {
+      const posts = await request<any[]>('/posts');
+      return posts.map((p) => ({
+        id: String(p.id),
+        user: {
+          id: String(p.user?.id || ''),
+          name: p.user?.name || 'User',
+          username: p.user?.username || 'user',
+          avatar: p.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+          isVerified: p.user?.is_verified,
+          isFollowing: p.user?.is_following,
+        },
+        image: p.image_url,
+        caption: p.caption,
+        tags: p.tags || [],
+        taggedItems: (p.tagged_items || []).map((ti: any) => ({
+          id: String(ti.id),
+          name: ti.name,
+          category: ti.category,
+          color: ti.color,
+          style: ti.occasion || 'Casual',
+          season: ti.season || 'All-Season',
+          image: ti.image_url,
+          createdAt: ti.created_at || new Date().toISOString(),
+        })),
+        occasion: (p.occasion as Occasion) || 'Casual Daily',
+        location: p.location,
+        likesCount: p.likes_count || 0,
+        commentsCount: p.comments_count || 0,
+        savesCount: p.saves_count || 0,
+        isLiked: p.is_liked || false,
+        isSaved: p.is_saved || false,
+        comments: (p.comments || []).map((c: any) => ({
+          id: String(c.id),
+          postId: String(p.id),
+          user: {
+            id: String(c.user?.id || ''),
+            name: c.user?.name || 'User',
+            username: c.user?.username || 'user',
+            avatar: c.user?.avatar || '',
+          },
+          text: c.text,
+          createdAt: c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now',
+          likesCount: c.likes_count || 0,
+        })),
+        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+      }));
+    },
+
+    async create(postData: {
+      caption: string;
+      image_url: string;
+      outfit_id?: string;
+      location?: string;
+      occasion?: string;
+      tags: string[];
+      tagged_item_ids: string[];
+    }): Promise<Post> {
+      const p = await request<any>('/posts', {
+        method: 'POST',
+        body: JSON.stringify(postData),
+      });
+      return {
+        id: String(p.id),
+        user: {
+          id: String(p.user?.id || ''),
+          name: p.user?.name || 'User',
+          username: p.user?.username || 'user',
+          avatar: p.user?.avatar || '',
+          isVerified: p.user?.is_verified,
+        },
+        image: p.image_url,
+        caption: p.caption,
+        tags: p.tags || [],
+        taggedItems: p.tagged_items || [],
+        occasion: (p.occasion as Occasion) || 'Casual Daily',
+        location: p.location,
+        likesCount: 0,
+        commentsCount: 0,
+        savesCount: 0,
+        isLiked: false,
+        isSaved: false,
+        comments: [],
+        createdAt: 'Just now',
+      };
+    },
+
+    async toggleLike(postId: string): Promise<{ liked: boolean }> {
+      return request<{ liked: boolean }>(`/posts/${postId}/like`, { method: 'POST' });
+    },
+
+    async unlike(postId: string): Promise<{ liked: boolean }> {
+      return request<{ liked: boolean }>(`/posts/${postId}/like`, { method: 'DELETE' });
+    },
+
+    async delete(postId: string): Promise<void> {
+      await request<void>(`/posts/${postId}`, { method: 'DELETE' });
+    },
+
+    async addComment(postId: string, text: string): Promise<any> {
+      return request<any>(`/posts/${postId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      });
+    },
+  },
+
+  // --- COLLECTIONS & SAVED ---
+  saved: {
+    async listSavedItems(itemType?: 'post' | 'outfit'): Promise<Array<{ id: string; itemType: string; itemId: string }>> {
+      const query = itemType ? `?item_type=${itemType}` : '';
+      const items = await request<any[]>(`/saved${query}`);
+      return items.map((s) => ({
+        id: String(s.id),
+        itemType: s.item_type,
+        itemId: String(s.item_id),
+      }));
+    },
+
+    async savePost(postId: string, collectionId?: string): Promise<void> {
+      const params = new URLSearchParams({ item_type: 'post', item_id: postId });
+      if (collectionId) params.set('collection_id', collectionId);
+      await request<void>(`/saved?${params.toString()}`, { method: 'POST' });
+    },
+
+    async unsavePost(postId: string): Promise<void> {
+      await request<void>(`/saved/by-item/post/${postId}`, { method: 'DELETE' });
+    },
+
+    async listCollections(): Promise<Collection[]> {
+      const cols = await request<any[]>('/saved/collections');
+      return cols.map((c) => ({
+        id: String(c.id),
+        name: c.name,
+        description: c.description,
+        coverImage: c.cover_image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+        itemCount: c.item_count || 0,
+        outfitIds: c.outfit_ids || [],
+        createdAt: c.created_at,
+        isPrivate: c.is_private,
+      }));
+    },
+
+    async createCollection(name: string, description?: string): Promise<Collection> {
+      const c = await request<any>('/saved/collections', {
+        method: 'POST',
+        body: JSON.stringify({ name, description, is_private: false }),
+      });
+      return {
+        id: String(c.id),
+        name: c.name,
+        description: c.description,
+        coverImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+        itemCount: 0,
+        outfitIds: [],
+        createdAt: c.created_at || new Date().toISOString(),
+      };
+    },
+  },
+
+  // --- USERS / PREFERENCES (explicit preferences persisted in Neon) ---
+  users: {
+    async getPreferences(): Promise<{
+      styles: string[];
+      favoriteColors: string[];
+      preferredCategories: string[];
+      preferredFit: string;
+      preferredOccasions: string[];
+      preferredSeasons: string[];
+      climatePreference: string;
+    }> {
+      const raw = await request<any>('/users/me/preferences');
+      return {
+        styles: raw.styles || [],
+        favoriteColors: raw.favorite_colors || [],
+        preferredCategories: raw.preferred_categories || [],
+        preferredFit: (raw.preferred_fits || [])[0] || 'Relaxed / Oversized',
+        preferredOccasions: raw.favorite_occasions || [],
+        preferredSeasons: raw.preferred_seasons || [],
+        climatePreference: raw.climate_preference || 'Moderate',
+      };
+    },
+
+    async updatePreferences(data: {
+      styles?: string[];
+      favorite_colors?: string[];
+      preferred_categories?: string[];
+      preferred_fits?: string[];
+      favorite_occasions?: string[];
+      preferred_seasons?: string[];
+      climate_preference?: string;
+    }): Promise<void> {
+      await request<void>('/users/me/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async updateProfile(data: {
+      first_name?: string;
+      last_name?: string;
+      display_name?: string;
+      bio?: string;
+      avatar_url?: string;
+      profile_image_url?: string;
+      location?: string;
+    }): Promise<User> {
+      const raw = await request<any>('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+      return {
+        id: String(raw.id),
+        name: raw.display_name || raw.username,
+        username: raw.username,
+        email: raw.email,
+        avatar: raw.profile_image_url || raw.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        bio: raw.bio || '',
+        location: raw.location || '',
+        followersCount: raw.followers_count || 0,
+        followingCount: raw.following_count || 0,
+        postsCount: raw.posts_count || 0,
+        wardrobeCount: raw.wardrobe_count || 0,
+        isVerified: raw.is_verified,
+        joinedDate: raw.created_at ? new Date(raw.created_at).toLocaleDateString() : '2026',
+        preferences: {
+          styles: raw.preferences?.styles || ['Minimal', 'Casual'],
+          staplePieces: ['Trench Coat', 'Tailored Trousers'],
+          lifestyle: 'Creative Professional',
+          favoriteColors: raw.preferences?.favorite_colors || ['Beige', 'Black', 'Cream'],
+          climatePreference: raw.preferences?.climate_preference || 'Moderate',
+          fitPreference: 'Classic / Regular',
+        },
+      };
+    },
+  },
+
+  // --- SOCIAL (follows persisted in Neon) ---
+  social: {
+    async follow(userId: string): Promise<void> {
+      await request<void>(`/social/follow/${userId}`, { method: 'POST' });
+    },
+
+    async unfollow(userId: string): Promise<void> {
+      await request<void>(`/social/follow/${userId}`, { method: 'DELETE' });
+    },
+  },
+
+  // --- NOTIFICATIONS ---
+  notifications: {
+    async list(): Promise<Notification[]> {
+      const notifs = await request<any[]>('/notifications');
+      return notifs.map((n) => {
+        const created = n.created_at ? new Date(n.created_at) : new Date();
+        const diffMs = Date.now() - created.getTime();
+        const timeAgo =
+          diffMs < 60 * 60 * 1000
+            ? `${Math.max(1, Math.floor(diffMs / 60000))}m ago`
+            : diffMs < 24 * 60 * 60 * 1000
+              ? `${Math.floor(diffMs / 3600000)}h ago`
+              : created.toLocaleDateString();
+        const group: 'Today' | 'Yesterday' | 'Earlier' =
+          diffMs < 24 * 60 * 60 * 1000 ? 'Today' : diffMs < 48 * 60 * 60 * 1000 ? 'Yesterday' : 'Earlier';
+        return {
+          id: String(n.id),
+          type: n.type,
+          title: n.title || 'Notification',
+          message: n.message,
+          timeAgo,
+          group,
+          timestamp: n.created_at || new Date().toISOString(),
+          isRead: n.is_read || false,
+          targetImage: n.target_image,
+          link: n.link,
+          actionUser: n.action_user
+            ? {
+                username: n.action_user.username || 'user',
+                name: n.action_user.name || 'Someone',
+                avatar: n.action_user.avatar || '',
+              }
+            : undefined,
+        };
+      });
+    },
+
+    async markRead(id: string): Promise<void> {
+      await request<void>(`/notifications/${id}/read`, { method: 'PATCH' });
+    },
+
+    async markAllRead(): Promise<void> {
+      await request<void>('/notifications/mark-all-read', { method: 'POST' });
+    },
+  },
+
+  // --- RECOMMENDATIONS / DAILY FIT ---
+  recommendations: {
+    async getDailyFit(
+      city: string = 'New York',
+      occasion: string = 'Casual Daily',
+      seed: number = 0,
+      latitude?: number,
+      longitude?: number,
+    ): Promise<Recommendation> {
+      const params = new URLSearchParams({
+        city,
+        occasion,
+        variation_seed: String(seed),
+      });
+      if (latitude !== undefined && latitude !== null) params.set('latitude', String(latitude));
+      if (longitude !== undefined && longitude !== null) params.set('longitude', String(longitude));
+      const rec = await request<any>(`/recommendations/daily-fit?${params.toString()}`);
+      const outfit = rec.outfit;
+      return {
+        id: String(rec.id),
+        outfit: {
+          id: String(outfit.id),
+          title: outfit.name,
+          description: outfit.description,
+          pieces: (outfit.clothing_items || []).map((ci: any) => ({
+            id: String(ci.id),
+            name: ci.name,
+            category: ci.category,
+            color: ci.color,
+            style: ci.occasion || 'Casual',
+            season: ci.season || 'All-Season',
+            brand: ci.brand,
+            image: ci.image_url,
+            createdAt: ci.created_at || new Date().toISOString(),
+          })),
+          occasion: (outfit.occasion as Occasion) || 'Casual Daily',
+          style: outfit.style || 'Minimal',
+          season: outfit.season || 'All-Season',
+          score: Math.round((outfit.compatibility_score || 0.9) * 100),
+          image: outfit.image_url,
+          tags: outfit.tags || [],
+          createdAt: outfit.created_at || new Date().toISOString(),
+        },
+        score: Math.round((rec.score || 0.9) * 100),
+        weatherCompatibility: 94,
+        styleCompatibility: 96,
+        occasionCompatibility: 92,
+        explanation: {
+          weatherMatch: rec.reasoning?.weather_match || 'Optimized for current weather conditions.',
+          styleMatch: rec.reasoning?.style_match || 'Aligned with your aesthetic preferences.',
+          wardrobeMatch: rec.reasoning?.wardrobe_match || 'Utilizes your staple wardrobe pieces.',
+          occasionMatch: rec.reasoning?.occasion_match || 'Matches the requested occasion.',
+        },
+        reasons: rec.context?.reasons || rec.reasons || ['Weather compatible', 'High color harmony', 'Matches preferred aesthetic'],
+        wornStatus: rec.worn_status || 'suggested',
+        recommendedAt: rec.created_at || new Date().toISOString(),
+      };
+    },
+
+    async sendFeedback(recommendationId: string, action: 'view' | 'like' | 'save' | 'wear' | 'reject' | 'skip'): Promise<void> {
+      await request<void>('/recommendations/feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          recommendation_id: recommendationId,
+          action,
+        }),
+      });
+    },
+  },
+
+  // --- WEATHER ---
+  weather: {
+    async getCurrent(city: string = 'New York', latitude?: number, longitude?: number): Promise<Weather> {
+      const params = new URLSearchParams();
+      if (city) params.set('city', city);
+      if (latitude !== undefined && latitude !== null) params.set('latitude', String(latitude));
+      if (longitude !== undefined && longitude !== null) params.set('longitude', String(longitude));
+      const data = await request<any>(`/weather/current?${params.toString()}`);
+      return {
+        city: data.city,
+        country: data.country,
+        temp: data.temp,
+        feelsLike: data.feels_like,
+        condition: data.condition,
+        icon: data.icon,
+        humidity: data.humidity,
+        windSpeed: data.wind_speed,
+        uvIndex: data.uv_index,
+        highTemp: data.high_temp,
+        lowTemp: data.low_temp,
+        summary: data.summary,
+      };
+    },
+  },
+};

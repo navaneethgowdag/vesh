@@ -1,0 +1,1947 @@
+{
+  "clothing": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "category",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "subcategory",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "color",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "secondary_color",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "pattern",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "material",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "fit",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "brand",
+        "type": "VARCHAR(150)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "size",
+        "type": "VARCHAR(50)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "season",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "occasion",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "image_url",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "is_favorite",
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": "false"
+      },
+      {
+        "name": "wear_count",
+        "type": "INTEGER",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "clothing_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "clothing_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": [
+      {
+        "name": "idx_clothing_category",
+        "unique": false,
+        "column_names": [
+          "category"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_clothing_color",
+        "unique": false,
+        "column_names": [
+          "color"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_clothing_occasion",
+        "unique": false,
+        "column_names": [
+          "occasion"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_clothing_season",
+        "unique": false,
+        "column_names": [
+          "season"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_clothing_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "clothing_analysis": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "clothing_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "detected_category",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "detected_subcategory",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "detected_colors",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "detected_pattern",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "detected_material",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "detected_fit",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "style_tags",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "season_tags",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "occasion_tags",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "confidence",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "feature_vector",
+        "type": "JSONB",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "clothing_analysis_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "clothing_analysis_clothing_id_fkey",
+        "constrained_columns": [
+          "clothing_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "clothing",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "clothing_id"
+        ],
+        "name": "clothing_analysis_clothing_id_key",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "clothing_analysis_clothing_id_key",
+        "unique": true,
+        "column_names": [
+          "clothing_id"
+        ],
+        "duplicates_constraint": "clothing_analysis_clothing_id_key",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "collections": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "collections_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "collections_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": []
+  },
+  "comments": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "post_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "content",
+        "type": "TEXT",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "comments_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "comments_post_id_fkey",
+        "constrained_columns": [
+          "post_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "posts",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "comments_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": []
+  },
+  "follows": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "follower_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "following_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "follows_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "follows_follower_id_fkey",
+        "constrained_columns": [
+          "follower_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "follows_following_id_fkey",
+        "constrained_columns": [
+          "following_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "follower_id",
+          "following_id"
+        ],
+        "name": "uq_follow",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "uq_follow",
+        "unique": true,
+        "column_names": [
+          "follower_id",
+          "following_id"
+        ],
+        "duplicates_constraint": "uq_follow",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "learned_preferences": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "style_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "color_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "category_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "fit_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "pattern_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "material_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "occasion_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "season_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "weather_scores",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'{}'::jsonb"
+      },
+      {
+        "name": "confidence_score",
+        "type": "DOUBLE PRECISION",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "name": "interaction_count",
+        "type": "INTEGER",
+        "nullable": false,
+        "default": "0"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "learned_preferences_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "learned_preferences_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "user_id"
+        ],
+        "name": "learned_preferences_user_id_key",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "idx_learned_preferences_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "learned_preferences_user_id_key",
+        "unique": true,
+        "column_names": [
+          "user_id"
+        ],
+        "duplicates_constraint": "learned_preferences_user_id_key",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "likes": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "post_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "likes_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "likes_post_id_fkey",
+        "constrained_columns": [
+          "post_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "posts",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "likes_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "user_id",
+          "post_id"
+        ],
+        "name": "uq_like_user_post",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "uq_like_user_post",
+        "unique": true,
+        "column_names": [
+          "user_id",
+          "post_id"
+        ],
+        "duplicates_constraint": "uq_like_user_post",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "notifications": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "title",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "message",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "is_read",
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": "false"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "notifications_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "notifications_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": []
+  },
+  "outfit_clothing": {
+    "columns": [
+      {
+        "name": "outfit_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "clothing_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "outfit_id",
+        "clothing_id"
+      ],
+      "name": "outfit_clothing_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "outfit_clothing_clothing_id_fkey",
+        "constrained_columns": [
+          "clothing_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "clothing",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "outfit_clothing_outfit_id_fkey",
+        "constrained_columns": [
+          "outfit_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "outfits",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": []
+  },
+  "outfits": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "occasion",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "season",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "outfits_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "outfits_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": [
+      {
+        "name": "idx_outfits_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "posts": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "caption",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "image_url",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "posts_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "posts_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": []
+  },
+  "recommendation_feedback": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "recommendation_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "feedback_value",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "recommendation_feedback_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "recommendation_feedback_recommendation_id_fkey",
+        "constrained_columns": [
+          "recommendation_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "recommendations",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "recommendation_feedback_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": [
+      {
+        "name": "idx_feedback_action",
+        "unique": false,
+        "column_names": [
+          "action"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_feedback_created",
+        "unique": false,
+        "column_names": [
+          "created_at"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_feedback_recommendation",
+        "unique": false,
+        "column_names": [
+          "recommendation_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_feedback_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "recommendations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "outfit_id",
+        "type": "UUID",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "temperature",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "feels_like_temperature",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "humidity",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "weather_condition",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "rain_probability",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "occasion",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "season",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "recommendation_score",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "model_version",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "recommendations_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "recommendations_outfit_id_fkey",
+        "constrained_columns": [
+          "outfit_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "outfits",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "SET NULL"
+        },
+        "comment": null
+      },
+      {
+        "name": "recommendations_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": [
+      {
+        "name": "idx_recommendations_created",
+        "unique": false,
+        "column_names": [
+          "created_at"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_recommendations_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "saved": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "post_id",
+        "type": "UUID",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "saved_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "saved_post_id_fkey",
+        "constrained_columns": [
+          "post_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "posts",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      },
+      {
+        "name": "saved_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "user_id",
+          "post_id"
+        ],
+        "name": "uq_saved_user_post",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "uq_saved_user_post",
+        "unique": true,
+        "column_names": [
+          "user_id",
+          "post_id"
+        ],
+        "duplicates_constraint": "uq_saved_user_post",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "user_preferences": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "preferred_styles",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_colors",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_categories",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_fits",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_patterns",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_materials",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_occasions",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "preferred_seasons",
+        "type": "JSONB",
+        "nullable": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "user_preferences_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "user_preferences_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [
+      {
+        "column_names": [
+          "user_id"
+        ],
+        "name": "user_preferences_user_id_key",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "user_preferences_user_id_key",
+        "unique": true,
+        "column_names": [
+          "user_id"
+        ],
+        "duplicates_constraint": "user_preferences_user_id_key",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "users": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "username",
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "email",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "password_hash",
+        "type": "TEXT",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "first_name",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "last_name",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "bio",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "avatar_url",
+        "type": "TEXT",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": "true"
+      },
+      {
+        "name": "is_verified",
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": "false"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "users_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [],
+    "uniques": [
+      {
+        "column_names": [
+          "email"
+        ],
+        "name": "users_email_key",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      },
+      {
+        "column_names": [
+          "username"
+        ],
+        "name": "users_username_key",
+        "comment": null,
+        "dialect_options": {
+          "postgresql_include": [],
+          "postgresql_nulls_not_distinct": false
+        }
+      }
+    ],
+    "indexes": [
+      {
+        "name": "users_email_key",
+        "unique": true,
+        "column_names": [
+          "email"
+        ],
+        "duplicates_constraint": "users_email_key",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "users_username_key",
+        "unique": true,
+        "column_names": [
+          "username"
+        ],
+        "duplicates_constraint": "users_username_key",
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  },
+  "wear_history": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "UUID",
+        "nullable": false,
+        "default": "gen_random_uuid()"
+      },
+      {
+        "name": "user_id",
+        "type": "UUID",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "outfit_id",
+        "type": "UUID",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "worn_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      },
+      {
+        "name": "temperature",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "feels_like_temperature",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "humidity",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "weather_condition",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "rain_probability",
+        "type": "DOUBLE PRECISION",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "occasion",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "season",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "user_rating",
+        "type": "INTEGER",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP",
+        "nullable": false,
+        "default": "now()"
+      }
+    ],
+    "pk": {
+      "constrained_columns": [
+        "id"
+      ],
+      "name": "wear_history_pkey",
+      "comment": null,
+      "dialect_options": {
+        "postgresql_include": []
+      }
+    },
+    "fks": [
+      {
+        "name": "wear_history_outfit_id_fkey",
+        "constrained_columns": [
+          "outfit_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "outfits",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "SET NULL"
+        },
+        "comment": null
+      },
+      {
+        "name": "wear_history_user_id_fkey",
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_schema": "public",
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ],
+        "options": {
+          "ondelete": "CASCADE"
+        },
+        "comment": null
+      }
+    ],
+    "uniques": [],
+    "indexes": [
+      {
+        "name": "idx_wear_history_outfit",
+        "unique": false,
+        "column_names": [
+          "outfit_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_wear_history_user",
+        "unique": false,
+        "column_names": [
+          "user_id"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      },
+      {
+        "name": "idx_wear_history_worn_at",
+        "unique": false,
+        "column_names": [
+          "worn_at"
+        ],
+        "dialect_options": {
+          "postgresql_include": []
+        }
+      }
+    ]
+  }
+}

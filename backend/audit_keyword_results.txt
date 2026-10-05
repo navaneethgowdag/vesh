@@ -1,0 +1,295 @@
+=== KEYWORD: display_name (26 occurrences) ===
+  backend\audit_codebase_keywords.py:5: "display_name",
+  backend\app\api\routes\auth.py:41: display_name=request.display_name,
+  backend\app\api\routes\comments.py:27: "name": current_user.display_name or current_user.username,
+  backend\app\api\routes\social.py:49: "name": u.display_name or u.username,
+  backend\app\api\routes\social.py:71: "name": u.display_name or u.username,
+  backend\app\models\user.py:16: display_name = Column(String(100), nullable=True)
+  backend\app\repositories\social_repository.py:86: liker_name = liker.display_name or liker.username if liker else "Someone"
+  backend\app\repositories\social_repository.py:126: name = commenter.display_name or commenter.username if commenter else "Someone"
+  backend\app\repositories\social_repository.py:177: name = follower.display_name or follower.username if follower else "Someone"
+  backend\app\repositories\user_repository.py:28: display_name: Optional[str] = None,
+  backend\app\repositories\user_repository.py:37: display_name=display_name or username,
+  backend\app\repositories\user_repository.py:131: .filter((User.username.ilike(search_pattern)) | (User.display_name.ilike(search_pattern)))
+  backend\app\schemas\auth.py:26: display_name: Optional[str] = None
+  backend\app\schemas\user.py:51: display_name: Optional[str] = None
+  backend\app\schemas\user.py:58: display_name: Optional[str] = None
+  backend\app\services\auth_service.py:19: display_name: Optional[str] = None,
+  backend\app\services\auth_service.py:39: display_name=display_name,
+  backend\app\services\feed_service.py:40: "name": c_user.display_name if c_user else "Unknown",
+  backend\app\services\feed_service.py:66: "name": (user.display_name or user.username) if user else "Unknown",
+  backend\app\services\notification_service.py:36: "name": n.actor.display_name or n.actor.username,
+  backend\app\services\user_service.py:58: "display_name": user.display_name,
+  frontend\src\context\AppContext.tsx:297: display_name: data.name,
+  frontend\src\context\AppContext.tsx:569: display_name: newSettings.account.name,
+  frontend\src\services\api.ts:65: async register(data: { username: string; email: string; password: string; display_name?: string }): Promise<{ access_token: string; user_id: string; username: string }> {
+  frontend\src\services\api.ts:83: name: raw.display_name || raw.username,
+  frontend\src\services\api.ts:430: display_name?: string;
+
+=== KEYWORD: profile_image_url (19 occurrences) ===
+  backend\audit_codebase_keywords.py:6: "profile_image_url",
+  backend\app\api\routes\auth.py:43: profile_image_url=request.profile_image_url,
+  backend\app\api\routes\comments.py:28: "avatar": current_user.profile_image_url,
+  backend\app\api\routes\social.py:50: "avatar": u.profile_image_url,
+  backend\app\api\routes\social.py:72: "avatar": u.profile_image_url,
+  backend\app\models\user.py:18: profile_image_url = Column(String(1024), nullable=True)
+  backend\app\repositories\user_repository.py:30: profile_image_url: Optional[str] = None,
+  backend\app\repositories\user_repository.py:39: profile_image_url=profile_image_url,
+  backend\app\schemas\auth.py:28: profile_image_url: Optional[str] = None
+  backend\app\schemas\user.py:53: profile_image_url: Optional[str] = None
+  backend\app\schemas\user.py:60: profile_image_url: Optional[str] = None
+  backend\app\services\auth_service.py:21: profile_image_url: Optional[str] = None,
+  backend\app\services\auth_service.py:41: profile_image_url=profile_image_url,
+  backend\app\services\feed_service.py:41: "avatar": c_user.profile_image_url if c_user else "",
+  backend\app\services\feed_service.py:67: "avatar": user.profile_image_url if user else None,
+  backend\app\services\notification_service.py:37: "avatar": n.actor.profile_image_url,
+  backend\app\services\user_service.py:60: "profile_image_url": user.profile_image_url,
+  frontend\src\services\api.ts:86: avatar: raw.profile_image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+  frontend\src\services\api.ts:432: profile_image_url?: string;
+
+=== KEYWORD: gender (3 occurrences) ===
+  backend\audit_codebase_keywords.py:7: "gender",
+  backend\app\models\user.py:19: gender = Column(String(30), nullable=True)
+  backend\app\schemas\user.py:62: gender: Optional[str] = None
+
+=== KEYWORD: age_range (3 occurrences) ===
+  backend\audit_codebase_keywords.py:8: "age_range",
+  backend\app\models\user.py:20: age_range = Column(String(30), nullable=True)
+  backend\app\schemas\user.py:63: age_range: Optional[str] = None
+
+=== KEYWORD: location (52 occurrences) ===
+  backend\audit_codebase_keywords.py:9: "location",
+  backend\app\api\routes\auth.py:44: location=request.location,
+  backend\app\api\routes\posts.py:37: location=post_in.location,
+  backend\app\models\post.py:18: location = Column(String(100), nullable=True)
+  backend\app\models\user.py:21: location = Column(String(100), nullable=True)
+  backend\app\repositories\social_repository.py:26: location: Optional[str] = None,
+  backend\app\repositories\social_repository.py:36: location=location,
+  backend\app\repositories\user_repository.py:31: location: Optional[str] = None,
+  backend\app\repositories\user_repository.py:40: location=location,
+  backend\app\schemas\auth.py:29: location: Optional[str] = None
+  backend\app\schemas\social.py:36: location: Optional[str] = None
+  backend\app\schemas\social.py:47: location: Optional[str] = None
+  backend\app\schemas\user.py:54: location: Optional[str] = None
+  backend\app\schemas\user.py:61: location: Optional[str] = None
+  backend\app\services\auth_service.py:22: location: Optional[str] = None,
+  backend\app\services\auth_service.py:42: location=location,
+  backend\app\services\feed_service.py:73: "location": p.location,
+  backend\app\services\feed_service.py:102: location: Optional[str] = None,
+  backend\app\services\feed_service.py:112: location=location,
+  backend\app\services\user_service.py:61: "location": user.location,
+  frontend\src\components\feed\PostCard.tsx:96: {post.location && (
+  frontend\src\components\feed\PostCard.tsx:99: {post.location}
+  frontend\src\components\social\ShareModal.tsx:20: const shareUrl = `${window.location.origin}/home?post=${post.id}`;
+  frontend\src\context\AppContext.tsx:63: location?: string;
+  frontend\src\context\AppContext.tsx:93: account: { name: '', username: '', email: '', bio: '', location: '' },
+  frontend\src\context\AppContext.tsx:114: location: '',
+  frontend\src\context\AppContext.tsx:177: location: user.location || '',
+  frontend\src\context\AppContext.tsx:464: location?: string;
+  frontend\src\context\AppContext.tsx:470: location: postData.location,
+  frontend\src\context\AppContext.tsx:557: location: newSettings.account.location,
+  frontend\src\context\AppContext.tsx:571: location: newSettings.account.location,
+  frontend\src\context\AppContext.tsx:588: location: previousUser.location || '',
+  frontend\src\data\users.ts:10: location: 'SoHo, New York',
+  frontend\src\pages\CreatePost.tsx:48: const [location, setLocation] = useState('SoHo, New York');
+  frontend\src\pages\CreatePost.tsx:92: location: location.trim() || undefined,
+  frontend\src\pages\CreatePost.tsx:295: value={location}
+  frontend\src\pages\Profile.tsx:80: {currentUser.location && (
+  frontend\src\pages\Profile.tsx:83: {currentUser.location}
+  frontend\src\pages\Settings.tsx:216: value={formData.account.location}
+  frontend\src\pages\Settings.tsx:220: account: { ...formData.account, location: e.target.value },
+  frontend\src\pages\UserProfile.tsx:90: navigator.clipboard.writeText(window.location.href);
+  frontend\src\pages\UserProfile.tsx:105: {creator.location && (
+  frontend\src\pages\UserProfile.tsx:108: {creator.location}
+  frontend\src\services\api.ts:88: location: raw.location || '',
+  frontend\src\services\api.ts:261: location: p.location,
+  frontend\src\services\api.ts:288: location?: string;
+  frontend\src\services\api.ts:311: location: p.location,
+  frontend\src\services\api.ts:433: location?: string;
+  frontend\src\services\storage.ts:176: location: CURRENT_USER.location || 'SoHo, New York',
+  frontend\src\types\index.ts:68: location?: string;
+  frontend\src\types\index.ts:149: location?: string;
+  frontend\src\types\index.ts:230: location: string;
+
+=== KEYWORD: styles (68 occurrences) ===
+  backend\audit_codebase_keywords.py:10: "styles",
+  backend\neon_schema_inventory.json:1541: "name": "preferred_styles",
+  backend\app\ai\outfit_compatibility.py:65: styles = [item.get("style", "").lower() for item in items if item.get("style")]
+  backend\app\ai\outfit_compatibility.py:66: style_score = self._evaluate_style_harmony(styles)
+  backend\app\ai\outfit_compatibility.py:119: def _evaluate_style_harmony(self, styles: List[str]) -> float:
+  backend\app\ai\outfit_compatibility.py:120: if not styles:
+  backend\app\ai\outfit_compatibility.py:122: unique_styles = set(styles)
+  backend\app\ai\outfit_compatibility.py:123: if len(unique_styles) == 1:
+  backend\app\ai\outfit_compatibility.py:125: if len(unique_styles) == 2:
+  backend\app\ai\recommendation_model.py:36: for style in features.get("styles", []):
+  backend\app\core\database.py:32: connect_args={"application_name": "stylesphere-api"},
+  backend\app\core\security.py:10: AUTH_COOKIE_NAME = "stylesphere_session"
+  backend\app\models\user_preference.py:15: styles = Column(JSONB, default=list, nullable=False)
+  backend\app\repositories\user_repository.py:48: styles=["Minimal", "Casual"],
+  backend\app\schemas\user.py:8: styles: List[str] = Field(default_factory=list)
+  backend\app\services\personalization_service.py:54: styles = [outfit.style] if outfit.style else []
+  backend\app\services\personalization_service.py:56: styles.extend(outfit.tags)
+  backend\app\services\personalization_service.py:58: for s in styles:
+  backend\app\services\recommendation_service.py:101: style=explicit_pref.styles[0] if (explicit_pref and explicit_pref.styles) else "Minimal",
+  backend\app\services\user_service.py:42: "styles": pref.styles or [],
+  backend\tests\test_personalization.py:53: """Verify liking an outfit increases preference for its colors and styles."""
+  frontend\index.html:12: <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  frontend\package-lock.json:2: "name": "stylesphere",
+  frontend\package-lock.json:8: "name": "stylesphere",
+  frontend\package.json:2: "name": "stylesphere",
+  frontend\src\context\AppContext.tsx:95: styles: ['Minimal'],
+  frontend\src\context\AppContext.tsx:110: username: 'stylesphere',
+  frontend\src\context\AppContext.tsx:122: styles: [],
+  frontend\src\context\AppContext.tsx:181: styles: user.preferences.styles,
+  frontend\src\context\AppContext.tsx:560: styles: newSettings.preferences.styles,
+  frontend\src\context\AppContext.tsx:574: styles: newSettings.preferences.styles,
+  frontend\src\data\users.ts:7: email: 'elena.rostova@stylesphere.io',
+  frontend\src\data\users.ts:18: styles: ['Minimal', 'Quiet Luxury', 'Classic'],
+  frontend\src\pages\Explore.tsx:98: placeholder="Search outfits, styles, creators, denim, minimal..."
+  frontend\src\pages\Explore.tsx:208: {creator.preferences.styles[0]} · {creator.followersCount} followers
+  frontend\src\pages\Login.tsx:10: const [email, setEmail] = useState('elena.rostova@stylesphere.io');
+  frontend\src\pages\Onboarding.tsx:78: { id: 'Other', title: 'Other / Creative', desc: 'Artistic explorations, bespoke routines, eclectic lifestyles' },
+  frontend\src\pages\Onboarding.tsx:133: styles: selectedStyles,
+  frontend\src\pages\Onboarding.tsx:142: styles: selectedStyles,
+  frontend\src\pages\Profile.tsx:134: {currentUser.preferences.styles.map((style) => (
+  frontend\src\pages\Settings.tsx:53: const styles = prev.preferences.styles.includes(style)
+  frontend\src\pages\Settings.tsx:54: ? prev.preferences.styles.filter((s) => s !== style)
+  frontend\src\pages\Settings.tsx:55: : [...prev.preferences.styles, style];
+  frontend\src\pages\Settings.tsx:58: preferences: { ...prev.preferences, styles },
+  frontend\src\pages\Settings.tsx:265: const isSelected = formData.preferences.styles.includes(style);
+  frontend\src\pages\Signup.tsx:13: const [email, setEmail] = useState('elena.rostova@stylesphere.io');
+  frontend\src\pages\UserProfile.tsx:151: {creator.preferences.styles.map((s) => (
+  frontend\src\services\api.ts:96: styles: raw.preferences?.styles || ['Minimal', 'Casual'],
+  frontend\src\services\api.ts:394: styles: string[];
+  frontend\src\services\api.ts:404: styles: raw.styles || [],
+  frontend\src\services\api.ts:415: styles?: string[];
+  frontend\src\services\recommendation.ts:28: styleMatch: `Reflects your ${preferences?.styles?.[0] || 'Minimal'} aesthetic.`,
+  frontend\src\services\recommendation.ts:34: `Matches your ${preferences?.styles?.[0] || 'Minimal'} style preference`,
+  frontend\src\services\recommendation.ts:99: const primaryStyle = preferences.styles[0] || 'Minimal';
+  frontend\src\services\recommendation.ts:130: styleMatch: `Aligns with your preference for ${preferences.styles.join(', ')} silhouettes.`,
+  frontend\src\services\storage.ts:19: USER: 'stylesphere_user',
+  frontend\src\services\storage.ts:20: WARDROBE: 'stylesphere_wardrobe',
+  frontend\src\services\storage.ts:21: POSTS: 'stylesphere_posts',
+  frontend\src\services\storage.ts:22: COLLECTIONS: 'stylesphere_collections',
+  frontend\src\services\storage.ts:23: NOTIFICATIONS: 'stylesphere_notifications',
+  frontend\src\services\storage.ts:24: OUTFITS: 'stylesphere_outfits',
+  frontend\src\services\storage.ts:25: RECOMMENDATION_HISTORY: 'stylesphere_rec_history',
+  frontend\src\services\storage.ts:26: FOLLOWING_IDS: 'stylesphere_following_ids',
+  frontend\src\services\storage.ts:27: SETTINGS: 'stylesphere_settings',
+  frontend\src\services\storage.ts:28: THEME: 'stylesphere_theme',
+  frontend\src\services\storage.ts:179: styles: CURRENT_USER.preferences.styles,
+  frontend\src\types\index.ts:53: styles: StyleVibe[];
+  frontend\src\types\index.ts:233: styles: StyleVibe[];
+
+=== KEYWORD: favorite_colors (10 occurrences) ===
+  backend\audit_codebase_keywords.py:11: "favorite_colors",
+  backend\app\models\user_preference.py:16: favorite_colors = Column(JSONB, default=list, nullable=False)
+  backend\app\repositories\user_repository.py:49: favorite_colors=["Black", "White", "Beige"],
+  backend\app\schemas\user.py:9: favorite_colors: List[str] = Field(default_factory=list)
+  backend\app\services\recommendation_service.py:193: fav_colors = set(c.lower() for c in (explicit_pref.favorite_colors or []))
+  backend\app\services\user_service.py:43: "favorite_colors": pref.favorite_colors or [],
+  frontend\src\context\AppContext.tsx:575: favorite_colors: newSettings.preferences.preferredColors,
+  frontend\src\services\api.ts:99: favoriteColors: raw.preferences?.favorite_colors || ['Beige', 'Black', 'Cream'],
+  frontend\src\services\api.ts:405: favoriteColors: raw.favorite_colors || [],
+  frontend\src\services\api.ts:416: favorite_colors?: string[];
+
+=== KEYWORD: favorite_occasions (7 occurrences) ===
+  backend\audit_codebase_keywords.py:12: "favorite_occasions",
+  backend\app\models\user_preference.py:21: favorite_occasions = Column(JSONB, default=list, nullable=False)
+  backend\app\repositories\user_repository.py:52: favorite_occasions=["Casual Daily"],
+  backend\app\schemas\user.py:14: favorite_occasions: List[str] = Field(default_factory=list)
+  backend\app\services\user_service.py:48: "favorite_occasions": pref.favorite_occasions or [],
+  frontend\src\services\api.ts:408: preferredOccasions: raw.favorite_occasions || [],
+  frontend\src\services\api.ts:419: favorite_occasions?: string[];
+
+=== KEYWORD: brand_scores (5 occurrences) ===
+  backend\audit_codebase_keywords.py:13: "brand_scores",
+  backend\app\api\routes\users.py:73: "brand_scores": lp.brand_scores or {},
+  backend\app\models\learned_preference.py:36: brand_scores = Column(JSONB, default=_empty_dict, nullable=False)
+  backend\app\repositories\user_repository.py:112: brand_scores={},
+  backend\app\schemas\user.py:38: brand_scores: Dict[str, float] = Field(default_factory=dict)
+
+=== KEYWORD: combination_scores (11 occurrences) ===
+  backend\audit_codebase_keywords.py:14: "combination_scores",
+  backend\app\api\routes\users.py:74: "combination_scores": lp.combination_scores or {},
+  backend\app\models\learned_preference.py:37: combination_scores = Column(JSONB, default=_empty_dict, nullable=False)
+  backend\app\repositories\user_repository.py:67: combination_scores={},
+  backend\app\repositories\user_repository.py:113: combination_scores={},
+  backend\app\schemas\user.py:39: combination_scores: Dict[str, float] = Field(default_factory=dict)
+  backend\app\services\personalization_service.py:83: combination_scores = dict(learned.combination_scores or {})
+  backend\app\services\personalization_service.py:110: curr_comb = combination_scores.get(comb_key, 0.5)
+  backend\app\services\personalization_service.py:111: combination_scores[comb_key] = round(max(-1.0, min(1.0, curr_comb + effective_delta)), 3)
+  backend\app\services\personalization_service.py:116: learned.combination_scores = combination_scores
+  backend\tests\test_personalization.py:38: self.combination_scores = {}
+
+=== KEYWORD: clothing_items (16 occurrences) ===
+  backend\audit_codebase_keywords.py:15: "clothing_items",
+  backend\alembic\versions\b401f52afba2_initial_schema_full_stylesphere_model_.py:10: learned_preferences, clothing_items, clothing_analyses, outfits,
+  backend\app\models\clothing.py:10: __tablename__ = "clothing_items"
+  backend\app\models\clothing.py:36: user = relationship("User", back_populates="clothing_items")
+  backend\app\models\clothing.py:38: outfits = relationship("Outfit", secondary="outfit_clothing", back_populates="clothing_items")
+  backend\app\models\clothing_analysis.py:13: clothing_id = Column(UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="CASCADE"), nullable=True, index=True)
+  backend\app\models\outfit.py:13: Column("clothing_id", UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="CASCADE"), primary_key=True),
+  backend\app\models\outfit.py:37: clothing_items = relationship("Clothing", secondary=outfit_clothing, back_populates="outfits")
+  backend\app\models\user.py:30: clothing_items = relationship("Clothing", back_populates="user", cascade="all, delete-orphan")
+  backend\app\repositories\outfit_repository.py:50: outfit.clothing_items = items
+  backend\app\repositories\outfit_repository.py:63: outfit.clothing_items = items
+  backend\app\schemas\outfit.py:37: clothing_items: List[ClothingResponse] = Field(default_factory=list)
+  backend\app\services\personalization_service.py:79: items = outfit.clothing_items or []
+  backend\app\services\user_service.py:36: wardrobe_count = len(user.clothing_items)
+  backend\tests\test_personalization.py:22: self.clothing_items = items
+  frontend\src\services\api.ts:510: pieces: (outfit.clothing_items || []).map((ci: any) => ({
+
+=== KEYWORD: clothing_analyses (3 occurrences) ===
+  backend\audit_codebase_keywords.py:16: "clothing_analyses",
+  backend\alembic\versions\b401f52afba2_initial_schema_full_stylesphere_model_.py:10: learned_preferences, clothing_items, clothing_analyses, outfits,
+  backend\app\models\clothing_analysis.py:10: __tablename__ = "clothing_analyses"
+
+=== KEYWORD: saved_items (11 occurrences) ===
+  backend\audit_codebase_keywords.py:17: "saved_items",
+  backend\alembic\versions\b401f52afba2_initial_schema_full_stylesphere_model_.py:11: outfit_clothing, posts, comments, likes, follows, saved_items,
+  backend\app\api\routes\saved.py:14: def get_saved_items(
+  backend\app\api\routes\saved.py:19: items = repo.list_saved_items(user_id=current_user.id)
+  backend\app\models\collection.py:31: saved_items = relationship("SavedItem", back_populates="collection")
+  backend\app\models\learned_preference.py:18: ``saved_items`` and ``posts``. This table only caches aggregated scores.
+  backend\app\models\saved.py:10: __tablename__ = "saved_items"
+  backend\app\models\saved.py:20: user = relationship("User", back_populates="saved_items")
+  backend\app\models\saved.py:21: collection = relationship("Collection", back_populates="saved_items")
+  backend\app\models\user.py:38: saved_items = relationship("SavedItem", back_populates="user", cascade="all, delete-orphan")
+  backend\app\repositories\social_repository.py:263: def list_saved_items(self, user_id: UUID, item_type: Optional[str] = None) -> List[SavedItem]:
+
+=== KEYWORD: collection_items (7 occurrences) ===
+  backend\audit_codebase_keywords.py:18: "collection_items",
+  backend\alembic\versions\b401f52afba2_initial_schema_full_stylesphere_model_.py:12: collections, collection_items, recommendations, recommendation_feedback,
+  backend\app\models\collection.py:8: collection_items = Table(
+  backend\app\models\collection.py:9: "collection_items",
+  backend\app\models\collection.py:30: posts = relationship("Post", secondary=collection_items, backref="in_collections")
+  backend\app\models\__init__.py:13: from app.models.collection import Collection, collection_items
+  backend\app\models\__init__.py:34: "collection_items",
+
+=== KEYWORD: SessionLocal (5 occurrences) ===
+  backend\audit_codebase_keywords.py:19: "SessionLocal",
+  backend\app\core\database.py:46: SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  backend\app\core\database.py:52: """Rebind SessionLocal to whichever engine is currently active."""
+  backend\app\core\database.py:53: SessionLocal.configure(bind=get_engine())
+  backend\app\core\database.py:118: db = SessionLocal()
+
+=== KEYWORD: localStorage (8 occurrences) ===
+  backend\audit_codebase_keywords.py:20: "localStorage",
+  frontend\src\context\AppContext.tsx:542: // Settings — persisted through FastAPI into Neon (no localStorage).
+  frontend\src\services\api.ts:6: // No localStorage / sessionStorage / IndexedDB persistence is used here.
+  frontend\src\services\storage.ts:33: const item = localStorage.getItem(key);
+  frontend\src\services\storage.ts:36: console.error(`Error reading ${key} from localStorage`, err);
+  frontend\src\services\storage.ts:43: localStorage.setItem(key, JSON.stringify(value));
+  frontend\src\services\storage.ts:45: console.error(`Error saving ${key} to localStorage`, err);
+  frontend\src\services\storage.ts:212: localStorage.clear();
+
+=== KEYWORD: DATABASE_URL (7 occurrences) ===
+  backend\audit_codebase_keywords.py:21: "DATABASE_URL",
+  backend\probe_role.py:34: url = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+  backend\app\core\config.py:128: DATABASE_URL: str = ""
+  backend\app\core\config.py:154: if not self.DATABASE_URL:
+  backend\app\core\config.py:156: "DATABASE_URL is not set. Copy backend/.env.example to backend/.env "
+  backend\app\core\config.py:161: url = self.DATABASE_URL
+  backend\app\core\config.py:166: "DATABASE_URL must use the psycopg 3 driver, e.g. "
+
