@@ -155,7 +155,7 @@ export const storageService = {
 
   // FOLLOWING
   getFollowingIds(): string[] {
-    return safeGet<string[]>(STORAGE_KEYS.FOLLOWING_IDS, ['usr_aria', 'usr_sofia']);
+    return safeGet<string[]>(STORAGE_KEYS.FOLLOWING_IDS, []);
   },
   toggleFollow(userId: string): { isFollowing: boolean; followingIds: string[] } {
     const ids = this.getFollowingIds();

@@ -6,24 +6,27 @@ import { useApp } from '../context/AppContext';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { showToast } = useApp();
-  const [email, setEmail] = useState('elena.rostova@stylesphere.io');
-  const [password, setPassword] = useState('password123');
+  const { login, showToast, authError } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Welcome back, Elena!', 'success');
+    try {
+      await login(email.trim(), password);
+      showToast('Welcome back to StyleSphere!', 'success');
       navigate('/home');
-    }, 500);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Invalid email or password', 'info');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
-    showToast('Signed in via Google', 'success');
-    navigate('/home');
+    showToast('Google OAuth is coming soon. Please sign in with email.', 'info');
   };
 
   return (
@@ -49,19 +52,24 @@ export const Login: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-cream-50 py-8 px-6 sm:px-10 shadow-soft-xl rounded-3xl border border-sand-200/90 space-y-6">
+          {authError && (
+            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+              {authError}
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1.5">
-                Email address
+                Username or Email
               </label>
               <div className="relative">
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
-                  placeholder="elena@example.com"
+                  placeholder="your_username or you@example.com"
                 />
                 <Mail className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>

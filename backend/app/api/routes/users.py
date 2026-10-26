@@ -1,24 +1,33 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_current_user_optional
-from app.schemas.user import UserResponse, UserUpdate, UserPreferenceBase, UserPreferenceResponse, LearnedPreferenceResponse
+from app.schemas.user import (
+    UserResponse,
+    UserUpdate,
+    UserPreferenceBase,
+    UserPreferenceResponse,
+    LearnedPreferenceResponse,
+    UserSearchResponse,
+)
 from app.services.user_service import UserService
 from app.models.user import User
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/{username}", response_model=UserResponse)
-def get_user_by_username(
-    username: str,
+@router.get("/search", response_model=List[UserSearchResponse])
+def search_users(
+    q: str = Query("", description="Search query for username or display name"),
+    limit: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional),
 ):
+    """Search users by username or display name."""
     service = UserService(db)
     viewer_id = current_user.id if current_user else None
-    return service.get_by_username(username, viewer_id=viewer_id)
+    return service.search_users(query=q, viewer_id=viewer_id, limit=limit)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -78,3 +87,14 @@ def get_learned_preferences(
         "created_at": lp.created_at,
         "updated_at": lp.updated_at,
     }
+
+
+@router.get("/{username}", response_model=UserResponse)
+def get_user_by_username(
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    service = UserService(db)
+    viewer_id = current_user.id if current_user else None
+    return service.get_by_username(username, viewer_id=viewer_id)

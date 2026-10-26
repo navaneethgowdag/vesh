@@ -42,6 +42,7 @@ export const DailyFit: React.FC = () => {
     wearDailyFit,
     cycleDailyFit,
     showToast,
+    currentUser,
   } = useApp();
 
   const [whyModalOpen, setWhyModalOpen] = useState(false);
@@ -94,10 +95,10 @@ export const DailyFit: React.FC = () => {
   const shareablePost: Post = {
     id: dailyFit.outfit.id,
     user: {
-      id: 'usr_me',
-      name: 'Elena Rostova',
-      username: 'elena_r',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+      id: currentUser?.id || 'usr_me',
+      name: currentUser?.name || 'My Style',
+      username: currentUser?.username || 'me',
+      avatar: currentUser?.avatar || '',
     },
     image: dailyFit.outfit.image || '',
     caption: `${dailyFit.outfit.title} · Curated by StyleSphere AI Atelier`,

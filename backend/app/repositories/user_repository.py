@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from app.models.user import User
 from app.models.user_preference import UserPreference
 from app.models.learned_preference import LearnedPreference
@@ -174,15 +174,27 @@ class UserRepository:
         return learned
 
     def search_users(self, query: str, limit: int = 20) -> List[User]:
-        search_pattern = f"%{query.strip()}%"
+        clean_q = query.strip()
+        if not clean_q:
+            return (
+                self.db.query(User)
+                .filter(User.is_active == True)
+                .order_by(User.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+        search_pattern = f"%{clean_q}%"
         return (
             self.db.query(User)
             .filter(
+                User.is_active == True,
                 or_(
                     User.username.ilike(search_pattern),
                     User.first_name.ilike(search_pattern),
                     User.last_name.ilike(search_pattern),
-                )
+                    func.concat(User.first_name, " ", func.coalesce(User.last_name, "")).ilike(search_pattern),
+                    User.bio.ilike(search_pattern),
+                ),
             )
             .limit(limit)
             .all()

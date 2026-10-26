@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Settings,
@@ -9,6 +9,9 @@ import {
   FolderHeart,
   MapPin,
   Calendar,
+  Clock,
+  Trash2,
+  Heart,
   PieChart as PieIcon,
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
@@ -20,17 +23,59 @@ import { PostCard } from '../components/feed/PostCard';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
 import { EditProfileModal } from '../components/profile/EditProfileModal';
 import { useApp, useCurrentUser } from '../context/AppContext';
+import { api } from '../services/api';
+import { OutfitMoment } from '../types';
 
 export const Profile: React.FC = () => {
-  const { posts, wardrobe, collections } = useApp();
+  const { posts, wardrobe, collections, showToast } = useApp();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'Posts' | 'Outfits' | 'Saved' | 'Collections'>('Posts');
+  const [activeTab, setActiveTab] = useState<'Posts' | 'Moments' | 'Outfits' | 'Saved' | 'Collections'>('Posts');
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+  const [myMoments, setMyMoments] = useState<OutfitMoment[]>([]);
+  const [isLoadingMoments, setIsLoadingMoments] = useState(false);
 
   const myPosts = posts.filter((p) => p.user.id === currentUser.id);
   const savedPosts = posts.filter((p) => p.isSaved);
+
+  const loadMyMoments = async () => {
+    setIsLoadingMoments(true);
+    try {
+      const data = await api.moments.listMine();
+      setMyMoments(data);
+    } catch {
+      showToast('Failed to load active moments', 'info');
+    } finally {
+      setIsLoadingMoments(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'Moments') {
+      loadMyMoments();
+    }
+  }, [activeTab]);
+
+  const handleDeleteMoment = async (id: string) => {
+    try {
+      await api.moments.delete(id);
+      setMyMoments((prev) => prev.filter((m) => m.id !== id));
+      showToast('Outfit moment removed', 'success');
+    } catch {
+      showToast('Failed to delete moment', 'info');
+    }
+  };
+
+  // Format time remaining for 24-hour expiration
+  const formatTimeRemaining = (seconds: number) => {
+    if (!seconds || seconds <= 0) return 'Expiring soon';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${mins}m left`;
+    return `${mins}m left`;
+  };
 
   // Recharts wardrobe distribution data
   const categoryData = [
@@ -206,18 +251,23 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Tabs Row */}
-      <div className="flex items-center justify-center sm:justify-start gap-8 border-b border-sand-200 mb-6">
-        {(['Posts', 'Outfits', 'Saved', 'Collections'] as const).map((tab) => (
+      <div className="flex items-center justify-center sm:justify-start gap-6 sm:gap-8 border-b border-sand-200 mb-6 overflow-x-auto">
+        {(['Posts', 'Moments', 'Outfits', 'Saved', 'Collections'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide transition-all relative ${
+            className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide transition-all whitespace-nowrap relative ${
               activeTab === tab
                 ? 'text-charcoal-950 font-bold border-b-2 border-charcoal-900 -mb-px'
                 : 'text-charcoal-400 hover:text-charcoal-700'
             }`}
           >
             {tab}
+            {tab === 'Moments' && myMoments.length > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-cognac-100 text-cognac-800 font-bold">
+                {myMoments.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -239,6 +289,80 @@ export const Profile: React.FC = () => {
             </div>
           ) : (
             myPosts.map((post) => <PostCard key={post.id} post={post} />)
+          )}
+        </div>
+      )}
+
+      {activeTab === 'Moments' && (
+        <div className="space-y-6">
+          {isLoadingMoments ? (
+            <div className="text-center py-16 bg-cream-50 rounded-3xl border border-sand-200">
+              <Sparkles className="w-6 h-6 text-cognac-600 animate-spin mx-auto mb-2" />
+              <p className="text-xs text-charcoal-500">Loading your active moments...</p>
+            </div>
+          ) : myMoments.length === 0 ? (
+            <div className="text-center py-16 bg-cream-50 rounded-3xl border border-sand-200 p-6">
+              <Clock className="w-8 h-8 text-cognac-600 mx-auto mb-2 opacity-60" />
+              <p className="font-serif font-bold text-charcoal-900 text-sm">No Active 24-Hour Moments</p>
+              <p className="text-xs text-charcoal-500 max-w-sm mx-auto mt-1 mb-4">
+                Moments you share appear in the For You discovery deck and automatically expire after 24 hours.
+              </p>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => navigate('/create')}
+              >
+                Share a 24h Outfit Moment
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {myMoments.map((moment) => (
+                <div
+                  key={moment.id}
+                  className="bg-cream-50 rounded-3xl border border-sand-200 overflow-hidden shadow-soft flex flex-col"
+                >
+                  <div className="relative aspect-[4/5] bg-sand-200">
+                    <img
+                      src={moment.imageUrl}
+                      alt={moment.caption || 'Outfit moment'}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-charcoal-900/80 backdrop-blur-md text-cream-50 text-[11px] font-medium border border-white/20 shadow-soft">
+                      <Clock className="w-3.5 h-3.5 text-cognac-400" />
+                      <span>{formatTimeRemaining(moment.timeRemainingSeconds)}</span>
+                    </div>
+                    <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-cream-50/90 backdrop-blur-md text-charcoal-900 text-[11px] font-bold shadow-soft">
+                      <Heart className="w-3 h-3 text-rose-500 fill-current" />
+                      <span>{moment.likesCount}</span>
+                    </div>
+                  </div>
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      {moment.occasion && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-cognac-700 block mb-1">
+                          {moment.occasion}
+                        </span>
+                      )}
+                      {moment.caption && (
+                        <p className="text-xs text-charcoal-800 line-clamp-2">{moment.caption}</p>
+                      )}
+                    </div>
+                    <div className="pt-2 border-t border-sand-200/80 flex items-center justify-between">
+                      <span className="text-[10px] text-charcoal-400">Live in For You</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMoment(moment.id)}
+                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

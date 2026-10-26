@@ -119,7 +119,7 @@ class FeedService:
 
         posts = (
             self.db.query(Post)
-            .filter(Post.image_url.isnot(None), Post.image_url != "")
+            .filter(Post.image_url.isnot(None), Post.image_url != "", ~Post.caption.like("[MOMENT:%"))
             .order_by(Post.created_at.desc())
             .limit(limit)
             .all()
@@ -128,6 +128,15 @@ class FeedService:
         if cache_key:
             cache_service.set(cache_key, formatted, ttl_seconds=TTL_STORIES)
         return formatted
+
+    def get_posts_by_user(
+        self,
+        user_id: UUID,
+        current_user_id: Optional[UUID] = None,
+        limit: int = 30,
+    ) -> List[Dict[str, Any]]:
+        posts = self.social_repo.list_posts_by_user(user_id=user_id, limit=limit)
+        return self._format_posts_batch(posts, current_user_id)
 
     def get_post_by_id(self, post_id: UUID, current_user_id: Optional[UUID] = None) -> Dict[str, Any]:
         p = self.social_repo.get_post_by_id(post_id)

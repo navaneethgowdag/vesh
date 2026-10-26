@@ -14,6 +14,7 @@ from app.api.routes import (
     notifications,
     calendar,
     media,
+    moments,
 )
 
 api_router = APIRouter()
@@ -32,6 +33,7 @@ api_router.include_router(saved.router)
 api_router.include_router(notifications.router)
 api_router.include_router(calendar.router)
 api_router.include_router(media.router)
+api_router.include_router(moments.router)
 
 __all__ = ["api_router"]
 

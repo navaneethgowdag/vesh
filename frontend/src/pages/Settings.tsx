@@ -541,7 +541,7 @@ export const Settings: React.FC = () => {
 
             {/* Bottom Save Action */}
             <div className="pt-5 border-t border-sand-200 flex items-center justify-between">
-              <span className="text-xs text-charcoal-400">Changes persist in local storage</span>
+              <span className="text-xs text-charcoal-400">Changes are saved to your account</span>
               <Button
                 type="submit"
                 variant="primary"

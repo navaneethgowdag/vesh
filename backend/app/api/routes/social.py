@@ -1,6 +1,6 @@
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.schemas.social import UserSummary
@@ -16,6 +16,11 @@ def follow_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot follow yourself",
+        )
     repo = SocialRepository(db)
     success = repo.follow_user(follower_id=current_user.id, following_id=user_id)
     return {"following": success}

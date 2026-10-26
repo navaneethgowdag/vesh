@@ -4,6 +4,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { ClothingCategory, ClothingColor, Season, StyleVibe } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 
 interface AddClothingModalProps {
   isOpen: boolean;
@@ -51,58 +52,11 @@ const STYLES: StyleVibe[] = [
 
 const SEASONS: Season[] = ['Spring', 'Summer', 'Autumn', 'Winter', 'All-Season'];
 
-const SAMPLE_PRESETS = [
-  {
-    name: 'Washed Camel Oversized Trench',
-    category: 'Outerwear' as ClothingCategory,
-    color: 'Beige' as ClothingColor,
-    style: 'Quiet Luxury' as StyleVibe,
-    season: 'Autumn' as Season,
-    brand: 'Totême',
-    pattern: 'Solid',
-    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=700&q=80',
-    notes: 'Timeless gabardine cut with generous storm flap.',
-  },
-  {
-    name: 'Pleated Raw Silk Ivory Shirt',
-    category: 'Tops' as ClothingCategory,
-    color: 'Cream' as ClothingColor,
-    style: 'Minimal' as StyleVibe,
-    season: 'All-Season' as Season,
-    brand: 'Lemaire',
-    pattern: 'Solid',
-    image: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=700&q=80',
-    notes: 'Architectural collar and relaxed sleeve drop.',
-  },
-  {
-    name: 'Wide-Leg Ecru Tailored Slacks',
-    category: 'Bottoms' as ClothingCategory,
-    color: 'Cream' as ClothingColor,
-    style: 'Smart Casual' as StyleVibe,
-    season: 'Summer' as Season,
-    brand: 'The Frankie Shop',
-    pattern: 'Solid',
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=700&q=80',
-    notes: 'High-waist double pleat for clean fall.',
-  },
-  {
-    name: 'Minimalist Chunky Derby Shoes',
-    category: 'Shoes' as ClothingCategory,
-    color: 'Black' as ClothingColor,
-    style: 'Smart Casual' as StyleVibe,
-    season: 'All-Season' as Season,
-    brand: 'Prada',
-    pattern: 'Solid',
-    image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?auto=format&fit=crop&w=700&q=80',
-    notes: 'Polished calf leather with lugged rubber sole.',
-  }
-];
-
 export const AddClothingModal: React.FC<AddClothingModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { addClothingItem } = useApp();
+  const { addClothingItem, showToast } = useApp();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ClothingCategory>('Tops');
@@ -112,58 +66,66 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
   const [season, setSeason] = useState<Season>('All-Season');
   const [brand, setBrand] = useState('');
   const [notes, setNotes] = useState('');
-  const [imageUrl, setImageUrl] = useState(
-    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80'
-  );
+  const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const applyPreset = (preset: typeof SAMPLE_PRESETS[0]) => {
-    setName(preset.name);
-    setCategory(preset.category);
-    setColor(preset.color);
-    setStyle(preset.style);
-    setSeason(preset.season);
-    setBrand(preset.brand);
-    setPattern(preset.pattern);
-    setImageUrl(preset.image);
-    setNotes(preset.notes);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setImageUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      try {
+        const uploaded = await api.media.upload(file);
+        setImageUrl(uploaded.image_url);
+        showToast('Image uploaded and optimized', 'success');
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setImageUrl(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showToast('Please enter a clothing item name', 'info');
+      return;
+    }
 
-    addClothingItem({
-      name: name.trim(),
-      category,
-      color,
-      pattern: pattern || 'Solid',
-      style,
-      season,
-      brand: brand.trim() || undefined,
-      notes: notes.trim() || undefined,
-      image: imageUrl,
-      tags: [category.toLowerCase(), style.toLowerCase(), color.toLowerCase()],
-      isFavorite: false,
-    });
+    setIsSubmitting(true);
+    try {
+      await addClothingItem({
+        name: name.trim(),
+        category,
+        color,
+        pattern: pattern || 'Solid',
+        style,
+        season,
+        brand: brand.trim() || undefined,
+        notes: notes.trim() || undefined,
+        image: imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80',
+        tags: [category.toLowerCase(), style.toLowerCase(), color.toLowerCase()],
+        isFavorite: false,
+      });
 
-    // Reset form
-    setName('');
-    setBrand('');
-    setNotes('');
-    onClose();
+      // Reset form
+      setName('');
+      setBrand('');
+      setNotes('');
+      setImageUrl('');
+      onClose();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to add clothing item', 'info');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -175,36 +137,22 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
       maxWidth="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Quick Sample Presets */}
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-2 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cognac-600" />
-            Quick Presets (or enter custom details below)
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {SAMPLE_PRESETS.map((p) => (
-              <button
-                type="button"
-                key={p.name}
-                onClick={() => applyPreset(p)}
-                className="text-left p-2 rounded-xl bg-sand-100/70 hover:bg-sand-200 border border-sand-200/80 transition-all flex items-center gap-2"
-              >
-                <img src={p.image} alt={p.name} className="w-8 h-8 rounded-lg object-cover" />
-                <span className="text-[11px] font-medium text-charcoal-800 line-clamp-1">
-                  {p.name.split(' ')[0]} {p.name.split(' ')[1]}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Image Preview & Upload */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-          <div className="sm:col-span-4 aspect-square rounded-2xl bg-sand-100 overflow-hidden border border-sand-300 relative group shadow-inner">
-            <img src={imageUrl} alt="Clothing preview" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white text-xs font-medium">Garment Preview</span>
-            </div>
+          <div className="sm:col-span-4 aspect-square rounded-2xl bg-sand-100 overflow-hidden border border-sand-300 relative group shadow-inner flex items-center justify-center">
+            {imageUrl ? (
+              <>
+                <img src={imageUrl} alt="Clothing preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-xs font-medium">Garment Preview</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center p-3">
+                <ImageIcon className="w-8 h-8 text-charcoal-400 mx-auto mb-1 opacity-60" />
+                <span className="text-[11px] text-charcoal-400 font-medium">No Image Uploaded</span>
+              </div>
+            )}
           </div>
 
           <div className="sm:col-span-8 space-y-2.5">
@@ -214,12 +162,13 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
             <div className="flex gap-2">
               <label className="cursor-pointer flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-sand-300 rounded-2xl text-xs font-medium text-charcoal-600 hover:border-cognac-600 hover:bg-sand-100 transition-colors">
                 <Upload className="w-4 h-4 text-cognac-600" />
-                <span>Upload File from Device</span>
+                <span>{isUploading ? 'Uploading...' : 'Upload File from Device'}</span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleFileUpload}
                   className="hidden"
+                  disabled={isUploading}
                 />
               </label>
             </div>
@@ -371,7 +320,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
           <Button type="button" variant="outline" size="md" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="md" disabled={!name.trim()}>
+          <Button type="submit" variant="primary" size="md" disabled={!name.trim() || isSubmitting} isLoading={isSubmitting}>
             Add to Wardrobe
           </Button>
         </div>

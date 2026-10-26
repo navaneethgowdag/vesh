@@ -100,3 +100,35 @@ class UserService:
 
     def get_learned_preferences(self, user_id: UUID) -> LearnedPreference:
         return self.user_repo.get_or_create_learned_preferences(user_id)
+
+    def search_users(
+        self,
+        query: str,
+        viewer_id: Optional[UUID] = None,
+        limit: int = 20,
+    ) -> List[dict]:
+        users = self.user_repo.search_users(query, limit=limit)
+        results = []
+        for u in users:
+            is_following = False
+            if viewer_id and viewer_id != u.id:
+                is_following = self.social_repo.is_following(viewer_id, u.id)
+
+            followers_count = self.social_repo.count_followers(u.id)
+            following_count = self.social_repo.count_following(u.id)
+            posts_count = len(self.social_repo.list_posts_by_user(u.id))
+
+            results.append({
+                "id": u.id,
+                "username": u.username,
+                "display_name": u.display_name,
+                "bio": u.bio or "",
+                "avatar": u.profile_image_url,
+                "is_verified": u.is_verified,
+                "followers_count": followers_count,
+                "following_count": following_count,
+                "posts_count": posts_count,
+                "is_following": is_following,
+                "is_me": (viewer_id == u.id) if viewer_id else False,
+            })
+        return results

@@ -99,3 +99,19 @@ class UserResponse(UserBase):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UserSearchResponse(BaseModel):
+    id: UUID
+    username: str
+    display_name: str
+    bio: Optional[str] = ""
+    avatar: Optional[str] = None
+    is_verified: bool = False
+    followers_count: int = 0
+    following_count: int = 0
+    posts_count: int = 0
+    is_following: bool = False
+    is_me: bool = False
+
+    model_config = {"from_attributes": True}

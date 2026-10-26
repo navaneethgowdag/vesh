@@ -201,6 +201,12 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ compact = false }) => 
         </div>
       </div>
 
+      {weatherError && !isWeatherLoading && (
+        <div className="mb-3 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-800 flex items-center justify-between">
+          <span className="truncate">{weatherError}</span>
+        </div>
+      )}
+
       {/* Main Temperature & Condition */}
       <div className="flex items-baseline justify-between mb-4">
         <div>

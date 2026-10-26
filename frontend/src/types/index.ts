@@ -273,3 +273,37 @@ export interface CalendarEvent {
   updatedAt: string;
   outfit?: Outfit;
 }
+
+export interface OutfitMoment {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    username: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  imageUrl: string;
+  caption?: string;
+  occasion?: string;
+  tags?: string[];
+  createdAt: string;
+  expiresAt: string;
+  timeRemainingSeconds: number;
+  likesCount: number;
+  isLiked: boolean;
+}
+
+export interface UserSearchResult {
+  id: string;
+  username: string;
+  displayName: string;
+  bio?: string;
+  avatar?: string;
+  isVerified: boolean;
+  followersCount: number;
+  followingCount: number;
+  postsCount: number;
+  isFollowing: boolean;
+  isMe: boolean;
+}

@@ -16,6 +16,8 @@ import {
   Weather,
   Occasion,
   CalendarEvent,
+  OutfitMoment,
+  UserSearchResult,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -392,6 +394,108 @@ export const api = {
     },
   },
 
+  // --- 24-HOUR OUTFIT MOMENTS ---
+  moments: {
+    async listFeed(limit: number = 30, offset: number = 0): Promise<OutfitMoment[]> {
+      const items = await request<any[]>(`/moments/feed?limit=${limit}&offset=${offset}`);
+      return items.map((m) => ({
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: m.user?.avatar || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: m.image_url,
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+      }));
+    },
+
+    async listMine(): Promise<OutfitMoment[]> {
+      const items = await request<any[]>('/moments/me');
+      return items.map((m) => ({
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: m.user?.avatar || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: m.image_url,
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+      }));
+    },
+
+    async create(data: {
+      image_url: string;
+      caption?: string;
+      occasion?: string;
+      tags?: string[];
+    }): Promise<OutfitMoment> {
+      const m = await request<any>('/moments', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return {
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: m.user?.avatar || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: m.image_url,
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+      };
+    },
+
+    async delete(id: string): Promise<void> {
+      await request<void>(`/moments/${id}`, { method: 'DELETE' });
+    },
+
+    async like(id: string): Promise<{ momentId: string; action: string; success: boolean }> {
+      const res = await request<any>(`/moments/${id}/like`, { method: 'POST' });
+      return {
+        momentId: String(res.moment_id),
+        action: res.action,
+        success: res.success,
+      };
+    },
+
+    async skip(id: string): Promise<{ momentId: string; action: string; success: boolean }> {
+      const res = await request<any>(`/moments/${id}/skip`, { method: 'POST' });
+      return {
+        momentId: String(res.moment_id),
+        action: res.action,
+        success: res.success,
+      };
+    },
+  },
+
   // --- MEDIA STORAGE & OPTIMIZATION ---
   media: {
     async upload(file: File): Promise<{ image_url: string; thumbnail_url: string }> {
@@ -464,6 +568,23 @@ export const api = {
 
   // --- USERS / PREFERENCES (explicit preferences persisted in Neon) ---
   users: {
+    async search(query: string, limit: number = 20): Promise<UserSearchResult[]> {
+      const items = await request<any[]>(`/users/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      return items.map((u) => ({
+        id: String(u.id),
+        username: u.username,
+        displayName: u.display_name,
+        bio: u.bio || '',
+        avatar: u.avatar || '',
+        isVerified: u.is_verified || false,
+        followersCount: u.followers_count || 0,
+        followingCount: u.following_count || 0,
+        postsCount: u.posts_count || 0,
+        isFollowing: u.is_following || false,
+        isMe: u.is_me || false,
+      }));
+    },
+
     async getByUsername(username: string): Promise<User> {
       const raw = await request<any>(`/users/${encodeURIComponent(username)}`);
       return {

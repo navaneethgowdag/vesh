@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Sparkles,
@@ -18,20 +18,31 @@ import { DiscoveryDeck } from '../components/feed/DiscoveryDeck';
 import { Button } from '../components/ui/Button';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
-import { Post } from '../types';
+import { Post, OutfitMoment } from '../types';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const currentUser = useCurrentUser();
-  const { toggleLikePost } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'for_you' | 'following'>('for_you');
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'for_you' | 'following'>(
+    tabParam === 'following' ? 'following' : 'for_you'
+  );
 
-  // Separate feed state for For You (Tinder-style deck) and Following (Instagram-style feed)
-  const [forYouPosts, setForYouPosts] = useState<Post[]>([]);
+  // Sync tab with URL search parameter if present
+  useEffect(() => {
+    if (tabParam === 'following' || tabParam === 'for-you') {
+      setActiveTab(tabParam === 'following' ? 'following' : 'for_you');
+    }
+  }, [tabParam]);
+
+  // For You discovery moments (unexpired 24-hour outfit moments)
+  const [forYouMoments, setForYouMoments] = useState<OutfitMoment[]>([]);
   const [isLoadingForYou, setIsLoadingForYou] = useState(true);
   const [forYouError, setForYouError] = useState<string | null>(null);
 
+  // Following feed (permanent posts from creators the user follows)
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
   const [followingError, setFollowingError] = useState<string | null>(null);
@@ -44,21 +55,21 @@ export const Home: React.FC = () => {
     return 'Good evening';
   };
 
-  // Load For You discovery posts (backend excludes own posts)
-  const loadForYouPosts = useCallback(async () => {
+  // Load For You discovery moments (unexpired, excludes seen/swiped)
+  const loadForYouMoments = useCallback(async () => {
     setIsLoadingForYou(true);
     setForYouError(null);
     try {
-      const data = await api.posts.listFeed('for_you');
-      setForYouPosts(data);
+      const data = await api.moments.listFeed();
+      setForYouMoments(data);
     } catch (err: any) {
-      setForYouError(err?.message || 'Failed to load discovery deck.');
+      setForYouError(err?.message || 'Failed to load discovery moments.');
     } finally {
       setIsLoadingForYou(false);
     }
   }, []);
 
-  // Load Following feed posts
+  // Load Following feed permanent posts
   const loadFollowingPosts = useCallback(async () => {
     setIsLoadingFollowing(true);
     setFollowingError(null);
@@ -74,8 +85,8 @@ export const Home: React.FC = () => {
 
   // Initial load
   useEffect(() => {
-    loadForYouPosts();
-  }, [loadForYouPosts]);
+    loadForYouMoments();
+  }, [loadForYouMoments]);
 
   // Load following when tab is switched to following
   useEffect(() => {
@@ -84,9 +95,14 @@ export const Home: React.FC = () => {
     }
   }, [activeTab, followingPosts.length, loadFollowingPosts]);
 
-  // Discovery Like Handler (Persists in PostgreSQL via existing toggleLikePost)
-  const handleDiscoveryLike = async (post: Post) => {
-    await toggleLikePost(post.id);
+  // Discovery Like Handler (Persists like and sends notification via backend)
+  const handleDiscoveryLike = async (moment: OutfitMoment) => {
+    await api.moments.like(moment.id);
+  };
+
+  // Discovery Skip Handler (Marks moment as seen without notifying)
+  const handleDiscoverySkip = async (moment: OutfitMoment) => {
+    await api.moments.skip(moment.id);
   };
 
   return (
@@ -217,7 +233,7 @@ export const Home: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={loadForYouPosts}
+                onClick={loadForYouMoments}
                 icon={<RefreshCw className="w-3.5 h-3.5" />}
               >
                 Retry
@@ -225,9 +241,10 @@ export const Home: React.FC = () => {
             </div>
           ) : (
             <DiscoveryDeck
-              posts={forYouPosts}
+              moments={forYouMoments}
               onLike={handleDiscoveryLike}
-              onRefresh={loadForYouPosts}
+              onSkip={handleDiscoverySkip}
+              onRefresh={loadForYouMoments}
               isLoading={isLoadingForYou}
             />
           )}

@@ -34,6 +34,18 @@ def get_stories(
     return service.get_stories(current_user_id=viewer_id, limit=limit)
 
 
+@router.get("/user/{user_id}", response_model=List[PostResponse])
+def get_posts_by_user(
+    user_id: UUID,
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    service = FeedService(db)
+    viewer_id = current_user.id if current_user else None
+    return service.get_posts_by_user(user_id=user_id, current_user_id=viewer_id, limit=limit)
+
+
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(
     post_in: PostCreate,

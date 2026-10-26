@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { X, Heart, Sparkles, Compass, RotateCcw, Tag } from 'lucide-react';
-import { Post } from '../../types';
+import { X, Heart, Sparkles, Compass, RotateCcw, Clock, PlusCircle } from 'lucide-react';
+import { OutfitMoment } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 
 interface DiscoveryDeckProps {
-  posts: Post[];
-  onLike: (post: Post) => Promise<void>;
-  onSkip?: (post: Post) => void;
+  moments: OutfitMoment[];
+  onLike: (moment: OutfitMoment) => Promise<void>;
+  onSkip?: (moment: OutfitMoment) => Promise<void> | void;
   onRefresh?: () => void;
   isLoading?: boolean;
 }
 
 export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
-  posts,
+  moments,
   onLike,
   onSkip,
   onRefresh,
@@ -27,11 +27,11 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   const [sessionSwipedIds, setSessionSwipedIds] = useState<Set<string>>(new Set());
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
 
-  // Filter posts to only unswiped items
-  const eligiblePosts = posts.filter((p) => !sessionSwipedIds.has(p.id));
-  const currentPost = eligiblePosts[0] || null;
-  const nextPost1 = eligiblePosts[1] || null;
-  const nextPost2 = eligiblePosts[2] || null;
+  // Filter moments to only unswiped items
+  const eligibleMoments = moments.filter((m) => !sessionSwipedIds.has(m.id));
+  const currentMoment = eligibleMoments[0] || null;
+  const nextMoment1 = eligibleMoments[1] || null;
+  const nextMoment2 = eligibleMoments[2] || null;
 
   // Drag physics values
   const x = useMotionValue(0);
@@ -42,40 +42,53 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
 
   // Bounded prefetch of next 1-2 images
   useEffect(() => {
-    if (nextPost1?.image) {
+    if (nextMoment1?.imageUrl) {
       const img1 = new window.Image();
-      img1.src = nextPost1.image;
+      img1.src = nextMoment1.imageUrl;
     }
-    if (nextPost2?.image) {
+    if (nextMoment2?.imageUrl) {
       const img2 = new window.Image();
-      img2.src = nextPost2.image;
+      img2.src = nextMoment2.imageUrl;
     }
-  }, [nextPost1, nextPost2]);
+  }, [nextMoment1, nextMoment2]);
+
+  // Format time remaining for 24-hour expiration
+  const formatTimeRemaining = (seconds: number) => {
+    if (!seconds || seconds <= 0) return 'Expiring soon';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${mins}m left`;
+    return `${mins}m left`;
+  };
 
   // Action handlers
   const handleSwipeAction = useCallback(
     async (direction: 'left' | 'right') => {
-      if (!currentPost) return;
+      if (!currentMoment) return;
 
-      const swipedPost = currentPost;
+      const swiped = currentMoment;
       setExitDirection(direction);
 
       // Add to session swiped IDs immediately for snappy responsive feel
-      setSessionSwipedIds((prev) => new Set(prev).add(swipedPost.id));
+      setSessionSwipedIds((prev) => new Set(prev).add(swiped.id));
 
       if (direction === 'right') {
         try {
-          await onLike(swipedPost);
+          await onLike(swiped);
         } catch {
           // If error occurs, roll back swipe
           setSessionSwipedIds((prev) => {
             const next = new Set(prev);
-            next.delete(swipedPost.id);
+            next.delete(swiped.id);
             return next;
           });
         }
       } else {
-        onSkip?.(swipedPost);
+        try {
+          await onSkip?.(swiped);
+        } catch {
+          // Skip silently ignores or logs
+        }
       }
 
       // Reset motion state
@@ -84,7 +97,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         setExitDirection(null);
       }, 300);
     },
-    [currentPost, onLike, onSkip, x]
+    [currentMoment, onLike, onSkip, x]
   );
 
   const handleDragEnd = (_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
@@ -101,7 +114,6 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   // Keyboard accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -129,18 +141,18 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         <div className="w-80 sm:w-96 aspect-[3/4] rounded-3xl bg-sand-100/80 animate-pulse border border-sand-200/90 flex flex-col items-center justify-center p-6 text-center">
           <Sparkles className="w-8 h-8 text-cognac-600 animate-spin mb-3" />
           <p className="text-xs font-semibold uppercase tracking-wider text-charcoal-700">
-            Curating Discovery Deck...
+            Curating 24-Hour Moments...
           </p>
           <p className="text-[11px] text-charcoal-400 mt-1 max-w-xs">
-            Gathering exceptional looks from style curators tailored to your aesthetic.
+            Fetching active outfit looks from style creators.
           </p>
         </div>
       </div>
     );
   }
 
-  // Empty state when all eligible looks have been swiped
-  if (!currentPost) {
+  // Empty state when all eligible moments have been swiped or none are active
+  if (!currentMoment) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="w-full max-w-md bg-cream-50/90 border border-sand-200/90 rounded-3xl p-8 sm:p-10 shadow-soft text-center">
@@ -148,10 +160,10 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             <Sparkles className="w-8 h-8" />
           </div>
           <h3 className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 mb-2">
-            You've Explored All Looks
+            You're All Caught Up
           </h3>
           <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed mb-6 max-w-xs mx-auto">
-            You're up to date on today's community rotation. Refresh your discovery deck or explore creators to find new inspiration.
+            You've explored all active 24-hour outfit moments in today's rotation. Share your own look or discover creators in Explore!
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
@@ -166,11 +178,11 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             <Button
               variant="primary"
               size="sm"
-              onClick={() => navigate('/explore')}
-              icon={<Compass className="w-3.5 h-3.5" />}
+              onClick={() => navigate('/create')}
+              icon={<PlusCircle className="w-3.5 h-3.5" />}
               className="w-full sm:w-auto"
             >
-              Explore Creators
+              Post a Moment
             </Button>
           </div>
         </div>
@@ -183,7 +195,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
       {/* Stacked Cards Container */}
       <div className="relative w-full max-w-[380px] sm:max-w-[420px] aspect-[3/4] sm:aspect-[4/5] mx-auto">
         {/* Background Card 2 (Bottom layer) */}
-        {nextPost2 && (
+        {nextMoment2 && (
           <div
             className="absolute inset-0 rounded-3xl bg-sand-200/60 border border-sand-300/40 shadow-soft overflow-hidden transition-all duration-300"
             style={{
@@ -192,8 +204,8 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             }}
           >
             <img
-              src={nextPost2.image}
-              alt={nextPost2.caption || 'Upcoming look'}
+              src={nextMoment2.imageUrl}
+              alt="Upcoming look"
               className="w-full h-full object-cover opacity-50 filter blur-[1px]"
               loading="lazy"
             />
@@ -201,7 +213,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         )}
 
         {/* Background Card 1 (Middle layer) */}
-        {nextPost1 && (
+        {nextMoment1 && (
           <div
             className="absolute inset-0 rounded-3xl bg-sand-100 border border-sand-200/80 shadow-soft overflow-hidden transition-all duration-300"
             style={{
@@ -210,8 +222,8 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             }}
           >
             <img
-              src={nextPost1.image}
-              alt={nextPost1.caption || 'Next look'}
+              src={nextMoment1.imageUrl}
+              alt="Next look"
               className="w-full h-full object-cover opacity-80"
               loading="lazy"
             />
@@ -221,7 +233,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         {/* Top Active Interactive Card */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPost.id}
+            key={currentMoment.id}
             style={{ x, rotate, opacity }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
@@ -237,16 +249,22 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing rounded-3xl overflow-hidden bg-charcoal-900 border border-sand-200/90 shadow-soft-xl flex flex-col justify-end"
           >
-            {/* Visual Focus: Full Post Image */}
+            {/* Visual Focus: Full Outfit Image */}
             <img
-              src={currentPost.image}
-              alt={currentPost.caption || 'Outfit discovery'}
+              src={currentMoment.imageUrl}
+              alt={currentMoment.caption || 'Outfit discovery'}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
               fetchPriority="high"
             />
 
             {/* Subtle Gradient Overlays for Readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/30 to-transparent pointer-events-none" />
+
+            {/* Top Expiration Badge */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-charcoal-900/70 backdrop-blur-md border border-white/20 text-cream-50 text-[11px] font-medium shadow-soft">
+              <Clock className="w-3.5 h-3.5 text-cognac-400" />
+              <span>{formatTimeRemaining(currentMoment.timeRemainingSeconds)}</span>
+            </div>
 
             {/* Visual Drag Indicator Badges */}
             <motion.div
@@ -269,41 +287,41 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
               <div
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/profile/${currentPost.user.username}`);
+                  navigate(`/profile/${currentMoment.user.username}`);
                 }}
                 className="flex items-center gap-3 cursor-pointer group mb-2.5"
               >
                 <Avatar
-                  src={currentPost.user.avatar}
-                  alt={currentPost.user.name}
+                  src={currentMoment.user.avatar}
+                  alt={currentMoment.user.name}
                   size="md"
-                  isVerified={currentPost.user.isVerified}
+                  isVerified={currentMoment.user.isVerified}
                 />
                 <div>
                   <p className="font-bold text-sm sm:text-base text-cream-50 group-hover:text-cognac-300 transition-colors leading-tight">
-                    {currentPost.user.name}
+                    {currentMoment.user.name}
                   </p>
                   <p className="text-[11px] text-cream-300/80">
-                    @{currentPost.user.username} • {currentPost.createdAt}
+                    @{currentMoment.user.username}
                   </p>
                 </div>
               </div>
 
               {/* Caption */}
-              {currentPost.caption && (
+              {currentMoment.caption && (
                 <p className="text-xs sm:text-sm text-cream-100 font-light leading-relaxed line-clamp-2 mb-3">
-                  {currentPost.caption}
+                  {currentMoment.caption}
                 </p>
               )}
 
               {/* Tags & Occasion Badges */}
               <div className="flex flex-wrap items-center gap-1.5">
-                {currentPost.occasion && (
+                {currentMoment.occasion && (
                   <span className="text-[10px] uppercase font-semibold tracking-wider px-2.5 py-0.5 rounded-full bg-cream-50/15 backdrop-blur-md text-cream-100 border border-white/10">
-                    {currentPost.occasion}
+                    {currentMoment.occasion}
                   </span>
                 )}
-                {currentPost.tags?.slice(0, 3).map((tag, idx) => (
+                {currentMoment.tags?.slice(0, 3).map((tag, idx) => (
                   <span
                     key={idx}
                     className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-charcoal-900/60 backdrop-blur-sm text-cream-200 border border-white/10"

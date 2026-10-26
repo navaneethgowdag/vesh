@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Upload,
+  Camera,
   Sparkles,
+  Clock,
   MapPin,
   Tag,
   Eye,
@@ -10,6 +12,8 @@ import {
   CheckCircle2,
   X,
   Plus,
+  Layers,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
@@ -27,53 +31,64 @@ const OCCASIONS: Occasion[] = [
   'Formal Event',
 ];
 
-const PRESET_OUTFIT_IMAGES = [
-  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80',
-  'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1000&q=80',
-];
-
 export const CreatePost: React.FC = () => {
   const navigate = useNavigate();
-  const { wardrobe, publishPost } = useApp();
+  const { wardrobe, publishPost, showToast } = useApp();
   const currentUser = useCurrentUser();
 
-  const [image, setImage] = useState(PRESET_OUTFIT_IMAGES[0]);
-  const [caption, setCaption] = useState(
-    'Crisp afternoon layering in the city. Structured tailoring paired with relaxed footwear.'
-  );
-  const [hashtags, setHashtags] = useState('#MinimalStyle #CapsuleWardrobe #AutumnTailoring');
+  const [publishType, setPublishType] = useState<'post' | 'moment'>('post');
+  const [image, setImage] = useState('');
+  const [caption, setCaption] = useState('');
+  const [hashtags, setHashtags] = useState('');
   const [occasion, setOccasion] = useState<Occasion>('Casual Daily');
-  const [location, setLocation] = useState('SoHo, New York');
-  const [taggedItemIds, setTaggedItemIds] = useState<string[]>([
-    wardrobe[0]?.id || '',
-    wardrobe[1]?.id || '',
-  ].filter(Boolean));
+  const [location, setLocation] = useState(currentUser.location || '');
+  const [taggedItemIds, setTaggedItemIds] = useState<string[]>([]);
   const [showWardrobePicker, setShowWardrobePicker] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const processFile = async (file: File) => {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (!validTypes.includes(file.type) && !file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (JPG, PNG, or WebP)', 'info');
+      return;
+    }
+
+    // Validate size (max 10MB)
+    const MAX_SIZE_MB = 10;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      showToast(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max size is ${MAX_SIZE_MB}MB.`, 'info');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const uploaded = await api.media.upload(file);
+      setImage(uploaded.image_url);
+      showToast('Image uploaded and optimized to WebP', 'success');
+    } catch (err) {
+      // Fallback to local data URL if server media storage is unreachable
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      showToast('Local preview generated', 'info');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setIsUploadingImage(true);
-      try {
-        const uploaded = await api.media.upload(file);
-        setImage(uploaded.image_url);
-      } catch {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            setImage(reader.result);
-          }
-        };
-        reader.readAsDataURL(file);
-      } finally {
-        setIsUploadingImage(false);
-      }
+      processFile(file);
     }
   };
 
@@ -83,45 +98,112 @@ export const CreatePost: React.FC = () => {
     );
   };
 
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!image || !caption.trim()) return;
+    if (!image) {
+      showToast('Please upload or provide an outfit image', 'info');
+      return;
+    }
+    if (!caption.trim()) {
+      showToast('Please add a caption or styling thoughts for this look', 'info');
+      return;
+    }
 
     setIsPublishing(true);
-    setTimeout(() => {
+    try {
       const parsedTags = hashtags
         .split(' ')
         .map((t) => t.trim())
         .filter((t) => t.length > 0)
         .map((t) => (t.startsWith('#') ? t : `#${t}`));
 
-      publishPost({
-        image,
-        caption: caption.trim(),
-        tags: parsedTags,
-        occasion,
-        location: location.trim() || undefined,
-        taggedItemIds,
-      });
-
+      if (publishType === 'post') {
+        await publishPost({
+          image,
+          caption: caption.trim(),
+          tags: parsedTags,
+          occasion,
+          location: location.trim() || undefined,
+          taggedItemIds,
+        });
+        showToast('Permanent outfit post published to profile & Following feed', 'success');
+        navigate('/home?tab=following');
+      } else {
+        await api.moments.create({
+          image_url: image,
+          caption: caption.trim(),
+          occasion,
+          tags: parsedTags,
+        });
+        showToast('24-Hour Outfit Moment live in For You discovery!', 'success');
+        navigate('/home?tab=for-you');
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to publish', 'info');
+    } finally {
       setIsPublishing(false);
-      navigate('/home');
-    }, 600);
+    }
   };
 
   const taggedItems = wardrobe.filter((i) => taggedItemIds.includes(i.id));
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto pb-12">
         {/* Page Title */}
         <div className="mb-6">
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal-950">
-            Publish New Outfit Look
+            Publish Outfit Look
           </h1>
           <p className="text-xs sm:text-sm text-charcoal-500 mt-1">
-            Share your daily styling with the StyleSphere community and link your wardrobe pieces.
+            Share your daily styling with the StyleSphere community as a permanent look or a 24-hour discovery moment.
           </p>
+        </div>
+
+        {/* Publication Type Selector */}
+        <div className="mb-6 bg-cream-50 p-3 rounded-2xl border border-sand-200 shadow-soft">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-2">
+            Publication Channel
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPublishType('post')}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                publishType === 'post'
+                  ? 'bg-charcoal-900 text-cream-50 shadow-md ring-2 ring-cognac-600'
+                  : 'bg-sand-100/70 text-charcoal-700 hover:bg-sand-200/70'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Permanent Post</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPublishType('moment')}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                publishType === 'moment'
+                  ? 'bg-charcoal-900 text-cream-50 shadow-md ring-2 ring-cognac-600'
+                  : 'bg-sand-100/70 text-charcoal-700 hover:bg-sand-200/70'
+              }`}
+            >
+              <Clock className="w-4 h-4 text-cognac-400" />
+              <span>24h Outfit Moment</span>
+            </button>
+          </div>
+          <div className="mt-2.5 px-2 text-[11px] text-charcoal-500 flex items-center gap-1.5">
+            {publishType === 'post' ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+                <span>Permanent Post: Stays on your profile grid indefinitely and appears in your followers' Following feed.</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-cognac-500 inline-block flex-shrink-0" />
+                <span>24-Hour Moment: Featured in the Tinder-style For You discovery swipe deck. Automatically expires after 24h.</span>
+              </>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handlePublish} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -130,118 +212,169 @@ export const CreatePost: React.FC = () => {
             {/* Image Preview & Upload */}
             <div className="bg-cream-50 p-5 rounded-3xl border border-sand-200 shadow-soft">
               <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-3">
-                Outfit Photography
+                Outfit Photography *
               </label>
 
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-sand-200 border border-sand-300 shadow-inner group mb-4">
-                <img
-                  src={image}
-                  alt="Post preview"
-                  className="w-full h-full object-cover"
-                />
+              {/* Hidden file inputs */}
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
 
-                <div className="absolute inset-0 bg-charcoal-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <label className="cursor-pointer bg-cream-50 text-charcoal-900 px-4 py-2 rounded-full text-xs font-bold hover:bg-sand-100 shadow-soft">
-                    Change Image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
+              {image ? (
+                <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-sand-200 border border-sand-300 shadow-inner group mb-3">
+                  <img
+                    src={image}
+                    alt="Post preview"
+                    className="w-full h-full object-cover"
+                  />
 
-              {/* Preset selection strip */}
-              <div>
-                <span className="text-[11px] font-semibold text-charcoal-500 block mb-2">
-                  Or select sample editorial image:
-                </span>
-                <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                  {PRESET_OUTFIT_IMAGES.map((img, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setImage(img)}
-                      className={`w-12 h-12 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
-                        image === img ? 'border-cognac-700 ring-2 ring-cognac-300' : 'border-sand-300'
-                      }`}
-                    >
-                      <img src={img} alt="Preset" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Tagged Wardrobe Items Section */}
-            <div className="bg-cream-50 p-5 rounded-3xl border border-sand-200 shadow-soft">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <Tag className="w-4 h-4 text-cognac-700" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
-                    Tag Wardrobe Items ({taggedItemIds.length})
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowWardrobePicker(!showWardrobePicker)}
-                  className="text-xs font-semibold text-cognac-700 hover:underline"
-                >
-                  {showWardrobePicker ? 'Done Tagging' : '+ Tag From Wardrobe'}
-                </button>
-              </div>
-
-              {/* Tagged Items Pills */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {taggedItems.map((item) => (
-                  <span
-                    key={item.id}
-                    className="inline-flex items-center gap-1.5 bg-sand-100 text-charcoal-800 text-xs px-2.5 py-1 rounded-full border border-sand-200"
-                  >
-                    <img src={item.image} alt={item.name} className="w-4 h-4 rounded-full object-cover" />
-                    <span>{item.name}</span>
+                  <div className="absolute inset-0 bg-charcoal-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       type="button"
-                      onClick={() => toggleTagItem(item.id)}
-                      className="hover:text-rose-600 ml-1"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="cursor-pointer bg-cream-50 text-charcoal-900 px-3.5 py-2 rounded-full text-xs font-bold hover:bg-sand-100 shadow-soft flex items-center gap-1.5"
                     >
-                      <X className="w-3 h-3" />
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Change</span>
                     </button>
-                  </span>
-                ))}
-              </div>
-
-              {/* Wardrobe picker drawer */}
-              {showWardrobePicker && (
-                <div className="p-3 bg-sand-100 rounded-2xl border border-sand-200 max-h-52 overflow-y-auto space-y-1.5">
-                  <p className="text-[11px] font-bold text-charcoal-600 mb-2">
-                    Click items from your digital closet to tag:
+                    <button
+                      type="button"
+                      onClick={() => setImage('')}
+                      className="bg-cream-50 text-rose-600 px-3.5 py-2 rounded-full text-xs font-bold hover:bg-rose-50 shadow-soft flex items-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="aspect-[4/5] rounded-2xl border-2 border-dashed border-sand-300 bg-sand-100/50 p-6 flex flex-col items-center justify-center text-center mb-3">
+                  <div className="w-14 h-14 rounded-2xl bg-cream-50 flex items-center justify-center text-cognac-700 shadow-soft mb-3">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <p className="font-serif font-semibold text-charcoal-900 text-sm mb-1">
+                    Add Outfit Photography
                   </p>
-                  {wardrobe.map((item) => {
-                    const isTagged = taggedItemIds.includes(item.id);
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => toggleTagItem(item.id)}
-                        className={`flex items-center justify-between p-2 rounded-xl cursor-pointer text-xs transition-colors ${
-                          isTagged
-                            ? 'bg-cognac-100 border border-cognac-300 font-bold'
-                            : 'bg-cream-50 hover:bg-sand-200/70 border border-sand-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={item.image} alt={item.name} className="w-8 h-8 rounded-lg object-cover" />
-                          <span className="truncate">{item.name}</span>
-                        </div>
-                        <span>{isTagged ? '✓ Tagged' : '+ Add'}</span>
-                      </div>
-                    );
-                  })}
+                  <p className="text-xs text-charcoal-500 max-w-xs mb-4">
+                    High resolution photography from your camera or gallery (JPG, PNG, WebP · Max 10MB)
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-charcoal-900 text-cream-50 rounded-xl text-xs font-semibold hover:bg-charcoal-800 transition-colors shadow-soft"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingImage ? 'Uploading...' : 'Device Files'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-sand-200 text-charcoal-900 rounded-xl text-xs font-semibold hover:bg-sand-300 transition-colors shadow-soft"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-cognac-700" />
+                      <span>Take Photo</span>
+                    </button>
+                  </div>
                 </div>
               )}
+
+              {/* Direct Image URL fallback */}
+              <div>
+                <input
+                  type="url"
+                  placeholder="Or enter image URL (https://...)"
+                  value={image.startsWith('http') ? image : ''}
+                  onChange={(e) => setImage(e.target.value)}
+                  className="w-full bg-cream-100/60 border border-sand-300 rounded-xl px-3 py-1.5 text-xs text-charcoal-800 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+                />
+              </div>
             </div>
+
+            {/* Tagged Wardrobe Items Section (Only for permanent posts) */}
+            {publishType === 'post' && (
+              <div className="bg-cream-50 p-5 rounded-3xl border border-sand-200 shadow-soft">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-cognac-700" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
+                      Tag Wardrobe Items ({taggedItemIds.length})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowWardrobePicker(!showWardrobePicker)}
+                    className="text-xs font-semibold text-cognac-700 hover:underline"
+                  >
+                    {showWardrobePicker ? 'Done Tagging' : '+ Tag From Wardrobe'}
+                  </button>
+                </div>
+
+                {/* Tagged Items Pills */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {taggedItems.map((item) => (
+                    <span
+                      key={item.id}
+                      className="inline-flex items-center gap-1.5 bg-sand-100 text-charcoal-800 text-xs px-2.5 py-1 rounded-full border border-sand-200"
+                    >
+                      <img src={item.image} alt={item.name} className="w-4 h-4 rounded-full object-cover" />
+                      <span>{item.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleTagItem(item.id)}
+                        className="hover:text-rose-600 ml-1"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                {/* Wardrobe picker drawer */}
+                {showWardrobePicker && (
+                  <div className="p-3 bg-sand-100 rounded-2xl border border-sand-200 max-h-52 overflow-y-auto space-y-1.5">
+                    <p className="text-[11px] font-bold text-charcoal-600 mb-2">
+                      Click items from your digital closet to tag:
+                    </p>
+                    {wardrobe.map((item) => {
+                      const isTagged = taggedItemIds.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => toggleTagItem(item.id)}
+                          className={`flex items-center justify-between p-2 rounded-xl cursor-pointer text-xs transition-colors ${
+                            isTagged
+                              ? 'bg-cognac-100 border border-cognac-300 font-bold'
+                              : 'bg-cream-50 hover:bg-sand-200/70 border border-sand-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <img src={item.image} alt={item.name} className="w-8 h-8 rounded-lg object-cover" />
+                            <span className="truncate">{item.name}</span>
+                          </div>
+                          <span>{isTagged ? '✓ Tagged' : '+ Add'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Metadata, Caption & Live Preview */}
@@ -295,39 +428,43 @@ export const CreatePost: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1.5">
-                    Location
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="e.g. SoHo, New York"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-9 pr-3 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
-                    />
-                    <MapPin className="w-3.5 h-3.5 text-charcoal-400 absolute left-3 top-2.5" />
+                {publishType === 'post' && (
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1.5">
+                      Location
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="e.g. SoHo, New York"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-9 pr-3 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+                      />
+                      <MapPin className="w-3.5 h-3.5 text-charcoal-400 absolute left-3 top-2.5" />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Live Card Preview Box */}
               <div className="pt-2">
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-charcoal-400 mb-2 flex items-center gap-1.5">
                   <Eye className="w-3.5 h-3.5 text-cognac-600" />
-                  Feed Preview
+                  {publishType === 'post' ? 'Feed Preview' : 'Discovery Moment Preview'}
                 </span>
                 <div className="p-3 bg-sand-100 rounded-2xl border border-sand-200 text-xs">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-bold text-charcoal-900">@{currentUser.username}</span>
-                    <span className="text-[10px] text-charcoal-400">· Just now</span>
+                    <span className="text-[10px] text-charcoal-400">
+                      {publishType === 'post' ? '· Permanent Post' : '· 24h Outfit Moment'}
+                    </span>
                     <span className="ml-auto text-[10px] bg-cream-50 px-2 py-0.5 rounded-full font-semibold">
                       {occasion}
                     </span>
                   </div>
-                  <p className="text-charcoal-700 line-clamp-2">{caption}</p>
-                  <p className="text-cognac-700 text-[11px] mt-1 font-medium">{hashtags}</p>
+                  <p className="text-charcoal-700 line-clamp-2">{caption || '(Caption preview will appear here...)'}</p>
+                  {hashtags && <p className="text-cognac-700 text-[11px] mt-1 font-medium">{hashtags}</p>}
                 </div>
               </div>
 
@@ -340,7 +477,7 @@ export const CreatePost: React.FC = () => {
                   isLoading={isPublishing}
                   className="w-full font-serif"
                 >
-                  Publish Outfit to Feed
+                  {publishType === 'post' ? 'Publish Outfit to Feed' : 'Publish 24h Outfit Moment'}
                 </Button>
               </div>
             </div>

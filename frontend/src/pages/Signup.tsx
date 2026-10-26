@@ -8,12 +8,12 @@ export const Signup: React.FC = () => {
   const navigate = useNavigate();
   const { register, showToast, authError } = useApp();
 
-  const [name, setName] = useState('Elena Rostova');
-  const [username, setUsername] = useState('elena_r');
-  const [email, setEmail] = useState('elena.rostova@stylesphere.io');
-  const [password, setPassword] = useState('password123');
-  const [confirmPassword, setConfirmPassword] = useState('password123');
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -74,7 +74,7 @@ export const Signup: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
-                  placeholder="Elena Rostova"
+                  placeholder="e.g. Jane Doe"
                 />
                 <User className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -91,7 +91,7 @@ export const Signup: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
-                  placeholder="elena_r"
+                  placeholder="e.g. janedoe"
                 />
                 <AtSign className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -108,7 +108,7 @@ export const Signup: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
-                  placeholder="elena@example.com"
+                  placeholder="you@example.com"
                 />
                 <Mail className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>

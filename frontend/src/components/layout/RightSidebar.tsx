@@ -20,13 +20,29 @@ export const RightSidebar: React.FC = () => {
   }, [posts]);
   const navigate = useNavigate();
 
-  const trendingTags = [
-    { tag: '#QuietLuxury', posts: '14.2k' },
-    { tag: '#CapsuleWardrobe', posts: '28.9k' },
-    { tag: '#AutumnTailoring', posts: '9.4k' },
-    { tag: '#LinenSeason', posts: '18.1k' },
-    { tag: '#MinimalStreetwear', posts: '12.6k' },
-  ];
+  const trendingTags = React.useMemo(() => {
+    const tagCountMap: Record<string, number> = {};
+    for (const p of posts) {
+      if (Array.isArray(p.tags)) {
+        for (const raw of p.tags) {
+          const t = raw.startsWith('#') ? raw : `#${raw}`;
+          tagCountMap[t] = (tagCountMap[t] || 0) + 1;
+        }
+      }
+    }
+    const entries = Object.entries(tagCountMap).sort((a, b) => b[1] - a[1]);
+    if (entries.length === 0) {
+      return [
+        { tag: '#QuietLuxury', posts: 'Explore' },
+        { tag: '#CapsuleWardrobe', posts: 'Explore' },
+        { tag: '#MinimalStyle', posts: 'Explore' },
+      ];
+    }
+    return entries.slice(0, 6).map(([tag, count]) => ({
+      tag,
+      posts: `${count} ${count === 1 ? 'post' : 'posts'}`,
+    }));
+  }, [posts]);
 
   return (
     <aside className="hidden xl:flex flex-col w-80 2xl:w-96 h-screen sticky top-0 p-6 overflow-y-auto space-y-6 select-none border-l border-sand-200/80">

@@ -44,6 +44,7 @@ class SocialRepository:
                 joinedload(Post.user),
                 selectinload(Post.comments).joinedload(Comment.user),
             )
+            .filter(~Post.caption.like("[MOMENT:%"))
         )
         if exclude_user_id is not None:
             q = q.filter(Post.user_id != exclude_user_id)
@@ -62,7 +63,7 @@ class SocialRepository:
                 joinedload(Post.user),
                 selectinload(Post.comments).joinedload(Comment.user),
             )
-            .filter(Post.user_id.in_(following_subq))
+            .filter(Post.user_id.in_(following_subq), ~Post.caption.like("[MOMENT:%"))
             .order_by(Post.created_at.desc())
             .offset(offset)
             .limit(limit)
@@ -140,7 +141,7 @@ class SocialRepository:
     def list_posts_by_user(self, user_id: UUID, limit: int = 30) -> List[Post]:
         return (
             self.db.query(Post)
-            .filter(Post.user_id == user_id)
+            .filter(Post.user_id == user_id, ~Post.caption.like("[MOMENT:%"))
             .order_by(Post.created_at.desc())
             .limit(limit)
             .all()
