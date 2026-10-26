@@ -43,7 +43,7 @@ export const DailyFitWidget: React.FC = () => {
                 Today's Fit
               </h2>
               <p className="text-xs font-semibold text-charcoal-800">
-                {weather.temp}°C · {dailyFit.outfit.occasion} · {dailyFit.outfit.style}
+                {weather.city ? `${weather.temp}°C · ` : ''}{dailyFit.outfit.occasion} · {dailyFit.outfit.style}
               </p>
             </div>
           </div>

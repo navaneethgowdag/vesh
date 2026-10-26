@@ -197,13 +197,25 @@ def test_feed_following_filter_and_stories(client):
     assert p2["id"] in fy_ids
     assert p3["id"] in fy_ids
 
-    # Stories endpoint returns recent posts with images
+    # Stories endpoint returns active 24h stories from followed creators only
+    story2_res = client.post("/api/v1/posts/stories", headers=h2, json={"image_url": "https://img.test/story2.jpg", "caption": "Story 2"})
+    assert story2_res.status_code == 201
+    story2 = story2_res.json()
+
+    story3_res = client.post("/api/v1/posts/stories", headers=h3, json={"image_url": "https://img.test/story3.jpg", "caption": "Story 3"})
+    assert story3_res.status_code == 201
+    story3 = story3_res.json()
+
+    # User 1 follows Creator 2, so should see story2 but NOT story3
     stories_res = client.get("/api/v1/posts/stories", headers=h1)
     assert stories_res.status_code == 200
     stories = stories_res.json()
     assert isinstance(stories, list)
     story_ids = [s["id"] for s in stories]
-    assert p2["id"] in story_ids or p3["id"] in story_ids
+    assert story2["id"] in story_ids
+    assert story3["id"] not in story_ids
+    # Permanent post p2 should NOT be mixed into stories
+    assert p2["id"] not in story_ids
 
 
 def test_like_notification_and_deduplication(client):

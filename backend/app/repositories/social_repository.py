@@ -44,7 +44,7 @@ class SocialRepository:
                 joinedload(Post.user),
                 selectinload(Post.comments).joinedload(Comment.user),
             )
-            .filter(~Post.caption.like("[MOMENT:%"))
+            .filter(~Post.caption.like("[MOMENT:%"), ~Post.caption.like("[STORY:%"))
         )
         if exclude_user_id is not None:
             q = q.filter(Post.user_id != exclude_user_id)
@@ -63,10 +63,53 @@ class SocialRepository:
                 joinedload(Post.user),
                 selectinload(Post.comments).joinedload(Comment.user),
             )
-            .filter(Post.user_id.in_(following_subq), ~Post.caption.like("[MOMENT:%"))
+            .filter(Post.user_id.in_(following_subq), ~Post.caption.like("[MOMENT:%"), ~Post.caption.like("[STORY:%"))
             .order_by(Post.created_at.desc())
             .offset(offset)
             .limit(limit)
+            .all()
+        )
+
+    def get_following_user_ids(self, follower_id: UUID) -> List[UUID]:
+        rows = self.db.query(Follow.following_id).filter(Follow.follower_id == follower_id).all()
+        return [r[0] for r in rows]
+
+    def list_stories(self, user_ids: List[UUID], cutoff: Any, limit: int = 20) -> List[Post]:
+        if not user_ids:
+            return []
+        return (
+            self.db.query(Post)
+            .options(
+                joinedload(Post.user),
+                selectinload(Post.comments).joinedload(Comment.user),
+            )
+            .filter(
+                Post.user_id.in_(user_ids),
+                Post.caption.like("[STORY:24H:%"),
+                Post.created_at >= cutoff,
+                Post.image_url.isnot(None),
+                Post.image_url != "",
+            )
+            .order_by(Post.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def list_user_stories(self, user_id: UUID, cutoff: Any) -> List[Post]:
+        return (
+            self.db.query(Post)
+            .options(
+                joinedload(Post.user),
+                selectinload(Post.comments).joinedload(Comment.user),
+            )
+            .filter(
+                Post.user_id == user_id,
+                Post.caption.like("[STORY:24H:%"),
+                Post.created_at >= cutoff,
+                Post.image_url.isnot(None),
+                Post.image_url != "",
+            )
+            .order_by(Post.created_at.desc())
             .all()
         )
 
@@ -141,7 +184,7 @@ class SocialRepository:
     def list_posts_by_user(self, user_id: UUID, limit: int = 30) -> List[Post]:
         return (
             self.db.query(Post)
-            .filter(Post.user_id == user_id, ~Post.caption.like("[MOMENT:%"))
+            .filter(Post.user_id == user_id, ~Post.caption.like("[MOMENT:%"), ~Post.caption.like("[STORY:%"))
             .order_by(Post.created_at.desc())
             .limit(limit)
             .all()

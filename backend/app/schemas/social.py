@@ -37,6 +37,12 @@ class PostCreate(BaseModel):
     occasion: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     tagged_item_ids: List[UUID] = Field(default_factory=list)
+    is_story: Optional[bool] = False
+
+
+class StoryCreate(BaseModel):
+    image_url: str
+    caption: Optional[str] = ""
 
 
 class PostResponse(BaseModel):

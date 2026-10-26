@@ -404,6 +404,64 @@ export const api = {
       }));
     },
 
+    async getMyStories(): Promise<Post[]> {
+      const posts = await request<any[]>('/posts/stories/me');
+      return posts.map((p) => ({
+        id: String(p.id),
+        user: {
+          id: String(p.user?.id || ''),
+          name: p.user?.name || 'User',
+          username: p.user?.username || 'user',
+          avatar: p.user?.avatar || '',
+          isVerified: p.user?.is_verified,
+          isFollowing: false,
+        },
+        image: p.image_url,
+        caption: p.caption,
+        tags: p.tags || [],
+        taggedItems: [],
+        occasion: (p.occasion as Occasion) || 'Casual Daily',
+        location: p.location,
+        likesCount: p.likes_count || 0,
+        commentsCount: p.comments_count || 0,
+        savesCount: p.saves_count || 0,
+        isLiked: false,
+        isSaved: false,
+        comments: [],
+        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+      }));
+    },
+
+    async createStory(storyData: { image_url: string; caption?: string }): Promise<Post> {
+      const p = await request<any>('/posts/stories', {
+        method: 'POST',
+        body: JSON.stringify(storyData),
+      });
+      return {
+        id: String(p.id),
+        user: {
+          id: String(p.user?.id || ''),
+          name: p.user?.name || 'User',
+          username: p.user?.username || 'user',
+          avatar: p.user?.avatar || '',
+          isVerified: p.user?.is_verified,
+        },
+        image: p.image_url,
+        caption: p.caption,
+        tags: [],
+        taggedItems: [],
+        occasion: 'Casual Daily',
+        location: undefined,
+        likesCount: 0,
+        commentsCount: 0,
+        savesCount: 0,
+        isLiked: false,
+        isSaved: false,
+        comments: [],
+        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+      };
+    },
+
     async create(postData: {
       caption: string;
       image_url: string;
@@ -412,6 +470,7 @@ export const api = {
       occasion?: string;
       tags: string[];
       tagged_item_ids: string[];
+      is_story?: boolean;
     }): Promise<Post> {
       const p = await request<any>('/posts', {
         method: 'POST',
@@ -1028,11 +1087,14 @@ export const api = {
 
   // --- WEATHER ---
   weather: {
-    async getCurrent(city: string = 'New York', latitude?: number, longitude?: number): Promise<Weather> {
+    async getCurrent(city?: string, latitude?: number, longitude?: number): Promise<Weather> {
       const params = new URLSearchParams();
-      if (city) params.set('city', city);
-      if (latitude !== undefined && latitude !== null) params.set('latitude', String(latitude));
-      if (longitude !== undefined && longitude !== null) params.set('longitude', String(longitude));
+      if (latitude !== undefined && latitude !== null && longitude !== undefined && longitude !== null) {
+        params.set('latitude', String(latitude));
+        params.set('longitude', String(longitude));
+      } else if (city && city.trim()) {
+        params.set('city', city.trim());
+      }
       const data = await request<any>(`/weather/current?${params.toString()}`);
       return {
         city: data.city,

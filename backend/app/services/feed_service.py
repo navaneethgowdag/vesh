@@ -1,3 +1,5 @@
+import re
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
@@ -13,6 +15,7 @@ from app.services.image_service import image_service
 
 
 class FeedService:
+    STORY_PREFIX = "[STORY:24H:]"
     def __init__(self, db: Session):
         self.db = db
         self.social_repo = SocialRepository(db)
@@ -46,6 +49,15 @@ class FeedService:
             is_saved = p.id in saved_post_ids
             is_following = user.id in following_author_ids if (user and current_user_id and user.id != current_user_id) else False
 
+            raw_caption = p.caption or ""
+            clean_caption = raw_caption
+            if raw_caption.startswith(self.STORY_PREFIX):
+                clean_caption = raw_caption[len(self.STORY_PREFIX):]
+            elif raw_caption.startswith("[STORY:24H:"):
+                clean_caption = raw_caption.split("]", 1)[1] if "]" in raw_caption else raw_caption
+            elif raw_caption.startswith("[MOMENT:24H:"):
+                clean_caption = raw_caption.split("]", 1)[1] if "]" in raw_caption else raw_caption
+
             comments_data = []
             for c in (p.comments or []):
                 c_user = c.user
@@ -76,7 +88,7 @@ class FeedService:
                     "is_following": is_following,
                 },
                 "image_url": p.image_url,
-                "caption": p.caption,
+                "caption": clean_caption,
                 "location": None,
                 "occasion": "Casual Daily",
                 "tags": [],
@@ -110,24 +122,60 @@ class FeedService:
         return self._format_posts_batch(posts, current_user_id)
 
     def get_stories(self, current_user_id: Optional[UUID] = None, limit: int = 20) -> List[Dict[str, Any]]:
-        # When unauthenticated, cache public stories list
-        cache_key = cache_service.build_key("stories", "recent") if current_user_id is None else None
-        if cache_key:
-            cached = cache_service.get(cache_key)
-            if cached is not None:
-                return cached
+        """
+        Instant Stories must display active 24-hour content exclusively from
+        accounts the authenticated user currently follows.
+        """
+        if not current_user_id:
+            return []
 
-        posts = (
-            self.db.query(Post)
-            .filter(Post.image_url.isnot(None), Post.image_url != "", ~Post.caption.like("[MOMENT:%"))
-            .order_by(Post.created_at.desc())
-            .limit(limit)
-            .all()
+        cache_key = cache_service.build_key("stories", f"user_{current_user_id}")
+        cached = cache_service.get(cache_key)
+        if cached is not None:
+            return cached
+
+        following_ids = self.social_repo.get_following_user_ids(current_user_id)
+        if not following_ids:
+            return []
+
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        stories = self.social_repo.list_stories(
+            user_ids=following_ids,
+            cutoff=cutoff,
+            limit=limit,
         )
-        formatted = self._format_posts_batch(posts, current_user_id)
-        if cache_key:
-            cache_service.set(cache_key, formatted, ttl_seconds=TTL_STORIES)
+        stories = [s for s in stories if s.user_id != current_user_id]
+        formatted = self._format_posts_batch(stories, current_user_id)
+        cache_service.set(cache_key, formatted, ttl_seconds=TTL_STORIES)
         return formatted
+
+    def get_my_stories(self, current_user_id: UUID) -> List[Dict[str, Any]]:
+        """
+        Returns active 24-hour stories published by the current user.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        stories = self.social_repo.list_user_stories(user_id=current_user_id, cutoff=cutoff)
+        return self._format_posts_batch(stories, current_user_id)
+
+    def create_story(
+        self,
+        user_id: UUID,
+        image_url: str,
+        caption: Optional[str] = "",
+    ) -> Dict[str, Any]:
+        safe_image_url = image_service.save_from_base64_if_needed(image_url)
+        clean_text = (caption or "").strip()
+        encoded_caption = f"{self.STORY_PREFIX}{clean_text}"
+        post = Post(
+            user_id=user_id,
+            caption=encoded_caption,
+            image_url=safe_image_url,
+        )
+        self.db.add(post)
+        self.db.commit()
+        self.db.refresh(post)
+        cache_service.invalidate_stories()
+        return self._format_post(post, user_id)
 
     def get_posts_by_user(
         self,
@@ -149,8 +197,11 @@ class FeedService:
         user_id: UUID,
         caption: str,
         image_url: str,
+        is_story: bool = False,
         **extra,
     ) -> Dict[str, Any]:
+        if is_story:
+            return self.create_story(user_id=user_id, image_url=image_url, caption=caption)
         safe_image_url = image_service.save_from_base64_if_needed(image_url)
         post = self.social_repo.create_post(
             user_id=user_id,

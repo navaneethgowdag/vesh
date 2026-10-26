@@ -142,6 +142,11 @@ class WeatherService:
 
         # Case A: Live GPS coordinates supplied
         if lat is not None and lon is not None:
+            if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid coordinates: latitude must be in [-90, 90], longitude in [-180, 180]. Got ({lat}, {lon}).",
+                )
             if not resolved_city or resolved_city.lower() in ("current location", "live location"):
                 resolved_city, resolved_country = await self.reverse_geocode(lat, lon)
 
@@ -151,18 +156,15 @@ class WeatherService:
             if geocoded:
                 lat, lon, resolved_city, resolved_country = geocoded
             else:
-                # If city could not be geocoded by Open-Meteo
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"City '{resolved_city}' could not be located on the global weather grid.",
                 )
         else:
-            # Default fallback city is New York if nothing is specified
-            geocoded = await self.geocode_city("New York")
-            if geocoded:
-                lat, lon, resolved_city, resolved_country = geocoded
-            else:
-                lat, lon, resolved_city, resolved_country = 40.7128, -74.0060, "New York", "US"
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Location coordinates or city name must be provided.",
+            )
 
         # Query Open-Meteo Forecast API with real coordinates
         try:

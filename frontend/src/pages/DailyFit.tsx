@@ -204,7 +204,7 @@ export const DailyFit: React.FC = () => {
           <div className="flex items-center gap-4 text-charcoal-700">
             <span className="flex items-center gap-1 font-semibold">
               <Thermometer className="w-3.5 h-3.5 text-cognac-700" />
-              {weather.city}: {weather.temp}°C {weather.condition}
+              {weather.city ? `${weather.city}: ${weather.temp}°C ${weather.condition}` : 'Location not set'}
             </span>
             <span>·</span>
             <span className="flex items-center gap-1">
@@ -295,7 +295,7 @@ export const DailyFit: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-charcoal-600">
                 <div className="flex items-start gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5 text-cognac-600 flex-shrink-0 mt-0.5" />
-                  <span>Thermal comfort for {weather.temp}°C {weather.condition}</span>
+                  <span>{weather.city ? `Thermal comfort for ${weather.temp}°C ${weather.condition}` : 'Thermal comfort calibrated for current season'}</span>
                 </div>
                 <div className="flex items-start gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5 text-cognac-600 flex-shrink-0 mt-0.5" />

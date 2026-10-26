@@ -200,9 +200,12 @@ class CacheService:
 
     # --- Domain Specific Invalidation Helpers ---
 
-    def invalidate_stories(self) -> None:
+    def invalidate_stories(self, user_id: Optional[Any] = None) -> None:
         """Invalidate cached recent stories."""
+        if user_id:
+            self.delete(self.build_key("stories", f"user_{user_id}"))
         self.delete(self.build_key("stories", "recent"))
+        self.delete_pattern("stories:*")
 
     def invalidate_feed(self) -> None:
         """Invalidate cached feed segments."""

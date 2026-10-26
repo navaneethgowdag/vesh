@@ -39,10 +39,20 @@ export const TopBar: React.FC = () => {
         {/* Weather chip */}
         <button
           onClick={() => navigate('/daily-fit')}
-          className="flex items-center gap-1.5 bg-sand-100 text-charcoal-700 px-2.5 py-1 rounded-full text-xs font-medium border border-sand-200"
+          className="flex items-center gap-1.5 bg-sand-100 hover:bg-sand-200 text-charcoal-700 px-2.5 py-1 rounded-full text-xs font-medium border border-sand-200 transition-colors"
+          title={weather.city ? `${weather.city} · ${weather.temp}°C ${weather.condition}` : 'Set location for live weather'}
         >
-          <span>{getWeatherEmoji(weather.icon)}</span>
-          <span>{weather.temp}°C</span>
+          {weather.city ? (
+            <>
+              <span>{getWeatherEmoji(weather.icon)}</span>
+              <span>{weather.temp}°C</span>
+            </>
+          ) : (
+            <>
+              <span>📍</span>
+              <span>Set City</span>
+            </>
+          )}
         </button>
 
         {/* Search */}

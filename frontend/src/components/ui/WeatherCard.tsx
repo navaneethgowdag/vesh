@@ -64,7 +64,24 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ compact = false }) => 
     }
   };
 
+  const hasLocation = Boolean(weather.city || selectedCity);
+
   if (compact) {
+    if (!hasLocation) {
+      return (
+        <div
+          onClick={() => setDropdownOpen(true)}
+          className="flex items-center gap-3 bg-sand-100/80 border border-sand-200/80 px-3.5 py-2 rounded-2xl cursor-pointer hover:bg-sand-200/70 transition-colors"
+        >
+          <MapPin className="w-4 h-4 text-cognac-600 animate-pulse" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-charcoal-900">Location Not Set</p>
+            <p className="text-[10px] text-charcoal-500 truncate">Enable GPS or select city</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-3 bg-sand-100/80 border border-sand-200/80 px-3.5 py-2 rounded-2xl">
         <span className="text-2xl" role="img" aria-label="weather icon">
@@ -103,7 +120,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ compact = false }) => 
               <MapPin className="w-3.5 h-3.5 text-cognac-600" />
             )}
             <span className="max-w-[140px] sm:max-w-none truncate">
-              {weather.city || selectedCity}{weather.country ? `, ${weather.country}` : ''}
+              {weather.city || selectedCity || 'Choose Location'}{weather.country ? `, ${weather.country}` : ''}
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-charcoal-400" />
           </button>
@@ -207,42 +224,74 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ compact = false }) => 
         </div>
       )}
 
-      {/* Main Temperature & Condition */}
-      <div className="flex items-baseline justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-4xl" role="img" aria-label="weather icon">
-              {getWeatherEmoji(weather.icon)}
-            </span>
-            <span className="text-4xl font-serif font-bold text-charcoal-900">
-              {weather.temp}°C
-            </span>
+      {!hasLocation ? (
+        <div className="text-center py-6 px-2">
+          <div className="w-10 h-10 mx-auto rounded-full bg-sand-200/70 flex items-center justify-center mb-2.5">
+            <MapPin className="w-5 h-5 text-cognac-600" />
           </div>
-          <p className="text-sm font-medium text-charcoal-800 mt-1">{weather.condition}</p>
-          <p className="text-xs text-charcoal-500">Feels like {weather.feelsLike}°C</p>
+          <h4 className="font-serif font-bold text-sm text-charcoal-900">Location Not Set</h4>
+          <p className="text-xs text-charcoal-500 mt-1 mb-3.5 max-w-[240px] mx-auto">
+            Enable live GPS or choose a city to view local weather and climate-adapted styling recommendations.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleGps}
+              disabled={isTogglingGps || isWeatherLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-charcoal-900 text-cream-50 hover:bg-cognac-700 transition-colors shadow-soft-xs"
+            >
+              {isTogglingGps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
+              <span>Enable GPS</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDropdownOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-sand-200/80 hover:bg-sand-300 text-charcoal-700 transition-colors"
+            >
+              Select City
+            </button>
+          </div>
         </div>
+      ) : (
+        <>
+          {/* Main Temperature & Condition */}
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-4xl" role="img" aria-label="weather icon">
+                  {getWeatherEmoji(weather.icon)}
+                </span>
+                <span className="text-4xl font-serif font-bold text-charcoal-900">
+                  {weather.temp}°C
+                </span>
+              </div>
+              <p className="text-sm font-medium text-charcoal-800 mt-1">{weather.condition}</p>
+              <p className="text-xs text-charcoal-500">Feels like {weather.feelsLike}°C</p>
+            </div>
 
-        <div className="text-right">
-          <div className="text-xs text-charcoal-500">H: {weather.highTemp}° · L: {weather.lowTemp}°</div>
-          <div className="text-[11px] text-cognac-700 font-medium mt-1">UV Index: {weather.uvIndex}</div>
-        </div>
-      </div>
+            <div className="text-right">
+              <div className="text-xs text-charcoal-500">H: {weather.highTemp}° · L: {weather.lowTemp}°</div>
+              <div className="text-[11px] text-cognac-700 font-medium mt-1">UV Index: {weather.uvIndex}</div>
+            </div>
+          </div>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sand-200/70 text-xs text-charcoal-600">
-        <div className="flex items-center gap-2 bg-cream-50/70 p-2 rounded-xl">
-          <Droplets className="w-3.5 h-3.5 text-sky-600" />
-          <span>Humidity {weather.humidity}%</span>
-        </div>
-        <div className="flex items-center gap-2 bg-cream-50/70 p-2 rounded-xl">
-          <Wind className="w-3.5 h-3.5 text-teal-600" />
-          <span>Wind {weather.windSpeed} km/h</span>
-        </div>
-      </div>
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sand-200/70 text-xs text-charcoal-600">
+            <div className="flex items-center gap-2 bg-cream-50/70 p-2 rounded-xl">
+              <Droplets className="w-3.5 h-3.5 text-sky-600" />
+              <span>Humidity {weather.humidity}%</span>
+            </div>
+            <div className="flex items-center gap-2 bg-cream-50/70 p-2 rounded-xl">
+              <Wind className="w-3.5 h-3.5 text-teal-600" />
+              <span>Wind {weather.windSpeed} km/h</span>
+            </div>
+          </div>
 
-      <p className="mt-3 text-[11px] text-charcoal-500 italic leading-snug">
-        "{weather.summary}"
-      </p>
+          <p className="mt-3 text-[11px] text-charcoal-500 italic leading-snug">
+            "{weather.summary}"
+          </p>
+        </>
+      )}
     </div>
   );
 };

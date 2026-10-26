@@ -87,8 +87,8 @@ interface AppContextType {
 }
 
 const INITIAL_WEATHER: Weather = {
-  city: 'New York',
-  country: 'US',
+  city: '',
+  country: '',
   temp: 20,
   feelsLike: 20,
   condition: 'Partly Cloudy',
@@ -154,7 +154,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [dailyFitError, setDailyFitError] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
-  const [selectedCity, setSelectedCity] = useState<string>('New York');
+  const [selectedCity, setSelectedCityState] = useState<string>(() => {
+    return localStorage.getItem('stylesphere_selected_city') || '';
+  });
+  const setSelectedCity = useCallback((city: string) => {
+    setSelectedCityState(city);
+    if (city.trim()) {
+      localStorage.setItem('stylesphere_selected_city', city.trim());
+    } else {
+      localStorage.removeItem('stylesphere_selected_city');
+    }
+  }, []);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion>('Casual Daily');
   const [weather, setWeather] = useState<Weather>({ ...INITIAL_WEATHER });
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
@@ -260,6 +270,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         preferredColors: user.preferences.favoriteColors as UserSettings['preferences']['preferredColors'],
       },
     }));
+    // If user has a saved location in profile and GPS is not active, use it
+    if (user.location && !localStorage.getItem('stylesphere_selected_city') && localStorage.getItem('stylesphere_live_location') !== 'true') {
+      setSelectedCityState(user.location);
+    }
   }, []);
 
   // Public setter so pages (Signup, Onboarding) can push a freshly loaded user
@@ -312,44 +326,95 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     refreshData();
   }, [refreshData]);
 
-  // Initial location bootstrap if user previously enabled live location
+  // Initial location bootstrap: check permission / saved live location preference
   useEffect(() => {
-    if (isLiveLocation && !liveCoordinates && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLiveCoordinates({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          });
-        },
-        () => {
-          setIsLiveLocation(false);
-          localStorage.setItem('stylesphere_live_location', 'false');
-        },
-        { timeout: 6000 }
-      );
+    if (!liveCoordinates && navigator.geolocation) {
+      if (isLiveLocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLiveCoordinates({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            });
+          },
+          () => {
+            setIsLiveLocation(false);
+            localStorage.setItem('stylesphere_live_location', 'false');
+          },
+          { timeout: 6000 }
+        );
+      } else if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions
+          .query({ name: 'geolocation' })
+          .then((result) => {
+            if (result.state === 'granted') {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  setLiveCoordinates({
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                  });
+                  setIsLiveLocation(true);
+                  localStorage.setItem('stylesphere_live_location', 'true');
+                },
+                () => {},
+                { timeout: 6000 }
+              );
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, [isLiveLocation, liveCoordinates]);
 
-  // Real live weather fetching via Open-Meteo
+  // Real live weather fetching according to 5-level location hierarchy
   useEffect(() => {
     let cancelled = false;
-    setIsWeatherLoading(true);
-    setWeatherError(null);
 
     const fetchWeather = async () => {
-      try {
-        if (isLiveLocation && liveCoordinates) {
+      // Priority 1-3: Browser/device geolocation with reverse geocoding
+      if (isLiveLocation && liveCoordinates) {
+        setIsWeatherLoading(true);
+        setWeatherError(null);
+        try {
           const w = await api.weather.getCurrent(undefined, liveCoordinates.latitude, liveCoordinates.longitude);
           if (!cancelled) {
             setWeather(w);
             if (w.city && w.city !== selectedCity) {
-              setSelectedCity(w.city);
+              setSelectedCityState(w.city);
             }
           }
-        } else {
-          const w = await api.weather.getCurrent(selectedCity);
-          if (!cancelled) setWeather(w);
+        } catch (err) {
+          if (!cancelled) {
+            const msg = err instanceof Error ? err.message : 'Live GPS weather temporarily unavailable';
+            setWeatherError(msg);
+          }
+        } finally {
+          if (!cancelled) setIsWeatherLoading(false);
+        }
+        return;
+      }
+
+      // Priority 4: Saved location in user settings, or manually selected city
+      const cityToFetch = selectedCity.trim() || currentUser?.location?.trim() || userSettings.account.location?.trim();
+
+      // Priority 5: If neither available, do NOT fallback to "New York". Show location-unavailable state.
+      if (!cityToFetch) {
+        setIsWeatherLoading(false);
+        setWeather(INITIAL_WEATHER);
+        setWeatherError('Location not set. Enable GPS or choose your city.');
+        return;
+      }
+
+      setIsWeatherLoading(true);
+      setWeatherError(null);
+      try {
+        const w = await api.weather.getCurrent(cityToFetch);
+        if (!cancelled) {
+          setWeather(w);
+          if (w.city && w.city !== selectedCity) {
+            setSelectedCityState(w.city);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -365,7 +430,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => {
       cancelled = true;
     };
-  }, [selectedCity, isLiveLocation, liveCoordinates]);
+  }, [selectedCity, isLiveLocation, liveCoordinates, currentUser?.location, userSettings.account.location]);
 
   // Daily Fit is generated server-side from Neon data and real Open-Meteo weather
   useEffect(() => {
@@ -378,8 +443,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const lat = isLiveLocation && liveCoordinates ? liveCoordinates.latitude : undefined;
     const lon = isLiveLocation && liveCoordinates ? liveCoordinates.longitude : undefined;
 
+    const targetCity = selectedCity.trim() || currentUser?.location?.trim() || undefined;
+
     api.recommendations
-      .getDailyFit(selectedCity, selectedOccasion, dailyFitVariation, lat, lon)
+      .getDailyFit(targetCity, selectedOccasion, dailyFitVariation, lat, lon)
       .then((rec) => {
         if (!cancelled) setDailyFit(rec);
       })

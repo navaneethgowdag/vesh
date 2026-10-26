@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.schemas.social import UserSummary
 from app.repositories.social_repository import SocialRepository
+from app.services.cache_service import cache_service
 from app.models.user import User
 
 router = APIRouter(prefix="/social", tags=["social"])
@@ -23,6 +24,8 @@ def follow_user(
         )
     repo = SocialRepository(db)
     success = repo.follow_user(follower_id=current_user.id, following_id=user_id)
+    cache_service.invalidate_stories(current_user.id)
+    cache_service.invalidate_feed()
     return {"following": success}
 
 
@@ -34,6 +37,8 @@ def unfollow_user(
 ):
     repo = SocialRepository(db)
     success = repo.unfollow_user(follower_id=current_user.id, following_id=user_id)
+    cache_service.invalidate_stories(current_user.id)
+    cache_service.invalidate_feed()
     return {"following": not success}
 
 

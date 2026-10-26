@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_current_user_optional
-from app.schemas.social import PostCreate, PostResponse
+from app.schemas.social import PostCreate, PostResponse, StoryCreate
 from app.services.feed_service import FeedService
 from app.models.user import User
 
@@ -34,6 +34,29 @@ def get_stories(
     return service.get_stories(current_user_id=viewer_id, limit=limit)
 
 
+@router.get("/stories/me", response_model=List[PostResponse])
+def get_my_stories(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = FeedService(db)
+    return service.get_my_stories(current_user_id=current_user.id)
+
+
+@router.post("/stories", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+def create_story(
+    story_in: StoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = FeedService(db)
+    return service.create_story(
+        user_id=current_user.id,
+        image_url=story_in.image_url,
+        caption=story_in.caption,
+    )
+
+
 @router.get("/user/{user_id}", response_model=List[PostResponse])
 def get_posts_by_user(
     user_id: UUID,
@@ -62,6 +85,7 @@ def create_post(
         occasion=post_in.occasion,
         tags=post_in.tags,
         tagged_item_ids=[str(tid) for tid in post_in.tagged_item_ids],
+        is_story=bool(post_in.is_story),
     )
 
 
