@@ -255,3 +255,21 @@ export interface UserSettings {
     allowDirectMessages: boolean;
   };
 }
+
+
+export interface CalendarEvent {
+  id: string;
+  userId: string;
+  eventDate: string; // YYYY-MM-DD
+  startTime?: string;
+  endTime?: string;
+  eventType: 'planned_outfit' | 'outfit_worn' | 'special_event';
+  outfitId?: string;
+  recommendationId?: string;
+  occasion?: string;
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  outfit?: Outfit;
+}

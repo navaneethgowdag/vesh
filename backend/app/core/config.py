@@ -137,6 +137,15 @@ class Settings(BaseSettings):
     
     APP_ENV: str = "development"
     
+    # Redis / Upstash configuration
+    REDIS_ENABLED: bool = False
+    REDIS_URL: str = ""
+    REDIS_TOKEN: str = ""
+    REDIS_CONNECT_TIMEOUT: float = 5.0
+    REDIS_SOCKET_TIMEOUT: float = 5.0
+    REDIS_MAX_CONNECTIONS: int = 20
+    REDIS_RETRY_ON_TIMEOUT: bool = True
+    
     AI_MODEL_PATH: str = "./ai_models"
     AI_ENABLE_ML: bool = True
     AI_ENABLE_IMAGE_ANALYSIS: bool = True
@@ -148,6 +157,37 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    @property
+    def redis_connection_url(self) -> str:
+        """
+        Return the normalized Redis connection URL.
+        Accepts direct redis:// / rediss:// schemes, or auto-converts
+        Upstash REST URLs (https://...) with REDIS_TOKEN into a rediss:// URL.
+        """
+        if not self.REDIS_URL:
+            return ""
+        url = self.REDIS_URL.strip().strip('"').strip("'")
+        if url.startswith("https://") and self.REDIS_TOKEN:
+            parsed = urlsplit(url)
+            token = self.REDIS_TOKEN.strip().strip('"').strip("'")
+            port = parsed.port or 6379
+            return f"rediss://default:{token}@{parsed.hostname}:{port}"
+        return url
+
+    def validate_redis_settings(self) -> None:
+        if not self.REDIS_ENABLED:
+            return
+        effective_url = self.redis_connection_url
+        if not effective_url or not effective_url.strip():
+            raise ValueError("REDIS_ENABLED is true, but REDIS_URL is not set.")
+        parsed = urlsplit(effective_url)
+        if parsed.scheme not in ("redis", "rediss"):
+            raise ValueError(f"Invalid REDIS_URL scheme '{parsed.scheme}'. Must be redis:// or rediss://")
+        if self.APP_ENV.lower() == "production":
+            is_local = parsed.hostname in ("localhost", "127.0.0.1", "::1", "host.docker.internal")
+            if not is_local and parsed.scheme != "rediss":
+                raise ValueError("In production, remote/hosted REDIS_URL must use the secure 'rediss://' (TLS) scheme.")
 
     @property
     def sync_database_url(self) -> str:

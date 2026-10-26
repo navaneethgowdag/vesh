@@ -7,7 +7,17 @@ import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 
 export const RightSidebar: React.FC = () => {
-  const { allCreators, isFollowingUser, toggleFollowUser, dailyFit } = useApp();
+  const { posts, isFollowingUser, toggleFollowUser, dailyFit } = useApp();
+
+  const suggestedCreators = React.useMemo(() => {
+    const map = new Map<string, (typeof posts)[0]['user']>();
+    for (const p of posts) {
+      if (p.user && p.user.id && !map.has(p.user.id)) {
+        map.set(p.user.id, p.user);
+      }
+    }
+    return Array.from(map.values()).slice(0, 3);
+  }, [posts]);
   const navigate = useNavigate();
 
   const trendingTags = [
@@ -88,35 +98,39 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         <div className="space-y-3.5">
-          {allCreators.slice(0, 3).map((creator) => {
-            const following = isFollowingUser(creator.id);
+          {suggestedCreators.length === 0 ? (
+            <p className="text-xs text-charcoal-400 italic">No creators yet. Explore the community!</p>
+          ) : (
+            suggestedCreators.map((creator) => {
+              const following = isFollowingUser(creator.id) || creator.isFollowing;
 
-            return (
-              <div key={creator.id} className="flex items-center justify-between gap-3">
-                <div
-                  onClick={() => navigate(`/profile/${creator.username}`)}
-                  className="flex items-center gap-2.5 cursor-pointer min-w-0 group"
-                >
-                  <Avatar src={creator.avatar} alt={creator.name} size="sm" isVerified={creator.isVerified} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-charcoal-900 truncate group-hover:text-cognac-700">
-                      {creator.name}
-                    </p>
-                    <p className="text-[11px] text-charcoal-400 truncate">@{creator.username}</p>
+              return (
+                <div key={creator.id} className="flex items-center justify-between gap-3">
+                  <div
+                    onClick={() => navigate(`/profile/${creator.username}`)}
+                    className="flex items-center gap-2.5 cursor-pointer min-w-0 group"
+                  >
+                    <Avatar src={creator.avatar} alt={creator.name} size="sm" isVerified={creator.isVerified} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-charcoal-900 truncate group-hover:text-cognac-700">
+                        {creator.name}
+                      </p>
+                      <p className="text-[11px] text-charcoal-400 truncate">@{creator.username}</p>
+                    </div>
                   </div>
-                </div>
 
-                <Button
-                  size="sm"
-                  variant={following ? 'outline' : 'secondary'}
-                  onClick={() => toggleFollowUser(creator.id)}
-                  className="text-xs py-1 px-3 h-7 rounded-full flex-shrink-0"
-                >
-                  {following ? 'Following' : 'Follow'}
-                </Button>
-              </div>
-            );
-          })}
+                  <Button
+                    size="sm"
+                    variant={following ? 'outline' : 'secondary'}
+                    onClick={() => toggleFollowUser(creator.id)}
+                    className="text-xs py-1 px-3 h-7 rounded-full flex-shrink-0"
+                  >
+                    {following ? 'Following' : 'Follow'}
+                  </Button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

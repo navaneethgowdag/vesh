@@ -1,6 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Set, Any
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import desc, func
 from app.models.post import Post
 from app.models.comment import Comment
@@ -37,14 +37,105 @@ class SocialRepository:
     def get_post_by_id(self, post_id: UUID) -> Optional[Post]:
         return self.db.query(Post).filter(Post.id == post_id).first()
 
-    def list_feed(self, limit: int = 30, offset: int = 0) -> List[Post]:
+    def list_feed(self, limit: int = 30, offset: int = 0, exclude_user_id: Optional[UUID] = None) -> List[Post]:
+        q = (
+            self.db.query(Post)
+            .options(
+                joinedload(Post.user),
+                selectinload(Post.comments).joinedload(Comment.user),
+            )
+        )
+        if exclude_user_id is not None:
+            q = q.filter(Post.user_id != exclude_user_id)
+        return (
+            q.order_by(Post.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+    def list_following_feed(self, user_id: UUID, limit: int = 30, offset: int = 0) -> List[Post]:
+        following_subq = self.db.query(Follow.following_id).filter(Follow.follower_id == user_id).scalar_subquery()
         return (
             self.db.query(Post)
+            .options(
+                joinedload(Post.user),
+                selectinload(Post.comments).joinedload(Comment.user),
+            )
+            .filter(Post.user_id.in_(following_subq))
             .order_by(Post.created_at.desc())
             .offset(offset)
             .limit(limit)
             .all()
         )
+
+    def get_feed_interactions_batch(
+        self,
+        current_user_id: Optional[UUID],
+        post_ids: List[UUID],
+        author_ids: List[UUID],
+    ) -> Dict[str, Any]:
+        if not post_ids:
+            return {
+                'likes_count': {},
+                'saves_count': {},
+                'liked_post_ids': set(),
+                'saved_post_ids': set(),
+                'following_author_ids': set(),
+            }
+
+        likes_counts_raw = (
+            self.db.query(Like.post_id, func.count(Like.id))
+            .filter(Like.post_id.in_(post_ids))
+            .group_by(Like.post_id)
+            .all()
+        )
+        likes_count_map = {pid: cnt for pid, cnt in likes_counts_raw}
+
+        saves_counts_raw = (
+            self.db.query(SavedItem.post_id, func.count(SavedItem.id))
+            .filter(SavedItem.post_id.in_(post_ids))
+            .group_by(SavedItem.post_id)
+            .all()
+        )
+        saves_count_map = {pid: cnt for pid, cnt in saves_counts_raw}
+
+        liked_post_ids = set()
+        saved_post_ids = set()
+        following_author_ids = set()
+
+        if current_user_id:
+            user_likes = (
+                self.db.query(Like.post_id)
+                .filter(Like.user_id == current_user_id, Like.post_id.in_(post_ids))
+                .all()
+            )
+            liked_post_ids = {row[0] for row in user_likes}
+
+            user_saves = (
+                self.db.query(SavedItem.post_id)
+                .filter(SavedItem.user_id == current_user_id, SavedItem.post_id.in_(post_ids))
+                .all()
+            )
+            saved_post_ids = {row[0] for row in user_saves}
+
+            if author_ids:
+                distinct_authors = [aid for aid in set(author_ids) if aid != current_user_id]
+                if distinct_authors:
+                    follows = (
+                        self.db.query(Follow.following_id)
+                        .filter(Follow.follower_id == current_user_id, Follow.following_id.in_(distinct_authors))
+                        .all()
+                    )
+                    following_author_ids = {row[0] for row in follows}
+
+        return {
+            'likes_count': likes_count_map,
+            'saves_count': saves_count_map,
+            'liked_post_ids': liked_post_ids,
+            'saved_post_ids': saved_post_ids,
+            'following_author_ids': following_author_ids,
+        }
 
     def list_posts_by_user(self, user_id: UUID, limit: int = 30) -> List[Post]:
         return (
@@ -78,12 +169,22 @@ class SocialRepository:
         if post and post.user_id != user_id:
             liker = self.db.query(User).filter(User.id == user_id).first()
             liker_name = liker.display_name if liker else "Someone"
-            self.create_notification(
-                user_id=post.user_id,
-                type="like",
-                title="New Like",
-                message=f"{liker_name} liked your outfit post",
+            existing_notif = (
+                self.db.query(Notification)
+                .filter(
+                    Notification.user_id == post.user_id,
+                    Notification.type == "like",
+                    Notification.message.like(f"{liker_name} liked%"),
+                )
+                .first()
             )
+            if not existing_notif:
+                self.create_notification(
+                    user_id=post.user_id,
+                    type="like",
+                    title="New Like",
+                    message=f"{liker_name} liked your outfit post",
+                )
 
         self.db.commit()
         return True

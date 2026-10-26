@@ -4,6 +4,16 @@ import { Search, Bell, Sparkles } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { Avatar } from '../ui/Avatar';
 
+const getWeatherEmoji = (icon: string) => {
+  if (icon === 'sun') return '☀️';
+  if (icon === 'cloud-sun') return '⛅';
+  if (icon === 'cloud-rain') return '🌧️';
+  if (icon === 'cloud-snow') return '❄️';
+  if (icon === 'cloud-lightning') return '⛈️';
+  if (icon === 'cloud') return '☁️';
+  return '⛅';
+};
+
 export const TopBar: React.FC = () => {
   const { unreadNotifsCount, weather } = useApp();
   const currentUser = useCurrentUser();
@@ -31,7 +41,7 @@ export const TopBar: React.FC = () => {
           onClick={() => navigate('/daily-fit')}
           className="flex items-center gap-1.5 bg-sand-100 text-charcoal-700 px-2.5 py-1 rounded-full text-xs font-medium border border-sand-200"
         >
-          <span>{weather.icon}</span>
+          <span>{getWeatherEmoji(weather.icon)}</span>
           <span>{weather.temp}°C</span>
         </button>
 

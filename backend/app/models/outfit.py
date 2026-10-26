@@ -57,3 +57,5 @@ class Outfit(Base):
     clothing_items = relationship("Clothing", secondary=outfit_clothing, back_populates="outfits")
     recommendations = relationship("Recommendation", back_populates="outfit", cascade="all, delete-orphan")
     wear_history = relationship("WearHistory", back_populates="outfit")
+    calendar_events = relationship("CalendarEvent", back_populates="outfit")
+

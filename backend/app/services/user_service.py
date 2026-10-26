@@ -7,6 +7,7 @@ from app.models.user_preference import UserPreference
 from app.models.learned_preference import LearnedPreference
 from app.repositories.user_repository import UserRepository
 from app.repositories.social_repository import SocialRepository
+from app.services.cache_service import cache_service, TTL_USER_PROFILE
 
 
 class UserService:
@@ -22,6 +23,13 @@ class UserService:
         return user
 
     def get_by_username(self, username: str, viewer_id: Optional[UUID] = None) -> dict:
+        # If unauthenticated viewer, check cache for public profile
+        cache_key = cache_service.build_key("users:profile", username) if viewer_id is None else None
+        if cache_key:
+            cached = cache_service.get(cache_key)
+            if cached is not None:
+                return cached
+
         user = self.user_repo.get_by_username(username)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -51,7 +59,7 @@ class UserService:
                 "climate_preference": "Moderate",
             }
 
-        return {
+        result = {
             "id": user.id,
             "username": user.username,
             "email": user.email,
@@ -72,9 +80,14 @@ class UserService:
             "preferences": pref_data,
             "created_at": user.created_at,
         }
+        if cache_key:
+            cache_service.set(cache_key, result, ttl_seconds=TTL_USER_PROFILE)
+        return result
 
     def update_profile(self, user: User, **kwargs) -> User:
-        return self.user_repo.update(user, **kwargs)
+        updated = self.user_repo.update(user, **kwargs)
+        cache_service.invalidate_user_profile(user.username)
+        return updated
 
     def get_preferences(self, user_id: UUID) -> UserPreference:
         pref = self.user_repo.get_preferences(user_id)

@@ -12,6 +12,7 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 @router.get("", response_model=List[PostResponse])
 def get_feed(
+    feed_type: str = Query("for_you", description="for_you | following"),
     limit: int = Query(30, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -19,7 +20,18 @@ def get_feed(
 ):
     service = FeedService(db)
     viewer_id = current_user.id if current_user else None
-    return service.get_feed(current_user_id=viewer_id, limit=limit, offset=offset)
+    return service.get_feed(current_user_id=viewer_id, limit=limit, offset=offset, feed_type=feed_type)
+
+
+@router.get("/stories", response_model=List[PostResponse])
+def get_stories(
+    limit: int = Query(20, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    service = FeedService(db)
+    viewer_id = current_user.id if current_user else None
+    return service.get_stories(current_user_id=viewer_id, limit=limit)
 
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)

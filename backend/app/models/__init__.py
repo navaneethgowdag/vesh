@@ -15,6 +15,8 @@ from app.models.recommendation import Recommendation
 from app.models.recommendation_feedback import RecommendationFeedback
 from app.models.wear_history import WearHistory
 from app.models.notification import Notification
+from app.models.calendar_event import CalendarEvent
+from app.models.background_job import BackgroundJob
 
 __all__ = [
     "Base",
@@ -35,4 +37,6 @@ __all__ = [
     "RecommendationFeedback",
     "WearHistory",
     "Notification",
+    "CalendarEvent",
+    "BackgroundJob",
 ]

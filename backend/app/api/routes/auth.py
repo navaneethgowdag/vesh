@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.core.config import settings
 from app.core.security import AUTH_COOKIE_NAME
+from app.core.rate_limiter import RateLimit
 from app.schemas.auth import LoginRequest, RegisterRequest, Token
 from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
@@ -31,7 +32,7 @@ def _clear_session_cookie(response: Response) -> None:
     response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
 
 
-@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RateLimit(requests=10, window=3600, scope="register"))])
 def register(request: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     service = AuthService(db)
     user, token = service.register(
@@ -52,7 +53,7 @@ def register(request: RegisterRequest, response: Response, db: Session = Depends
     }
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[Depends(RateLimit(requests=10, window=60, scope="login"))])
 def login(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
     service = AuthService(db)
     user, token = service.authenticate_user(

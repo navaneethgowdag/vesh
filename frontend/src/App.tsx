@@ -18,6 +18,7 @@ import { Notifications } from './pages/Notifications';
 import { Profile } from './pages/Profile';
 import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
+import { Calendar } from './pages/Calendar';
 
 export const App: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
           {/* Core Application routes */}
           <Route path="/home" element={<Home />} />
           <Route path="/daily-fit" element={<DailyFit />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/wardrobe" element={<Wardrobe />} />
           <Route path="/wardrobe/:id" element={<ClothingDetail />} />
@@ -52,4 +54,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

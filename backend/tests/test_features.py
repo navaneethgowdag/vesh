@@ -145,3 +145,99 @@ def test_delete_post_security_and_cascade(client):
     # 7. Deleting already deleted post returns 404
     del_again_res = client.delete(f"/api/v1/posts/{post_id}", headers=headers1)
     assert del_again_res.status_code == 404
+
+
+def test_feed_following_filter_and_stories(client):
+    """Verify backend-enforced following feed and stories endpoint."""
+    s1 = uuid.uuid4().hex[:8]
+    s2 = uuid.uuid4().hex[:8]
+    s3 = uuid.uuid4().hex[:8]
+
+    # User 1 (Follower)
+    u1 = client.post("/api/v1/auth/register", json={"username": f"u1_{s1}", "email": f"u1_{s1}@test.com", "password": "Password123!", "display_name": "User One"}).json()
+    token1 = u1["access_token"]
+    h1 = {"Authorization": f"Bearer {token1}"}
+
+    # User 2 (Followed Creator)
+    u2 = client.post("/api/v1/auth/register", json={"username": f"u2_{s2}", "email": f"u2_{s2}@test.com", "password": "Password123!", "display_name": "User Two"}).json()
+    token2 = u2["access_token"]
+    h2 = {"Authorization": f"Bearer {token2}"}
+
+    # User 3 (Non-followed Creator)
+    u3 = client.post("/api/v1/auth/register", json={"username": f"u3_{s3}", "email": f"u3_{s3}@test.com", "password": "Password123!", "display_name": "User Three"}).json()
+    token3 = u3["access_token"]
+    h3 = {"Authorization": f"Bearer {token3}"}
+
+    # Create posts
+    p2 = client.post("/api/v1/posts", headers=h2, json={"caption": "From Creator 2", "image_url": "https://img.test/2.jpg"}).json()
+    p3 = client.post("/api/v1/posts", headers=h3, json={"caption": "From Creator 3", "image_url": "https://img.test/3.jpg"}).json()
+
+    # User 1 follows User 2
+    follow_res = client.post(f"/api/v1/social/follow/{u2['user_id']}", headers=h1)
+    assert follow_res.status_code == 200
+
+    # User 1 gets following feed
+    feed_fol = client.get("/api/v1/posts?feed_type=following", headers=h1)
+    assert feed_fol.status_code == 200
+    fol_posts = feed_fol.json()
+    fol_ids = [p["id"] for p in fol_posts]
+    assert p2["id"] in fol_ids
+    assert p3["id"] not in fol_ids
+
+    # Anonymous user gets following feed -> returns empty list
+    client.cookies.clear()
+    anon_fol = client.get("/api/v1/posts?feed_type=following")
+    assert anon_fol.status_code == 200
+    assert anon_fol.json() == []
+
+    # For You feed returns both
+    feed_fy = client.get("/api/v1/posts?feed_type=for_you", headers=h1)
+    assert feed_fy.status_code == 200
+    fy_ids = [p["id"] for p in feed_fy.json()]
+    assert p2["id"] in fy_ids
+    assert p3["id"] in fy_ids
+
+    # Stories endpoint returns recent posts with images
+    stories_res = client.get("/api/v1/posts/stories", headers=h1)
+    assert stories_res.status_code == 200
+    stories = stories_res.json()
+    assert isinstance(stories, list)
+    story_ids = [s["id"] for s in stories]
+    assert p2["id"] in story_ids or p3["id"] in story_ids
+
+
+def test_like_notification_and_deduplication(client):
+    """Verify like notifications, self-like prevention, and duplicate prevention."""
+    sa = uuid.uuid4().hex[:8]
+    sb = uuid.uuid4().hex[:8]
+
+    ua = client.post("/api/v1/auth/register", json={"username": f"ua_{sa}", "email": f"ua_{sa}@test.com", "password": "Password123!", "display_name": "Author Alice"}).json()
+    ha = {"Authorization": f"Bearer {ua['access_token']}"}
+
+    ub = client.post("/api/v1/auth/register", json={"username": f"ub_{sb}", "email": f"ub_{sb}@test.com", "password": "Password123!", "display_name": "Bob Stylist"}).json()
+    hb = {"Authorization": f"Bearer {ub['access_token']}"}
+
+    # Author creates post
+    post = client.post("/api/v1/posts", headers=ha, json={"caption": "Alice fit", "image_url": "https://img.test/a.jpg"}).json()
+    post_id = post["id"]
+
+    # Author likes own post (self-like) -> no notification should be sent
+    client.post(f"/api/v1/posts/{post_id}/like", headers=ha)
+    notifs_a1 = client.get("/api/v1/notifications", headers=ha).json()
+    like_notifs_a1 = [n for n in notifs_a1 if n.get("type") == "like"]
+    assert len(like_notifs_a1) == 0
+
+    # Bob likes Alice's post
+    client.post(f"/api/v1/posts/{post_id}/like", headers=hb)
+    notifs_a2 = client.get("/api/v1/notifications", headers=ha).json()
+    like_notifs_a2 = [n for n in notifs_a2 if n.get("type") == "like"]
+    assert len(like_notifs_a2) == 1
+    assert "Bob Stylist" in like_notifs_a2[0]["message"]
+
+    # Bob unlikes and likes again -> no duplicate notification
+    client.delete(f"/api/v1/posts/{post_id}/like", headers=hb)
+    client.post(f"/api/v1/posts/{post_id}/like", headers=hb)
+    notifs_a3 = client.get("/api/v1/notifications", headers=ha).json()
+    like_notifs_a3 = [n for n in notifs_a3 if n.get("type") == "like"]
+    assert len(like_notifs_a3) == 1
+

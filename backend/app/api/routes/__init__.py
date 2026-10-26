@@ -12,6 +12,8 @@ from app.api.routes import (
     social,
     saved,
     notifications,
+    calendar,
+    media,
 )
 
 api_router = APIRouter()
@@ -28,6 +30,8 @@ api_router.include_router(comments.router)
 api_router.include_router(social.router)
 api_router.include_router(saved.router)
 api_router.include_router(notifications.router)
+api_router.include_router(calendar.router)
+api_router.include_router(media.router)
 
 __all__ = ["api_router"]
 

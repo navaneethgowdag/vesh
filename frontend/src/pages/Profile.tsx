@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button';
 import { StyleChip } from '../components/ui/StyleChip';
 import { PostCard } from '../components/feed/PostCard';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
+import { EditProfileModal } from '../components/profile/EditProfileModal';
 import { useApp, useCurrentUser } from '../context/AppContext';
 
 export const Profile: React.FC = () => {
@@ -26,6 +27,7 @@ export const Profile: React.FC = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'Posts' | 'Outfits' | 'Saved' | 'Collections'>('Posts');
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const myPosts = posts.filter((p) => p.user.id === currentUser.id);
   const savedPosts = posts.filter((p) => p.isSaved);
@@ -64,7 +66,7 @@ export const Profile: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/settings')}
+                  onClick={() => setIsEditProfileOpen(true)}
                   icon={<Settings className="w-4 h-4" />}
                 >
                   Edit Profile
@@ -273,6 +275,7 @@ export const Profile: React.FC = () => {
           ))}
         </div>
       )}
+      <EditProfileModal isOpen={isEditProfileOpen} onClose={() => setIsEditProfileOpen(false)} />
     </AppShell>
   );
 };

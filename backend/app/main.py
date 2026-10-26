@@ -1,8 +1,11 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import verify_database_connection
+from app.core.redis import init_redis, close_redis, check_redis_health
 from app.api.routes import api_router
 from app.ai.model_manager import model_manager
 
@@ -17,11 +20,15 @@ async def lifespan(app: FastAPI):
     else:
         print("Warning: Database connection verification failed during startup.")
     
+    # Initialize Upstash / Redis if enabled
+    init_redis()
+
     # Load ML models if available
     model_manager.load_recommendation_model()
     yield
     # Shutdown tasks
     print("StyleSphere API shutting down...")
+    close_redis()
 
 
 app = FastAPI(
@@ -54,6 +61,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ensure static upload directory exists and mount static file serving
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+os.makedirs(os.path.join(static_dir, "uploads"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 
 @app.get("/health", tags=["health"])
 def health_check():
@@ -74,12 +86,21 @@ def health_db_check():
     }
 
 
+@app.get("/health/redis", tags=["health"])
+@app.get("/api/v1/health/redis", tags=["health"])
+def health_redis_check():
+    return check_redis_health()
+
+
 @app.get("/api/v1/health", tags=["health"])
 def api_health_check():
     db_ok = verify_database_connection()
+    redis_health = check_redis_health()
+    is_ok = db_ok and (redis_health["status"] in ("ok", "disabled"))
     return {
-        "status": "ok" if db_ok else "degraded",
+        "status": "ok" if is_ok else "degraded",
         "database": "Neon PostgreSQL" if db_ok else "disconnected",
+        "redis": redis_health["status"],
     }
 
 

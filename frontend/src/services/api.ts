@@ -15,6 +15,7 @@ import {
   User,
   Weather,
   Occasion,
+  CalendarEvent,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -228,12 +229,36 @@ export const api = {
         body: new URLSearchParams({ image_url: imageUrl || '' }),
       });
     },
+
+    async createAnalysisJob(imageUrl?: string, clothingId?: string): Promise<{ id: string; status: string }> {
+      const res = await request<any>('/clothing-ai/jobs', {
+        method: 'POST',
+        body: JSON.stringify({ image_url: imageUrl, clothing_id: clothingId }),
+      });
+      return { id: String(res.id), status: res.status };
+    },
+
+    async getAnalysisJob(jobId: string): Promise<{
+      id: string;
+      status: string;
+      result?: any;
+      errorMessage?: string;
+    }> {
+      const raw = await request<any>(`/clothing-ai/jobs/${jobId}`);
+      return {
+        id: String(raw.id),
+        status: raw.status,
+        result: raw.result,
+        errorMessage: raw.error_message,
+      };
+    },
   },
 
   // --- POSTS / SOCIAL FEED ---
   posts: {
-    async listFeed(): Promise<Post[]> {
-      const posts = await request<any[]>('/posts');
+    async listFeed(feedType: 'for_you' | 'following' = 'for_you'): Promise<Post[]> {
+      const query = feedType === 'following' ? '?feed_type=following' : '';
+      const posts = await request<any[]>(`/posts${query}`);
       return posts.map((p) => ({
         id: String(p.id),
         user: {
@@ -277,6 +302,34 @@ export const api = {
           createdAt: c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now',
           likesCount: c.likes_count || 0,
         })),
+        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+      }));
+    },
+
+    async getStories(): Promise<Post[]> {
+      const posts = await request<any[]>('/posts/stories');
+      return posts.map((p) => ({
+        id: String(p.id),
+        user: {
+          id: String(p.user?.id || ''),
+          name: p.user?.name || 'User',
+          username: p.user?.username || 'user',
+          avatar: p.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+          isVerified: p.user?.is_verified,
+          isFollowing: p.user?.is_following,
+        },
+        image: p.image_url,
+        caption: p.caption,
+        tags: p.tags || [],
+        taggedItems: [],
+        occasion: (p.occasion as Occasion) || 'Casual Daily',
+        location: p.location,
+        likesCount: p.likes_count || 0,
+        commentsCount: p.comments_count || 0,
+        savesCount: p.saves_count || 0,
+        isLiked: p.is_liked || false,
+        isSaved: p.is_saved || false,
+        comments: [],
         createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
       }));
     },
@@ -339,6 +392,23 @@ export const api = {
     },
   },
 
+  // --- MEDIA STORAGE & OPTIMIZATION ---
+  media: {
+    async upload(file: File): Promise<{ image_url: string; thumbnail_url: string }> {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/media/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (!res.ok) {
+        throw new Error('Failed to upload image asset');
+      }
+      return res.json();
+    },
+  },
+
   // --- COLLECTIONS & SAVED ---
   saved: {
     async listSavedItems(itemType?: 'post' | 'outfit'): Promise<Array<{ id: string; itemType: string; itemId: string }>> {
@@ -394,6 +464,32 @@ export const api = {
 
   // --- USERS / PREFERENCES (explicit preferences persisted in Neon) ---
   users: {
+    async getByUsername(username: string): Promise<User> {
+      const raw = await request<any>(`/users/${encodeURIComponent(username)}`);
+      return {
+        id: String(raw.id),
+        name: raw.display_name || raw.username,
+        username: raw.username,
+        email: raw.email || '',
+        avatar: raw.profile_image_url || raw.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        bio: raw.bio || '',
+        location: raw.location || '',
+        followersCount: raw.followers_count || 0,
+        followingCount: raw.following_count || 0,
+        postsCount: raw.posts_count || 0,
+        wardrobeCount: raw.wardrobe_count || 0,
+        isVerified: raw.is_verified || false,
+        joinedDate: raw.created_at ? new Date(raw.created_at).toLocaleDateString() : '2026',
+        preferences: {
+          styles: raw.preferences?.styles || ['Minimal', 'Casual'],
+          staplePieces: [],
+          lifestyle: '',
+          favoriteColors: raw.preferences?.favorite_colors || ['Beige', 'Black'],
+          climatePreference: raw.preferences?.climate_preference || 'Moderate',
+          fitPreference: 'Classic / Regular',
+        },
+      };
+    },
     async getPreferences(): Promise<{
       styles: string[];
       favoriteColors: string[];
@@ -593,6 +689,151 @@ export const api = {
           action,
         }),
       });
+    },
+  },
+
+
+  // --- CALENDAR & OUTFIT PLANNING ---
+  calendar: {
+    async listEvents(startDate?: string, endDate?: string, status?: string): Promise<CalendarEvent[]> {
+      const params = new URLSearchParams();
+      if (startDate) params.set('start_date', startDate);
+      if (endDate) params.set('end_date', endDate);
+      if (status) params.set('status', status);
+      const items = await request<any[]>(`/calendar/events?${params.toString()}`);
+      return items.map((e) => ({
+        id: String(e.id),
+        userId: String(e.user_id),
+        eventDate: e.event_date,
+        startTime: e.start_time || undefined,
+        endTime: e.end_time || undefined,
+        eventType: e.event_type || 'planned_outfit',
+        outfitId: e.outfit_id ? String(e.outfit_id) : undefined,
+        recommendationId: e.recommendation_id ? String(e.recommendation_id) : undefined,
+        occasion: e.occasion || undefined,
+        notes: e.notes || undefined,
+        status: e.status || 'scheduled',
+        createdAt: e.created_at,
+        updatedAt: e.updated_at,
+        outfit: e.outfit
+          ? {
+              id: String(e.outfit.id),
+              title: e.outfit.name,
+              description: e.outfit.description,
+              pieces: (e.outfit.clothing_items || []).map((ci: any) => ({
+                id: String(ci.id),
+                name: ci.name,
+                category: ci.category,
+                color: ci.color,
+                style: ci.occasion || 'Casual',
+                season: ci.season || 'All-Season',
+                brand: ci.brand,
+                image: ci.image_url,
+                createdAt: ci.created_at || new Date().toISOString(),
+              })),
+              occasion: e.outfit.occasion as Occasion,
+              style: e.outfit.style || 'Minimal',
+              season: e.outfit.season || 'All-Season',
+              score: Math.round((e.outfit.compatibility_score || 0.9) * 100),
+              image: e.outfit.image_url,
+              tags: e.outfit.tags || [],
+              createdAt: e.outfit.created_at || new Date().toISOString(),
+            }
+          : undefined,
+      }));
+    },
+
+    async createEvent(data: {
+      event_date: string;
+      start_time?: string;
+      end_time?: string;
+      event_type?: string;
+      outfit_id?: string;
+      occasion?: string;
+      notes?: string;
+    }): Promise<CalendarEvent> {
+      const res = await request<any>('/calendar/events', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return {
+        id: String(res.id),
+        userId: String(res.user_id),
+        eventDate: res.event_date,
+        startTime: res.start_time || undefined,
+        endTime: res.end_time || undefined,
+        eventType: res.event_type || 'planned_outfit',
+        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
+        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
+        occasion: res.occasion || undefined,
+        notes: res.notes || undefined,
+        status: res.status || 'scheduled',
+        createdAt: res.created_at,
+        updatedAt: res.updated_at,
+      };
+    },
+
+    async updateEvent(
+      id: string,
+      updates: Partial<{
+        event_date: string;
+        start_time?: string;
+        end_time?: string;
+        event_type?: string;
+        outfit_id?: string;
+        occasion?: string;
+        notes?: string;
+        status?: string;
+      }>
+    ): Promise<CalendarEvent> {
+      const res = await request<any>(`/calendar/events/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+      return {
+        id: String(res.id),
+        userId: String(res.user_id),
+        eventDate: res.event_date,
+        startTime: res.start_time || undefined,
+        endTime: res.end_time || undefined,
+        eventType: res.event_type || 'planned_outfit',
+        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
+        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
+        occasion: res.occasion || undefined,
+        notes: res.notes || undefined,
+        status: res.status || 'scheduled',
+        createdAt: res.created_at,
+        updatedAt: res.updated_at,
+      };
+    },
+
+    async deleteEvent(id: string): Promise<void> {
+      await request<void>(`/calendar/events/${id}`, { method: 'DELETE' });
+    },
+
+    async scheduleRecommendation(
+      recommendationId: string,
+      data: { date: string; time?: string; occasion?: string; notes?: string }
+    ): Promise<CalendarEvent> {
+      const res = await request<any>(`/recommendations/${recommendationId}/schedule`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return {
+        id: String(res.id),
+        userId: String(res.user_id),
+        eventDate: res.event_date,
+        startTime: res.start_time || undefined,
+        endTime: res.end_time || undefined,
+        eventType: res.event_type || 'planned_outfit',
+        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
+        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
+        occasion: res.occasion || undefined,
+        notes: res.notes || undefined,
+        status: res.status || 'scheduled',
+        createdAt: res.created_at,
+        updatedAt: res.updated_at,
+      };
     },
   },
 

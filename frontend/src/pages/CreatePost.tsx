@@ -14,6 +14,7 @@ import {
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { useApp, useCurrentUser } from '../context/AppContext';
+import { api } from '../services/api';
 import { Occasion } from '../types';
 
 const OCCASIONS: Occasion[] = [
@@ -53,16 +54,26 @@ export const CreatePost: React.FC = () => {
   const [showWardrobePicker, setShowWardrobePicker] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setImage(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingImage(true);
+      try {
+        const uploaded = await api.media.upload(file);
+        setImage(uploaded.image_url);
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setImage(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 

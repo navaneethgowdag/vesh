@@ -35,7 +35,7 @@ const COLORS = ['All Colors', 'White', 'Black', 'Beige', 'Cognac', 'Brown', 'Nav
 const SEASONS = ['All Seasons', 'Summer', 'Autumn', 'Winter', 'Spring'];
 
 export const Explore: React.FC = () => {
-  const { posts, allCreators, isFollowingUser, toggleFollowUser } = useApp();
+  const { posts, isFollowingUser, toggleFollowUser } = useApp();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +43,17 @@ export const Explore: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('All Colors');
   const [selectedSeason, setSelectedSeason] = useState('All Seasons');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Derive real style curators from existing posts in Neon database
+  const styleCurators = useMemo(() => {
+    const map = new Map<string, typeof posts[0]['user']>();
+    for (const p of posts) {
+      if (p.user && p.user.id && !map.has(p.user.id)) {
+        map.set(p.user.id, p.user);
+      }
+    }
+    return Array.from(map.values());
+  }, [posts]);
 
   // Search and filter outfits
   const filteredPosts = useMemo(() => {
@@ -173,56 +184,55 @@ export const Explore: React.FC = () => {
         </div>
       </div>
 
-      {/* Popular Creators Spotlight Strip */}
-      <div className="mb-8 p-5 bg-sand-100/70 rounded-3xl border border-sand-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-cognac-700" />
-            <h3 className="font-serif text-base font-bold text-charcoal-900">
-              Popular Style Curators
-            </h3>
+      {/* Popular Creators Spotlight Strip (Real active creators) */}
+      {styleCurators.length > 0 && (
+        <div className="mb-8 p-5 bg-sand-100/70 rounded-3xl border border-sand-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-cognac-700" />
+              <h3 className="font-serif text-base font-bold text-charcoal-900">
+                Popular Style Curators
+              </h3>
+            </div>
+            <span className="text-xs text-charcoal-500">Active style tastemakers</span>
           </div>
-          <span className="text-xs text-charcoal-500">Verified tastemakers</span>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {allCreators.map((creator) => {
-            const isFollowing = isFollowingUser(creator.id);
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {styleCurators.map((creator) => {
+              const isFollowing = isFollowingUser(creator.id) || creator.isFollowing;
 
-            return (
-              <div
-                key={creator.id}
-                className="flex items-center justify-between p-3 rounded-2xl bg-cream-50 border border-sand-200/90 shadow-soft-sm hover:shadow-soft transition-all"
-              >
+              return (
                 <div
-                  onClick={() => navigate(`/profile/${creator.username}`)}
-                  className="flex items-center gap-3 cursor-pointer min-w-0"
+                  key={creator.id}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-cream-50 border border-sand-200/90 shadow-soft-sm hover:shadow-soft transition-all"
                 >
-                  <Avatar src={creator.avatar} alt={creator.name} size="md" isVerified={creator.isVerified} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-charcoal-900 truncate">
-                      {creator.name}
-                    </p>
-                    <p className="text-[11px] text-charcoal-400 truncate">@{creator.username}</p>
-                    <p className="text-[10px] text-cognac-700 font-medium truncate mt-0.5">
-                      {creator.preferences.styles[0]} · {creator.followersCount} followers
-                    </p>
+                  <div
+                    onClick={() => navigate(`/profile/${creator.username}`)}
+                    className="flex items-center gap-3 cursor-pointer min-w-0"
+                  >
+                    <Avatar src={creator.avatar} alt={creator.name} size="md" isVerified={creator.isVerified} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-charcoal-900 truncate">
+                        {creator.name}
+                      </p>
+                      <p className="text-[11px] text-charcoal-400 truncate">@{creator.username}</p>
+                    </div>
                   </div>
-                </div>
 
-                <Button
-                  size="sm"
-                  variant={isFollowing ? 'outline' : 'secondary'}
-                  onClick={() => toggleFollowUser(creator.id)}
-                  className="text-xs px-3 py-1 ml-2 flex-shrink-0"
-                >
-                  {isFollowing ? 'Following' : '+ Follow'}
-                </Button>
-              </div>
-            );
-          })}
+                  <Button
+                    size="sm"
+                    variant={isFollowing ? 'outline' : 'secondary'}
+                    onClick={() => toggleFollowUser(creator.id)}
+                    className="text-xs px-3 py-1 ml-2 flex-shrink-0"
+                  >
+                    {isFollowing ? 'Following' : '+ Follow'}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Masonry / Grid of Outfit Posts */}
       <div>

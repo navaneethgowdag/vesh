@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.clothing_ai import ClothingAnalysisResponse
 
 
@@ -19,7 +19,7 @@ class ClothingBase(BaseModel):
     season: str = "All-Season"
     occasion: str = "Casual Daily"
     style_tags: List[str] = Field(default_factory=list)
-    image_url: str
+    image_url: Optional[str] = None
     description: Optional[str] = None
 
 
@@ -57,5 +57,4 @@ class ClothingResponse(ClothingBase):
     updated_at: datetime
     analysis: Optional[ClothingAnalysisResponse] = None
 
-    model_config = {"from_attributes": True}
-
+    model_config = ConfigDict(from_attributes=True)

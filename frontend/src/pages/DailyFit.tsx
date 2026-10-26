@@ -19,6 +19,7 @@ import { StyleChip } from '../components/ui/StyleChip';
 import { WeatherCard } from '../components/ui/WeatherCard';
 import { WhyThisOutfitModal } from '../components/recommendation/WhyThisOutfitModal';
 import { ShareModal } from '../components/social/ShareModal';
+import { ScheduleOutfitModal } from '../components/recommendation/ScheduleOutfitModal';
 import { useApp } from '../context/AppContext';
 import { Occasion, Post } from '../types';
 
@@ -46,6 +47,7 @@ export const DailyFit: React.FC = () => {
   const [whyModalOpen, setWhyModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [wornSuccess, setWornSuccess] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const navigate = useNavigate();
 
   if (!dailyFit) {
@@ -296,6 +298,14 @@ export const DailyFit: React.FC = () => {
               <Button
                 variant="outline"
                 size="md"
+                onClick={() => setScheduleModalOpen(true)}
+                icon={<Calendar className="w-4 h-4 text-cognac-700" />}
+              >
+                Schedule Outfit
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
                 onClick={handleSave}
                 icon={<Bookmark className="w-4 h-4 text-cognac-700" />}
               >
@@ -376,6 +386,14 @@ export const DailyFit: React.FC = () => {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         post={shareablePost}
+      />
+      <ScheduleOutfitModal
+        isOpen={scheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        recommendation={dailyFit}
+        onScheduled={(event) => {
+          showToast(`Outfit scheduled for ${event.eventDate}!`, 'success');
+        }}
       />
     </AppShell>
   );

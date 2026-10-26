@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -7,27 +7,64 @@ import {
   Calendar,
   Grid,
   Share2,
+  Loader2,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { PostCard } from '../components/feed/PostCard';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
+import { User } from '../types';
 
 export const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { allCreators, posts, isFollowingUser, toggleFollowUser, showToast } = useApp();
+  const { posts, isFollowingUser, toggleFollowUser, showToast } = useApp();
 
+  const [creator, setCreator] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Outfits' | 'Saved'>('Outfits');
 
-  const creator = allCreators.find((c) => c.username === username);
+  useEffect(() => {
+    if (!username) return;
+    let cancelled = false;
+    setIsLoading(true);
+
+    api.users
+      .getByUsername(username)
+      .then((u) => {
+        if (!cancelled) setCreator(u);
+      })
+      .catch(() => {
+        if (!cancelled) setCreator(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [username]);
+
+  if (isLoading) {
+    return (
+      <AppShell>
+        <div className="text-center py-24 bg-cream-50 rounded-3xl border border-sand-200">
+          <Loader2 className="w-8 h-8 text-cognac-600 animate-spin mx-auto mb-2" />
+          <p className="text-xs text-charcoal-500">Loading curator profile...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!creator) {
     return (
       <AppShell>
         <div className="text-center py-20 bg-cream-50 rounded-3xl border border-sand-200">
           <p className="font-serif font-bold text-lg text-charcoal-900">Creator not found</p>
+          <p className="text-xs text-charcoal-500 mt-1">This user may not have an active profile on StyleSphere.</p>
           <Button
             variant="outline"
             size="sm"
@@ -42,7 +79,9 @@ export const UserProfile: React.FC = () => {
   }
 
   const isFollowing = isFollowingUser(creator.id);
-  const creatorPosts = posts.filter((p) => p.user.username === creator.username);
+  const creatorPosts = posts.filter(
+    (p) => p.user.id === creator.id || p.user.username.toLowerCase() === creator.username.toLowerCase()
+  );
 
   return (
     <AppShell>
@@ -78,7 +117,9 @@ export const UserProfile: React.FC = () => {
                 <Button
                   variant={isFollowing ? 'outline' : 'primary'}
                   size="md"
-                  onClick={() => toggleFollowUser(creator.id)}
+                  onClick={async () => {
+                    await toggleFollowUser(creator.id);
+                  }}
                   className="px-6"
                 >
                   {isFollowing ? 'Following' : '+ Follow'}
@@ -98,7 +139,7 @@ export const UserProfile: React.FC = () => {
             </div>
 
             <p className="text-xs sm:text-sm text-charcoal-700 max-w-xl leading-relaxed mb-4">
-              {creator.bio}
+              {creator.bio || 'Curating intentional looks and versatile wardrobe capsules on StyleSphere.'}
             </p>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-charcoal-500 mb-6">
@@ -110,25 +151,25 @@ export const UserProfile: React.FC = () => {
               )}
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-cognac-600" />
-                {creator.joinedDate}
+                Joined {creator.joinedDate}
               </span>
             </div>
 
-            {/* Stats */}
+            {/* Social Stats */}
             <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-sand-200/80">
-              <div className="text-center sm:text-left">
+              <div>
                 <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {creator.postsCount}
+                  {creator.postsCount ?? creatorPosts.length}
                 </span>
                 <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Posts</span>
               </div>
-              <div className="text-center sm:text-left">
+              <div>
                 <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {(creator.followersCount / 1000).toFixed(1)}K
+                  {creator.followersCount}
                 </span>
                 <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Followers</span>
               </div>
-              <div className="text-center sm:text-left">
+              <div>
                 <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
                   {creator.followingCount}
                 </span>
@@ -139,48 +180,23 @@ export const UserProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Style Preferences Strip */}
-      <div className="bg-sand-100/90 rounded-3xl p-5 border border-sand-200/90 shadow-soft mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-cognac-700" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
-            Style Aesthetic & Signature
-          </h3>
-        </div>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {creator.preferences.styles.map((s) => (
-            <span
-              key={s}
-              className="bg-cream-50 text-charcoal-800 text-xs font-semibold px-3 py-1.5 rounded-full border border-sand-200"
-            >
-              {s}
-            </span>
-          ))}
-          {creator.preferences.favoriteColors.map((c) => (
-            <span
-              key={c}
-              className="bg-cream-50 text-charcoal-600 text-xs font-medium px-3 py-1.5 rounded-full border border-sand-200"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-        <p className="text-xs text-charcoal-600">
-          <strong className="text-charcoal-800">Capsule Staples:</strong>{' '}
-          {creator.preferences.staplePieces.join(' · ')}
-        </p>
-      </div>
-
-      {/* Outfits Feed */}
+      {/* Outfits Stream */}
       <div>
-        <h3 className="font-serif text-lg font-bold text-charcoal-900 mb-4">
-          Published Looks by @{creator.username}
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Grid className="w-4 h-4 text-cognac-600" />
+            <h3 className="font-serif text-lg font-bold text-charcoal-900">
+              Shared Outfits & Rotations
+            </h3>
+          </div>
+          <span className="text-xs text-charcoal-500">{creatorPosts.length} Looks</span>
+        </div>
 
         {creatorPosts.length === 0 ? (
           <div className="text-center py-16 bg-cream-50 rounded-3xl border border-sand-200">
-            <p className="text-xs font-semibold text-charcoal-600">
-              No recent posts by this creator.
+            <p className="text-sm font-bold text-charcoal-800">No outfit looks shared yet</p>
+            <p className="text-xs text-charcoal-500 mt-1">
+              Check back soon for new styling inspirations from {creator.name}.
             </p>
           </div>
         ) : (
@@ -194,4 +210,3 @@ export const UserProfile: React.FC = () => {
     </AppShell>
   );
 };
-

@@ -10,7 +10,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { useApp } from '../context/AppContext';
 
 export const Saved: React.FC = () => {
-  const { posts, wardrobe, collections, createCollection, allCreators } = useApp();
+  const { posts, wardrobe, collections, createCollection } = useApp();
   const navigate = useNavigate();
 
   const [activeSection, setActiveSection] = useState<'All' | 'Outfits' | 'Clothing' | 'Creators'>('All');
@@ -20,7 +20,15 @@ export const Saved: React.FC = () => {
 
   const savedPosts = posts.filter((p) => p.isSaved);
   const savedClothing = wardrobe.filter((w) => w.isFavorite);
-  const savedCreators = allCreators.filter((c) => c.isFollowing);
+  const savedCreators = React.useMemo(() => {
+    const map = new Map<string, typeof posts[0]['user']>();
+    for (const p of posts) {
+      if (p.user && p.user.isFollowing && !map.has(p.user.id)) {
+        map.set(p.user.id, p.user);
+      }
+    }
+    return Array.from(map.values());
+  }, [posts]);
 
   const handleCreateCollection = (e: React.FormEvent) => {
     e.preventDefault();

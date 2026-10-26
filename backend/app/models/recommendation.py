@@ -70,3 +70,5 @@ class Recommendation(Base):
     user = relationship("User", back_populates="recommendations")
     outfit = relationship("Outfit", back_populates="recommendations")
     feedback = relationship("RecommendationFeedback", back_populates="recommendation", cascade="all, delete-orphan")
+    calendar_events = relationship("CalendarEvent", back_populates="recommendation")
+

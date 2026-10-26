@@ -8,8 +8,10 @@ from app.schemas.recommendation import (
     RecommendationFeedbackCreate,
     RecommendationFeedbackResponse,
 )
+from app.schemas.calendar import ScheduleRecommendationRequest, CalendarEventResponse
 from app.services.recommendation_service import RecommendationService
 from app.services.feedback_service import FeedbackService
+from app.services.calendar_service import CalendarService
 from app.models.user import User
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
@@ -56,3 +58,24 @@ def record_recommendation_feedback(
         "created_at": fb.created_at,
         "message": "Feedback recorded and learned preferences updated successfully",
     }
+
+
+@router.post(
+    "/{recommendation_id}/schedule",
+    response_model=CalendarEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def schedule_recommendation(
+    recommendation_id: UUID,
+    req: ScheduleRecommendationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Schedules an existing recommendation into the user's outfit calendar.
+    Does NOT increment wear counts or mark outfit as worn.
+    """
+    service = CalendarService(db)
+    return service.schedule_recommendation(
+        user_id=current_user.id, recommendation_id=recommendation_id, req=req
+    )

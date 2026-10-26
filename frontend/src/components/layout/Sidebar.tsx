@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   Sparkles,
+  Calendar as CalendarIcon,
   Compass,
   Shirt,
   PlusCircle,
@@ -24,6 +25,7 @@ export const Sidebar: React.FC = () => {
   const navItems = [
     { name: 'Home', path: '/home', icon: Home },
     { name: 'Daily Fit', path: '/daily-fit', icon: Sparkles, badge: 'AI' },
+    { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
     { name: 'Explore', path: '/explore', icon: Compass },
     { name: 'Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
     { name: 'Create', path: '/create', icon: PlusCircle, highlight: true },
@@ -140,4 +142,3 @@ export const Sidebar: React.FC = () => {
     </aside>
   );
 };
-

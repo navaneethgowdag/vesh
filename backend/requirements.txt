@@ -18,4 +18,6 @@ opencv-python-headless>=4.10.0
 numpy>=2.0.0
 scikit-learn>=1.5.0
 dnspython>=2.6.0
+redis>=5.0.0
+rq>=1.16.0
 
