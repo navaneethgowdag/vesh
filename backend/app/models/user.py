@@ -60,8 +60,8 @@ class User(Base):
     saved_items = relationship("SavedItem", back_populates="user", cascade="all, delete-orphan")
     collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
-    calendar_events = relationship("CalendarEvent", back_populates="user", cascade="all, delete-orphan")
-    background_jobs = relationship("BackgroundJob", back_populates="user", cascade="all, delete-orphan")
+    calendar_events = relationship("CalendarEvent", back_populates="user", cascade="save-update, merge", passive_deletes="all")
+    background_jobs = relationship("BackgroundJob", back_populates="user", cascade="save-update, merge", passive_deletes="all")
 
     following = relationship(
         "Follow",

@@ -22,6 +22,54 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+const TOKEN_STORAGE_KEY = 'stylesphere_token';
+
+let memoryToken: string | null = null;
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    memoryToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  }
+} catch {
+  // localStorage may be restricted in sandbox/SSR
+}
+
+export const tokenStorage = {
+  get: (): string | null => {
+    if (!memoryToken && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        memoryToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    return memoryToken;
+  },
+  set: (token: string | null) => {
+    memoryToken = token;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        if (token) {
+          window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+        } else {
+          window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  },
+  clear: () => {
+    memoryToken = null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+  },
+};
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -32,16 +80,26 @@ export class ApiError extends Error {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  const token = tokenStorage.get();
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     credentials: 'include', // send the HttpOnly session cookie
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
+    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
+      tokenStorage.clear();
+    }
     let errorDetail = `${response.status} ${response.statusText}`;
     try {
       const errorJson = await response.json();
@@ -66,17 +124,25 @@ export const api = {
   // --- AUTH ---
   auth: {
     async register(data: { username: string; email: string; password: string; display_name?: string }): Promise<{ access_token: string; user_id: string; username: string }> {
-      return request<{ access_token: string; user_id: string; username: string }>('/auth/register', {
+      const res = await request<{ access_token: string; user_id: string; username: string }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      if (res?.access_token) {
+        tokenStorage.set(res.access_token);
+      }
+      return res;
     },
 
     async login(data: { username_or_email: string; password: string }): Promise<{ access_token: string; user_id: string; username: string }> {
-      return request<{ access_token: string; user_id: string; username: string }>('/auth/login', {
+      const res = await request<{ access_token: string; user_id: string; username: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      if (res?.access_token) {
+        tokenStorage.set(res.access_token);
+      }
+      return res;
     },
 
     async getMe(): Promise<User> {
@@ -111,6 +177,8 @@ export const api = {
         await request<void>('/auth/logout', { method: 'POST' });
       } catch {
         // Session may already be expired; logout is idempotent client-side.
+      } finally {
+        tokenStorage.clear();
       }
     },
   },

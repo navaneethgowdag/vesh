@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, User, AtSign, Mail, Lock, Check } from 'lucide-react';
+import { ArrowRight, User, AtSign, Mail, Lock, Check, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useApp } from '../context/AppContext';
 
@@ -15,30 +15,84 @@ export const Signup: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const clearErrors = () => {
+    if (formError) setFormError(null);
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match', 'info');
+    clearErrors();
+
+    const cleanName = name.trim();
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      setFormError('Please enter your full name.');
+      showToast('Please enter your full name.', 'info');
       return;
     }
+
+    if (cleanUsername.length < 3) {
+      setFormError('Username must be at least 3 characters long.');
+      showToast('Username must be at least 3 characters long.', 'info');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_.-]+$/.test(cleanUsername)) {
+      setFormError('Username can only contain letters, numbers, underscores, dashes, and periods.');
+      showToast('Username can only contain letters, numbers, underscores, and dashes.', 'info');
+      return;
+    }
+
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setFormError('Please enter a valid email address.');
+      showToast('Please enter a valid email address.', 'info');
+      return;
+    }
+
+    if (password.length < 6) {
+      setFormError('Password must be at least 6 characters long.');
+      showToast('Password must be at least 6 characters long.', 'info');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      showToast('Passwords do not match.', 'info');
+      return;
+    }
+
     if (!agreeTerms) {
-      showToast('Please agree to terms to proceed', 'info');
+      setFormError('Please accept the Terms of Service and Privacy Policy to proceed.');
+      showToast('Please agree to terms to proceed.', 'info');
       return;
     }
 
     setLoading(true);
     try {
-      // Creates the account in Neon and establishes the session cookie.
-      await register({ name, username, email, password });
+      await register({
+        name: cleanName,
+        username: cleanUsername,
+        email: cleanEmail,
+        password,
+      });
       showToast('Account created! Let us configure your style profile.', 'success');
       navigate('/onboarding');
-    } catch {
-      // The context exposes the failure through `authError` / a toast.
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to create account. Please try again.';
+      setFormError(msg);
+      showToast(msg, 'info');
     } finally {
       setLoading(false);
     }
   };
+
+  const displayedError = formError || authError;
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -62,6 +116,16 @@ export const Signup: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-cream-50 py-8 px-6 sm:px-10 shadow-soft-xl rounded-3xl border border-sand-200/90 space-y-6">
+          {displayedError && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                <span className="font-semibold block">Registration Error</span>
+                <span>{displayedError}</span>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1.5">
@@ -72,9 +136,13 @@ export const Signup: React.FC = () => {
                   type="text"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearErrors();
+                  }}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
                   placeholder="e.g. Jane Doe"
+                  autoComplete="name"
                 />
                 <User className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -88,10 +156,16 @@ export const Signup: React.FC = () => {
                 <input
                   type="text"
                   required
+                  minLength={3}
+                  maxLength={50}
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    clearErrors();
+                  }}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
                   placeholder="e.g. janedoe"
+                  autoComplete="username"
                 />
                 <AtSign className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -106,9 +180,13 @@ export const Signup: React.FC = () => {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearErrors();
+                  }}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
                   placeholder="you@example.com"
+                  autoComplete="email"
                 />
                 <Mail className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -122,10 +200,15 @@ export const Signup: React.FC = () => {
                 <input
                   type="password"
                   required
+                  minLength={6}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearErrors();
+                  }}
                   className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
-                  placeholder="••••••••"
+                  placeholder="•••••••• (at least 6 characters)"
+                  autoComplete="new-password"
                 />
                 <Lock className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
               </div>
@@ -139,13 +222,30 @@ export const Signup: React.FC = () => {
                 <input
                   type="password"
                   required
+                  minLength={6}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-cream-100/60 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600 focus:bg-cream-50"
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    clearErrors();
+                  }}
+                  className={`w-full bg-cream-100/60 border rounded-2xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:bg-cream-50 ${
+                    passwordsMismatch
+                      ? 'border-rose-400 focus:ring-rose-500'
+                      : passwordsMatch
+                      ? 'border-emerald-500 focus:ring-emerald-500'
+                      : 'border-sand-300 focus:ring-cognac-600'
+                  }`}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                 />
                 <Lock className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
+                {passwordsMatch && (
+                  <Check className="w-4 h-4 text-emerald-600 absolute right-3.5 top-3" />
+                )}
               </div>
+              {passwordsMismatch && (
+                <p className="text-[11px] text-rose-600 mt-1 pl-1">Passwords do not match</p>
+              )}
             </div>
 
             <div className="flex items-center gap-2 pt-1">
@@ -153,7 +253,10 @@ export const Signup: React.FC = () => {
                 id="terms"
                 type="checkbox"
                 checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
+                onChange={(e) => {
+                  setAgreeTerms(e.target.checked);
+                  clearErrors();
+                }}
                 className="w-4 h-4 rounded text-cognac-600 focus:ring-cognac-500 border-sand-300"
               />
               <label htmlFor="terms" className="text-xs text-charcoal-600">

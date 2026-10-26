@@ -283,10 +283,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setAuthError(null);
 
       const [items, feedPosts, cols, notifs] = await Promise.all([
-        api.wardrobe.list(),
-        api.posts.listFeed(),
-        api.saved.listCollections(),
-        api.notifications.list(),
+        api.wardrobe.list().catch(() => []),
+        api.posts.listFeed().catch(() => []),
+        api.saved.listCollections().catch(() => []),
+        api.notifications.list().catch(() => []),
       ]);
       setWardrobe(items);
       setPosts(feedPosts);
@@ -398,8 +398,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const login = async (emailOrUsername: string, password: string) => {
     setAuthError(null);
     try {
-      await api.auth.login({ username_or_email: emailOrUsername, password });
-      await refreshData();
+      await api.auth.login({ username_or_email: emailOrUsername.trim(), password });
+      const user = await api.auth.getMe();
+      setCurrentUserState(user);
+      syncSettingsFromUser(user);
+
+      Promise.allSettled([
+        api.wardrobe.list().then(setWardrobe),
+        api.posts.listFeed().then(setPosts),
+        api.saved.listCollections().then(setCollections),
+        api.notifications.list().then(setNotifications),
+      ]).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setAuthError(message);
@@ -411,12 +420,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAuthError(null);
     try {
       await api.auth.register({
-        username: data.username,
-        email: data.email,
+        username: data.username.trim(),
+        email: data.email.trim().toLowerCase(),
         password: data.password,
-        display_name: data.name,
+        display_name: data.name.trim(),
       });
-      await refreshData();
+      const user = await api.auth.getMe();
+      setCurrentUserState(user);
+      syncSettingsFromUser(user);
+
+      Promise.allSettled([
+        api.wardrobe.list().then(setWardrobe),
+        api.posts.listFeed().then(setPosts),
+        api.saved.listCollections().then(setCollections),
+        api.notifications.list().then(setNotifications),
+      ]).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
       setAuthError(message);

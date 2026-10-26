@@ -9,6 +9,14 @@ class ModelManager:
     def __init__(self, model_dir: str = settings.AI_MODEL_PATH):
         self.model_dir = model_dir
         os.makedirs(self.model_dir, exist_ok=True)
+        self.recommendation_model = recommendation_model
+
+    def get_model(self):
+        """Return the recommendation model instance.
+        If a trained ML model artifact is loaded, it executes ML inference.
+        Otherwise, it provides deterministic compatibility scoring fallback.
+        """
+        return self.recommendation_model
 
     def load_recommendation_model(self) -> None:
         model_path = os.path.join(self.model_dir, "recommendation_rf.joblib")

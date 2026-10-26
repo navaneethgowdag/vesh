@@ -43,6 +43,7 @@ export const DailyFit: React.FC = () => {
     cycleDailyFit,
     showToast,
     currentUser,
+    dailyFitError,
   } = useApp();
 
   const [whyModalOpen, setWhyModalOpen] = useState(false);
@@ -52,6 +53,41 @@ export const DailyFit: React.FC = () => {
   const navigate = useNavigate();
 
   if (!dailyFit) {
+    if (dailyFitError) {
+      return (
+        <AppShell>
+          <div className="text-center py-16 px-6 bg-cream-50 rounded-3xl border border-sand-200 max-w-xl mx-auto my-12">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 mx-auto mb-3">
+              <Info className="w-6 h-6" />
+            </div>
+            <h2 className="font-serif text-xl font-bold text-charcoal-900">
+              Daily Fit Recommendation Unavailable
+            </h2>
+            <p className="text-xs sm:text-sm text-charcoal-600 mt-2 max-w-md mx-auto">
+              {dailyFitError}
+            </p>
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => cycleDailyFit()}
+                icon={<RefreshCw className="w-4 h-4" />}
+              >
+                Retry
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => navigate('/wardrobe')}
+              >
+                Go to Wardrobe
+              </Button>
+            </div>
+          </div>
+        </AppShell>
+      );
+    }
+
     return (
       <AppShell>
         <div className="text-center py-20 bg-cream-50 rounded-3xl border border-sand-200">

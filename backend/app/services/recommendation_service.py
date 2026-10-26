@@ -81,7 +81,8 @@ class RecommendationService:
         if not candidates:
             candidates = [wardrobe[:min(4, len(wardrobe))]]
 
-        # 5. Score candidates
+        # 5. Score candidates using reused model instance
+        ml_model = model_manager.get_model()
         scored_candidates = []
         for candidate_items in candidates:
             score_data = self._score_candidate(
@@ -91,6 +92,7 @@ class RecommendationService:
                 weather=weather,
                 occasion=occasion,
                 target_season=target_season,
+                ml_model=ml_model,
             )
             scored_candidates.append((candidate_items, score_data))
 
@@ -112,6 +114,8 @@ class RecommendationService:
             season=target_season,
         )
 
+        model_ver = "ml-rf-v1" if (ml_model and getattr(ml_model, "is_trained", False)) else "deterministic-v1"
+
         # 7. Save recommendation record in database with actual Neon columns
         rec = self.rec_repo.create(
             user_id=user_id,
@@ -124,7 +128,7 @@ class RecommendationService:
             rain_probability=float(rain_prob),
             occasion=occasion,
             season=target_season,
-            model_version="open-meteo-v1",
+            model_version=model_ver,
         )
 
         return rec
@@ -179,6 +183,7 @@ class RecommendationService:
         weather: Dict[str, Any],
         occasion: str,
         target_season: str,
+        ml_model: Optional[Any] = None,
     ) -> Dict[str, Any]:
         # 1. Compatibility
         compat = compatibility_engine.evaluate_compatibility(
@@ -272,6 +277,8 @@ class RecommendationService:
         feature_dict = {
             "style_match": style_match,
             "color_match": color_match,
+            "color_harmony": color_match,
+            "style_harmony": style_match,
             "category_match": category_match,
             "weather_match": weather_score,
             "occasion_match": occasion_match,
@@ -282,8 +289,8 @@ class RecommendationService:
             "wear_count_ratio": 0.5,
         }
 
-        ml_model = model_manager.get_model()
-        ml_score = ml_model.predict_score(feature_dict)
+        active_model = ml_model if ml_model is not None else model_manager.get_model()
+        ml_score = active_model.predict_score(feature_dict)
 
         # Final blended score
         total_score = round(0.40 * ml_score + 0.35 * compat_score + 0.25 * learned_score, 3)
