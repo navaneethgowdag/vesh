@@ -26,6 +26,7 @@ def follow_user(
     success = repo.follow_user(follower_id=current_user.id, following_id=user_id)
     cache_service.invalidate_stories(current_user.id)
     cache_service.invalidate_feed()
+    cache_service.invalidate_moments(current_user.id)
     return {"following": success}
 
 
@@ -39,6 +40,7 @@ def unfollow_user(
     success = repo.unfollow_user(follower_id=current_user.id, following_id=user_id)
     cache_service.invalidate_stories(current_user.id)
     cache_service.invalidate_feed()
+    cache_service.invalidate_moments(current_user.id)
     return {"following": not success}
 
 

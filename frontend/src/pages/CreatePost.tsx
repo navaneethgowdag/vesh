@@ -37,9 +37,9 @@ export const CreatePost: React.FC = () => {
   const { wardrobe, publishPost, showToast } = useApp();
   const currentUser = useCurrentUser();
 
-  const [publishType, setPublishType] = useState<'post' | 'moment' | 'story'>(() => {
+  const [publishType, setPublishType] = useState<'post' | 'moment'>(() => {
     const t = searchParams.get('type');
-    return t === 'story' ? 'story' : t === 'moment' ? 'moment' : 'post';
+    return t === 'moment' ? 'moment' : 'post';
   });
   const [image, setImage] = useState('');
   const [caption, setCaption] = useState('');
@@ -132,13 +132,6 @@ export const CreatePost: React.FC = () => {
         });
         showToast('Permanent outfit post published to profile & Following feed', 'success');
         navigate('/home?tab=following');
-      } else if (publishType === 'story') {
-        await api.posts.createStory({
-          image_url: image,
-          caption: caption.trim(),
-        });
-        showToast('24-Hour Instant Story published for your followers!', 'success');
-        navigate('/home?tab=following');
       } else {
         await api.moments.create({
           image_url: image,
@@ -176,7 +169,7 @@ export const CreatePost: React.FC = () => {
           <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-2">
             Publication Channel
           </label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setPublishType('post')}
@@ -191,18 +184,6 @@ export const CreatePost: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setPublishType('story')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                publishType === 'story'
-                  ? 'bg-charcoal-900 text-cream-50 shadow-md ring-2 ring-cognac-600'
-                  : 'bg-sand-100/70 text-charcoal-700 hover:bg-sand-200/70'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-cognac-400 flex-shrink-0" />
-              <span className="truncate">Instant Story (24h)</span>
-            </button>
-            <button
-              type="button"
               onClick={() => setPublishType('moment')}
               className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 publishType === 'moment'
@@ -211,7 +192,7 @@ export const CreatePost: React.FC = () => {
               }`}
             >
               <Clock className="w-4 h-4 text-cognac-400 flex-shrink-0" />
-              <span className="truncate">24h Moment</span>
+              <span className="truncate">24h Outfit Moment</span>
             </button>
           </div>
           <div className="mt-2.5 px-2 text-[11px] text-charcoal-500 flex items-center gap-1.5">
@@ -220,15 +201,10 @@ export const CreatePost: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
                 <span>Permanent Post: Stays on your profile grid indefinitely and appears in your followers' Following feed.</span>
               </>
-            ) : publishType === 'story' ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-cognac-500 inline-block flex-shrink-0" />
-                <span>Instant Story: Appears exclusively in your followers' Instant Stories bar. Automatically expires in 24 hours.</span>
-              </>
             ) : (
               <>
                 <span className="w-2 h-2 rounded-full bg-amber-500 inline-block flex-shrink-0" />
-                <span>24-Hour Moment: Featured in the Tinder-style For You discovery swipe deck. Automatically expires after 24h.</span>
+                <span>24-Hour Moment: Shared exclusively with users who follow you. Automatically expires after 24 hours.</span>
               </>
             )}
           </div>

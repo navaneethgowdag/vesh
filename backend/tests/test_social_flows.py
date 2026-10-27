@@ -171,6 +171,12 @@ def test_scenario_c_outfit_moments_discovery_like_skip(client: TestClient):
     user_b = register_user(client, prefix="skipper_b", display_name="Skipper B")
     user_c = register_user(client, prefix="liker_c", display_name="Liker C")
 
+    # Following-only audience connections: B and C follow A
+    follow_b_a = client.post(f"/api/v1/social/follow/{user_a['id']}", headers=user_b["headers"])
+    assert follow_b_a.status_code in (200, 204)
+    follow_c_a = client.post(f"/api/v1/social/follow/{user_a['id']}", headers=user_c["headers"])
+    assert follow_c_a.status_code in (200, 204)
+
     # 1. User A publishes a 24-hour moment
     create_res = client.post(
         "/api/v1/moments",

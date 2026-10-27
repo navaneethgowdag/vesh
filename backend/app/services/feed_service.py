@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.clothing import Clothing
 from app.repositories.social_repository import SocialRepository
 from app.repositories.wardrobe_repository import WardrobeRepository
-from app.services.cache_service import cache_service, TTL_STORIES
+from app.services.cache_service import cache_service
 from app.services.image_service import image_service
 
 
@@ -121,62 +121,6 @@ class FeedService:
             posts = self.social_repo.list_feed(limit=limit, offset=offset, exclude_user_id=current_user_id)
         return self._format_posts_batch(posts, current_user_id)
 
-    def get_stories(self, current_user_id: Optional[UUID] = None, limit: int = 20) -> List[Dict[str, Any]]:
-        """
-        Instant Stories must display active 24-hour content exclusively from
-        accounts the authenticated user currently follows.
-        """
-        if not current_user_id:
-            return []
-
-        cache_key = cache_service.build_key("stories", f"user_{current_user_id}")
-        cached = cache_service.get(cache_key)
-        if cached is not None:
-            return cached
-
-        following_ids = self.social_repo.get_following_user_ids(current_user_id)
-        if not following_ids:
-            return []
-
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-        stories = self.social_repo.list_stories(
-            user_ids=following_ids,
-            cutoff=cutoff,
-            limit=limit,
-        )
-        stories = [s for s in stories if s.user_id != current_user_id]
-        formatted = self._format_posts_batch(stories, current_user_id)
-        cache_service.set(cache_key, formatted, ttl_seconds=TTL_STORIES)
-        return formatted
-
-    def get_my_stories(self, current_user_id: UUID) -> List[Dict[str, Any]]:
-        """
-        Returns active 24-hour stories published by the current user.
-        """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-        stories = self.social_repo.list_user_stories(user_id=current_user_id, cutoff=cutoff)
-        return self._format_posts_batch(stories, current_user_id)
-
-    def create_story(
-        self,
-        user_id: UUID,
-        image_url: str,
-        caption: Optional[str] = "",
-    ) -> Dict[str, Any]:
-        safe_image_url = image_service.save_from_base64_if_needed(image_url)
-        clean_text = (caption or "").strip()
-        encoded_caption = f"{self.STORY_PREFIX}{clean_text}"
-        post = Post(
-            user_id=user_id,
-            caption=encoded_caption,
-            image_url=safe_image_url,
-        )
-        self.db.add(post)
-        self.db.commit()
-        self.db.refresh(post)
-        cache_service.invalidate_stories()
-        return self._format_post(post, user_id)
-
     def get_posts_by_user(
         self,
         user_id: UUID,
@@ -197,18 +141,14 @@ class FeedService:
         user_id: UUID,
         caption: str,
         image_url: str,
-        is_story: bool = False,
         **extra,
     ) -> Dict[str, Any]:
-        if is_story:
-            return self.create_story(user_id=user_id, image_url=image_url, caption=caption)
         safe_image_url = image_service.save_from_base64_if_needed(image_url)
         post = self.social_repo.create_post(
             user_id=user_id,
             caption=caption,
             image_url=safe_image_url,
         )
-        cache_service.invalidate_stories()
         cache_service.invalidate_feed()
         return self._format_post(post, user_id)
 

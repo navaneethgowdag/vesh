@@ -74,45 +74,6 @@ class SocialRepository:
         rows = self.db.query(Follow.following_id).filter(Follow.follower_id == follower_id).all()
         return [r[0] for r in rows]
 
-    def list_stories(self, user_ids: List[UUID], cutoff: Any, limit: int = 20) -> List[Post]:
-        if not user_ids:
-            return []
-        return (
-            self.db.query(Post)
-            .options(
-                joinedload(Post.user),
-                selectinload(Post.comments).joinedload(Comment.user),
-            )
-            .filter(
-                Post.user_id.in_(user_ids),
-                Post.caption.like("[STORY:24H:%"),
-                Post.created_at >= cutoff,
-                Post.image_url.isnot(None),
-                Post.image_url != "",
-            )
-            .order_by(Post.created_at.desc())
-            .limit(limit)
-            .all()
-        )
-
-    def list_user_stories(self, user_id: UUID, cutoff: Any) -> List[Post]:
-        return (
-            self.db.query(Post)
-            .options(
-                joinedload(Post.user),
-                selectinload(Post.comments).joinedload(Comment.user),
-            )
-            .filter(
-                Post.user_id == user_id,
-                Post.caption.like("[STORY:24H:%"),
-                Post.created_at >= cutoff,
-                Post.image_url.isnot(None),
-                Post.image_url != "",
-            )
-            .order_by(Post.created_at.desc())
-            .all()
-        )
-
     def get_feed_interactions_batch(
         self,
         current_user_id: Optional[UUID],

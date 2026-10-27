@@ -77,6 +77,7 @@ interface AppContextType {
   }) => Promise<void>;
   toggleFollowUser: (userId: string) => Promise<boolean>;
   isFollowingUser: (userId: string) => boolean;
+  followingIds: string[];
   wearDailyFit: () => Promise<void>;
   cycleDailyFit: () => void;
   createCollection: (name: string, description?: string, coverImage?: string) => Promise<Collection>;
@@ -870,6 +871,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deletePost,
         toggleFollowUser,
         isFollowingUser,
+        followingIds,
         wearDailyFit,
         cycleDailyFit,
         createCollection,

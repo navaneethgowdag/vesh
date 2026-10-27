@@ -58,6 +58,21 @@ def publish_moment(
     )
 
 
+@router.get("/{moment_id}", response_model=MomentResponse)
+def get_moment(
+    moment_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """
+    Get a single 24-hour outfit moment by ID.
+    Enforces expiration check and following-only audience authorization rule.
+    """
+    service = MomentService(db)
+    viewer_id = current_user.id if current_user else None
+    return service.get_moment_by_id(moment_id=moment_id, viewer_id=viewer_id)
+
+
 @router.delete("/{moment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_moment(
     moment_id: UUID,

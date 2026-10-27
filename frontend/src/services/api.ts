@@ -376,92 +376,6 @@ export const api = {
       }));
     },
 
-    async getStories(): Promise<Post[]> {
-      const posts = await request<any[]>('/posts/stories');
-      return posts.map((p) => ({
-        id: String(p.id),
-        user: {
-          id: String(p.user?.id || ''),
-          name: p.user?.name || 'User',
-          username: p.user?.username || 'user',
-          avatar: p.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-          isVerified: p.user?.is_verified,
-          isFollowing: p.user?.is_following,
-        },
-        image: p.image_url,
-        caption: p.caption,
-        tags: p.tags || [],
-        taggedItems: [],
-        occasion: (p.occasion as Occasion) || 'Casual Daily',
-        location: p.location,
-        likesCount: p.likes_count || 0,
-        commentsCount: p.comments_count || 0,
-        savesCount: p.saves_count || 0,
-        isLiked: p.is_liked || false,
-        isSaved: p.is_saved || false,
-        comments: [],
-        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
-      }));
-    },
-
-    async getMyStories(): Promise<Post[]> {
-      const posts = await request<any[]>('/posts/stories/me');
-      return posts.map((p) => ({
-        id: String(p.id),
-        user: {
-          id: String(p.user?.id || ''),
-          name: p.user?.name || 'User',
-          username: p.user?.username || 'user',
-          avatar: p.user?.avatar || '',
-          isVerified: p.user?.is_verified,
-          isFollowing: false,
-        },
-        image: p.image_url,
-        caption: p.caption,
-        tags: p.tags || [],
-        taggedItems: [],
-        occasion: (p.occasion as Occasion) || 'Casual Daily',
-        location: p.location,
-        likesCount: p.likes_count || 0,
-        commentsCount: p.comments_count || 0,
-        savesCount: p.saves_count || 0,
-        isLiked: false,
-        isSaved: false,
-        comments: [],
-        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
-      }));
-    },
-
-    async createStory(storyData: { image_url: string; caption?: string }): Promise<Post> {
-      const p = await request<any>('/posts/stories', {
-        method: 'POST',
-        body: JSON.stringify(storyData),
-      });
-      return {
-        id: String(p.id),
-        user: {
-          id: String(p.user?.id || ''),
-          name: p.user?.name || 'User',
-          username: p.user?.username || 'user',
-          avatar: p.user?.avatar || '',
-          isVerified: p.user?.is_verified,
-        },
-        image: p.image_url,
-        caption: p.caption,
-        tags: [],
-        taggedItems: [],
-        occasion: 'Casual Daily',
-        location: undefined,
-        likesCount: 0,
-        commentsCount: 0,
-        savesCount: 0,
-        isLiked: false,
-        isSaved: false,
-        comments: [],
-        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
-      };
-    },
-
     async create(postData: {
       caption: string;
       image_url: string;
@@ -470,7 +384,6 @@ export const api = {
       occasion?: string;
       tags: string[];
       tagged_item_ids: string[];
-      is_story?: boolean;
     }): Promise<Post> {
       const p = await request<any>('/posts', {
         method: 'POST',
@@ -579,6 +492,29 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      return {
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: m.user?.avatar || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: m.image_url,
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+      };
+    },
+
+    async get(id: string): Promise<OutfitMoment> {
+      const m = await request<any>(`/moments/${id}`);
       return {
         id: String(m.id),
         user: {

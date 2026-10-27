@@ -178,7 +178,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             <Button
               variant="primary"
               size="sm"
-              onClick={() => navigate('/create')}
+              onClick={() => navigate('/create?type=moment')}
               icon={<PlusCircle className="w-3.5 h-3.5" />}
               className="w-full sm:w-auto"
             >

@@ -211,6 +211,12 @@ class CacheService:
         """Invalidate cached feed segments."""
         self.delete_pattern("feed:*")
 
+    def invalidate_moments(self, user_id: Optional[Any] = None) -> None:
+        """Invalidate cached moment feeds."""
+        if user_id:
+            self.delete(self.build_key("moments", f"user_{user_id}"))
+        self.delete_pattern("moments:*")
+
     def invalidate_user_profile(self, username: str) -> None:
         """Invalidate public user profile cache."""
         self.delete(self.build_key("users:profile", username))

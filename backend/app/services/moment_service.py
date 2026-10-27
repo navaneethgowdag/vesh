@@ -3,13 +3,16 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any, Set
 from uuid import UUID
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_, and_
 from fastapi import HTTPException, status
 from app.models.post import Post
 from app.models.like import Like
+from app.models.follow import Follow
 from app.models.user import User
 from app.models.notification import Notification
 from app.repositories.social_repository import SocialRepository
 from app.services.image_service import image_service
+from app.services.cache_service import cache_service
 from app.core.redis import get_redis_client
 
 
@@ -113,7 +116,27 @@ class MomentService:
         self.db.add(post)
         self.db.commit()
         self.db.refresh(post)
+        cache_service.invalidate_moments()
         return self._format_moment(post, user_id)
+
+    def is_viewer_eligible(self, creator_id: UUID, viewer_id: Optional[UUID]) -> bool:
+        """
+        Following-Only Audience Rule:
+        A moment created by creator A is visible to viewer V if and only if:
+        V follows A.
+        The creator themselves is always eligible to view their own moment.
+        Unauthenticated viewers (viewer_id is None) are not eligible.
+        """
+        if not viewer_id:
+            return False
+        if creator_id == viewer_id:
+            return True
+        is_following = (
+            self.db.query(Follow.id)
+            .filter(Follow.follower_id == viewer_id, Follow.following_id == creator_id)
+            .first()
+        )
+        return is_following is not None
 
     def get_discovery_feed(
         self,
@@ -123,30 +146,42 @@ class MomentService:
     ) -> List[Dict[str, Any]]:
         """
         Returns active unexpired 24-hour outfit moments for For You discovery.
+        Following-Only Audience Rule:
+        Only shows moments from creators where:
+        current_user follows creator.
         Excludes current user's own moments, already liked moments, and skipped moments.
+        Unauthenticated requests receive [].
         """
+        if not current_user_id:
+            return []
+
         cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+
+        following_subq = (
+            self.db.query(Follow.following_id)
+            .filter(Follow.follower_id == current_user_id)
+            .scalar_subquery()
+        )
+
         q = (
             self.db.query(Post)
             .options(joinedload(Post.user), joinedload(Post.likes))
             .filter(
                 Post.caption.like(f"{self.MOMENT_PREFIX}%"),
                 Post.created_at >= cutoff,
+                Post.user_id != current_user_id,
+                Post.user_id.in_(following_subq),
             )
         )
 
-        if current_user_id:
-            # Exclude own moments
-            q = q.filter(Post.user_id != current_user_id)
+        # Exclude already liked moments
+        liked_subq = self.db.query(Like.post_id).filter(Like.user_id == current_user_id).scalar_subquery()
+        q = q.filter(~Post.id.in_(liked_subq))
 
-            # Exclude already liked moments
-            liked_subq = self.db.query(Like.post_id).filter(Like.user_id == current_user_id).scalar_subquery()
-            q = q.filter(~Post.id.in_(liked_subq))
-
-            # Exclude skipped moments
-            skipped_ids = self._get_skipped_ids(current_user_id)
-            if skipped_ids:
-                q = q.filter(~Post.id.in_(skipped_ids))
+        # Exclude skipped moments
+        skipped_ids = self._get_skipped_ids(current_user_id)
+        if skipped_ids:
+            q = q.filter(~Post.id.in_(skipped_ids))
 
         moments = (
             q.order_by(Post.created_at.desc())
@@ -155,6 +190,38 @@ class MomentService:
             .all()
         )
         return [self._format_moment(m, current_user_id) for m in moments]
+
+    def get_moment_by_id(self, moment_id: UUID, viewer_id: Optional[UUID]) -> Dict[str, Any]:
+        """
+        Retrieves a single moment by ID.
+        Strictly enforces:
+        1. Moment exists and has not expired (within 24h).
+        2. Viewer satisfies the mutual-union audience rule (or is creator).
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        post = (
+            self.db.query(Post)
+            .options(joinedload(Post.user), joinedload(Post.likes))
+            .filter(
+                Post.id == moment_id,
+                Post.caption.like(f"{self.MOMENT_PREFIX}%"),
+                Post.created_at >= cutoff,
+            )
+            .first()
+        )
+        if not post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Outfit moment not found or expired",
+            )
+
+        if not self.is_viewer_eligible(post.user_id, viewer_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to view this outfit moment",
+            )
+
+        return self._format_moment(post, viewer_id)
 
     def get_user_moments(self, user_id: UUID) -> List[Dict[str, Any]]:
         """Returns the authenticated creator's active (unexpired) 24-hour moments."""
@@ -187,6 +254,12 @@ class MomentService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Outfit moment not found or expired",
+            )
+
+        if not self.is_viewer_eligible(post.user_id, user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to interact with this outfit moment",
             )
 
         # Check existing like (concurrency safe)
@@ -225,7 +298,30 @@ class MomentService:
         """
         Skip a moment without liking or creating a notification.
         Persists skip to avoid showing the moment again in For You.
+        Enforces existence, expiration, and audience eligibility.
         """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        post = (
+            self.db.query(Post)
+            .filter(
+                Post.id == moment_id,
+                Post.caption.like(f"{self.MOMENT_PREFIX}%"),
+                Post.created_at >= cutoff,
+            )
+            .first()
+        )
+        if not post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Outfit moment not found or expired",
+            )
+
+        if not self.is_viewer_eligible(post.user_id, user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to interact with this outfit moment",
+            )
+
         self._record_skipped(user_id, moment_id)
         return {"moment_id": moment_id, "action": "skipped", "success": True}
 
@@ -239,3 +335,4 @@ class MomentService:
                 detail="You do not have permission to delete this moment",
             )
         self.social_repo.delete_post(post)
+        cache_service.invalidate_moments()

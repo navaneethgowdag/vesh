@@ -24,6 +24,7 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentUser = useCurrentUser();
+  const { followingIds, isFollowingUser } = useApp();
 
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'for_you' | 'following'>(
@@ -83,17 +84,18 @@ export const Home: React.FC = () => {
     }
   }, []);
 
-  // Initial load
+  // Reload moments and following feed whenever follow relationships change
   useEffect(() => {
     loadForYouMoments();
-  }, [loadForYouMoments]);
-
-  // Load following when tab is switched to following
-  useEffect(() => {
-    if (activeTab === 'following' && followingPosts.length === 0) {
+    if (activeTab === 'following') {
       loadFollowingPosts();
     }
-  }, [activeTab, followingPosts.length, loadFollowingPosts]);
+  }, [loadForYouMoments, loadFollowingPosts, followingIds, activeTab]);
+
+  // Ensure only moments from followed accounts are displayed
+  const visibleMoments = forYouMoments.filter(
+    (m) => m.user && isFollowingUser(m.user.id)
+  );
 
   // Discovery Like Handler (Persists like and sends notification via backend)
   const handleDiscoveryLike = async (moment: OutfitMoment) => {
@@ -114,8 +116,8 @@ export const Home: React.FC = () => {
         </h1>
         <p className="text-xs sm:text-sm text-charcoal-500 mt-1 font-sans">
           {activeTab === 'for_you'
-            ? "Swipe through today's curated aesthetic looks. Right to like, left to pass."
-            : 'Recent wardrobe stories and community looks from curators you follow.'}
+            ? "Swipe through today's 24-hour moments from creators you follow. Right to like, left to pass."
+            : 'Recent outfits and community looks from curators you follow.'}
         </p>
       </div>
 
@@ -123,7 +125,7 @@ export const Home: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-7">
         {/* Share Daily Outfit Card */}
         <div
-          onClick={() => navigate('/create')}
+          onClick={() => navigate('/create?type=moment')}
           className="group cursor-pointer p-4 sm:p-5 rounded-3xl bg-cream-50 hover:bg-sand-100/80 border border-sand-200/90 shadow-soft transition-all duration-300 flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
@@ -135,7 +137,7 @@ export const Home: React.FC = () => {
                 Share Daily Outfit
               </h2>
               <p className="text-[11px] text-charcoal-400">
-                Post today's styling look to the feed
+                Share a 24h outfit moment with your followers
               </p>
             </div>
           </div>
@@ -241,7 +243,7 @@ export const Home: React.FC = () => {
             </div>
           ) : (
             <DiscoveryDeck
-              moments={forYouMoments}
+              moments={visibleMoments}
               onLike={handleDiscoveryLike}
               onSkip={handleDiscoverySkip}
               onRefresh={loadForYouMoments}
