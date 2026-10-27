@@ -21,8 +21,9 @@ import {
   SocialUserSummary,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
+import { getApiBaseUrl } from '../utils/apiUrl';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+export const API_BASE = getApiBaseUrl();
 
 const TOKEN_STORAGE_KEY = 'stylesphere_token';
 
@@ -82,6 +83,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const apiBase = getApiBaseUrl();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> | undefined),
@@ -92,11 +94,30 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    credentials: 'include', // send the HttpOnly session cookie
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}${endpoint}`, {
+      ...options,
+      credentials: 'include', // send the HttpOnly session cookie
+      headers,
+    });
+  } catch (err: any) {
+    if (err instanceof TypeError || err?.name === 'TypeError') {
+      const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+      const isHttpTarget = apiBase.startsWith('http://');
+      if (isHttps && isHttpTarget) {
+        throw new ApiError(
+          0,
+          `Connection blocked (Mixed Content): Secure app cannot send requests to non-secure backend (${apiBase}).`
+        );
+      }
+      throw new ApiError(
+        0,
+        `Unable to reach StyleSphere API server (${apiBase}). Please verify your network or check backend status.`
+      );
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
@@ -285,15 +306,35 @@ export const api = {
     },
 
     async analyzeImage(file?: File, imageUrl?: string): Promise<any> {
+      const apiBase = getApiBaseUrl();
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch(`${API_BASE}/clothing-ai/analyze`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
-        return res.json();
+        const headers: Record<string, string> = {};
+        const token = tokenStorage.get();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        try {
+          const res = await fetch(`${apiBase}/clothing-ai/analyze`, {
+            method: 'POST',
+            credentials: 'include',
+            headers,
+            body: formData,
+          });
+          if (!res.ok) {
+            let detail = `${res.status} ${res.statusText}`;
+            try {
+              const errJson = await res.json();
+              detail = errJson.detail || errJson.message || detail;
+            } catch {}
+            throw new ApiError(res.status, detail);
+          }
+          return res.json();
+        } catch (err: any) {
+          if (err instanceof ApiError) throw err;
+          throw new ApiError(0, `Image analysis failed: ${err.message || 'Network error'}`);
+        }
       }
       return request<any>('/clothing-ai/analyze', {
         method: 'POST',
@@ -564,21 +605,38 @@ export const api = {
   // --- MEDIA STORAGE & OPTIMIZATION ---
   media: {
     async upload(file: File): Promise<{ image_url: string; thumbnail_url: string }> {
+      const apiBase = getApiBaseUrl();
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch(`${API_BASE}/media/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!res.ok) {
-        throw new Error('Failed to upload image asset');
+      const headers: Record<string, string> = {};
+      const token = tokenStorage.get();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
-      const data = await res.json();
-      return {
-        image_url: resolveImageUrl(data.image_url),
-        thumbnail_url: resolveImageUrl(data.thumbnail_url),
-      };
+      try {
+        const res = await fetch(`${apiBase}/media/upload`, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+          body: formData,
+        });
+        if (!res.ok) {
+          let detail = 'Failed to upload image asset';
+          try {
+            const errJson = await res.json();
+            detail = errJson.detail || errJson.message || detail;
+          } catch {}
+          throw new ApiError(res.status, detail);
+        }
+        const data = await res.json();
+        return {
+          image_url: resolveImageUrl(data.image_url),
+          thumbnail_url: resolveImageUrl(data.thumbnail_url),
+        };
+      } catch (err: any) {
+        if (err instanceof ApiError) throw err;
+        throw new ApiError(0, `Image upload failed: ${err.message || 'Network error'}`);
+      }
     },
   },
 

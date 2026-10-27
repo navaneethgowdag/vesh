@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
@@ -15,21 +16,33 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 COOKIE_MAX_AGE = 60 * 60 * 24  # 1 day; JWT expiry still governs real validity
 
 
+def _is_production() -> bool:
+    return settings.APP_ENV.lower() in ("production", "prod") or bool(os.getenv("RENDER"))
+
+
 def _set_session_cookie(response: Response, token: str) -> None:
     """Set the HttpOnly session cookie (browser transport for the JWT)."""
+    is_prod = _is_production()
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=token,
         max_age=COOKIE_MAX_AGE,
         httponly=True,
-        secure=settings.APP_ENV.lower() == "production",
-        samesite="lax",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
         path="/",
     )
 
 
 def _clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
+    is_prod = _is_production()
+    response.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
+    )
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RateLimit(requests=10, window=3600, scope="register"))])
