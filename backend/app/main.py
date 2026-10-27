@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
@@ -41,17 +41,26 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# CORS configuration
-origins = [
+# CORS configuration - robust multi-origin support with trailing slash stripping
+raw_origins = [
     settings.FRONTEND_URL,
+    os.getenv("ADDITIONAL_CORS_ORIGINS", ""),
+    "https://vesh.onrender.com",
+    "https://vesh-backend-5sx2.onrender.com",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# Deduplicate while preserving order
-allowed_origins = list(dict.fromkeys(origins))
+allowed_origins: list[str] = []
+for entry in raw_origins:
+    if not entry:
+        continue
+    for item in entry.split(","):
+        cleaned = item.strip().rstrip("/")
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,13 +86,75 @@ os.makedirs(os.path.join(static_dir, "uploads"), exist_ok=True)
 app.mount("/static", CORSStaticFiles(directory=static_dir), name="static")
 
 
+@app.get("/", tags=["root"], operation_id="root_endpoint")
+def root_endpoint():
+    """
+    Root service endpoint directing developers to OpenAPI documentation and health checks.
+    """
+    return {
+        "service": "StyleSphere API",
+        "status": "running",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+        "ready": "/ready",
+    }
+
+
+@app.head("/", include_in_schema=False)
+def root_head():
+    """Support HEAD / probes from Render and reverse proxies."""
+    return Response(status_code=status.HTTP_200_OK)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon_endpoint():
+    """Silence browser favicon requests without generating 404 warnings."""
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @app.get("/health", tags=["health"])
 def health_check():
+    """
+    Lightweight liveness probe for basic process uptime.
+    Does not query database to keep heartbeat overhead zero.
+    """
     return {
         "status": "ok",
         "app": "StyleSphere",
         "version": "1.0.0",
         "env": settings.APP_ENV,
+    }
+
+
+@app.get("/ready", tags=["health"])
+@app.get("/health/ready", tags=["health"])
+@app.get("/api/v1/ready", tags=["health"])
+def readiness_check(response: Response):
+    """
+    Dependency readiness probe. Verifies that Neon PostgreSQL is reachable
+    via a lightweight SELECT 1 query before orchestrators route live traffic.
+    Returns HTTP 200 when ready, HTTP 503 when dependencies fail.
+    """
+    db_ok = verify_database_connection()
+    redis_health = check_redis_health()
+    is_ready = db_ok
+
+    if not is_ready:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "not_ready",
+            "app": "StyleSphere",
+            "database": "disconnected",
+            "redis": redis_health["status"],
+            "detail": "Database connection check failed",
+        }
+
+    return {
+        "status": "ready",
+        "app": "StyleSphere",
+        "database": "Neon PostgreSQL",
+        "redis": redis_health["status"],
     }
 
 
@@ -116,4 +187,5 @@ def api_health_check():
 
 # Include all v1 API routes
 app.include_router(api_router, prefix="/api/v1")
+
 

@@ -57,4 +57,10 @@ ai_models/
 *.pkl
 *.joblib
 *.pt
-*.pth
+*.pth
+
+# --- Uploaded static assets ---
+backend/static/uploads/*.webp
+backend/static/uploads/*.jpg
+backend/static/uploads/*.jpeg
+backend/static/uploads/*.png
