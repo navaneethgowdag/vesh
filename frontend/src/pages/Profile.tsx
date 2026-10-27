@@ -22,9 +22,11 @@ import { StyleChip } from '../components/ui/StyleChip';
 import { PostCard } from '../components/feed/PostCard';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
 import { EditProfileModal } from '../components/profile/EditProfileModal';
+import { UserListModal } from '../components/social/UserListModal';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
 import { OutfitMoment } from '../types';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
 
 export const Profile: React.FC = () => {
   const { posts, wardrobe, collections, showToast } = useApp();
@@ -33,6 +35,24 @@ export const Profile: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'Posts' | 'Moments' | 'Outfits' | 'Saved' | 'Collections'>('Posts');
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [userListModalOpen, setUserListModalOpen] = useState(false);
+  const [userListInitialTab, setUserListInitialTab] = useState<'followers' | 'following'>('followers');
+
+  const formatStatCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 10000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toLocaleString();
+  };
+
+  const openFollowersModal = () => {
+    setUserListInitialTab('followers');
+    setUserListModalOpen(true);
+  };
+
+  const openFollowingModal = () => {
+    setUserListInitialTab('following');
+    setUserListModalOpen(true);
+  };
 
   const [myMoments, setMyMoments] = useState<OutfitMoment[]>([]);
   const [isLoadingMoments, setIsLoadingMoments] = useState(false);
@@ -144,18 +164,30 @@ export const Profile: React.FC = () => {
                 </span>
                 <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Posts</span>
               </div>
-              <div className="text-center sm:text-left">
-                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {(currentUser.followersCount / 1000).toFixed(1)}K
+              <button
+                type="button"
+                onClick={openFollowersModal}
+                className="text-center sm:text-left group cursor-pointer focus:outline-none"
+              >
+                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block group-hover:text-cognac-700 transition-colors">
+                  {formatStatCount(currentUser.followersCount || 0)}
                 </span>
-                <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Followers</span>
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {currentUser.followingCount}
+                <span className="text-[11px] text-charcoal-500 uppercase font-semibold group-hover:text-charcoal-800 transition-colors">
+                  Followers
                 </span>
-                <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Following</span>
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={openFollowingModal}
+                className="text-center sm:text-left group cursor-pointer focus:outline-none"
+              >
+                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block group-hover:text-cognac-700 transition-colors">
+                  {formatStatCount(currentUser.followingCount || 0)}
+                </span>
+                <span className="text-[11px] text-charcoal-500 uppercase font-semibold group-hover:text-charcoal-800 transition-colors">
+                  Following
+                </span>
+              </button>
               <div className="text-center sm:text-left">
                 <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
                   {wardrobe.length}
@@ -390,7 +422,16 @@ export const Profile: React.FC = () => {
               key={col.id}
               className="bg-cream-50 rounded-2xl border border-sand-200 overflow-hidden shadow-soft"
             >
-              <img src={col.coverImage} alt={col.name} className="w-full aspect-[4/3] object-cover" />
+              <img
+                src={resolveImageUrl(col.coverImage) || FALLBACK_POST_IMAGE}
+                alt={col.name}
+                onError={(e) => {
+                  if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                    e.currentTarget.src = FALLBACK_POST_IMAGE;
+                  }
+                }}
+                className="w-full aspect-[4/3] object-cover"
+              />
               <div className="p-3">
                 <p className="font-serif font-bold text-xs text-charcoal-900 truncate">{col.name}</p>
                 <p className="text-[10px] text-charcoal-500">{col.itemCount} items</p>
@@ -400,6 +441,15 @@ export const Profile: React.FC = () => {
         </div>
       )}
       <EditProfileModal isOpen={isEditProfileOpen} onClose={() => setIsEditProfileOpen(false)} />
+      <UserListModal
+        isOpen={userListModalOpen}
+        onClose={() => setUserListModalOpen(false)}
+        userId={currentUser.id}
+        username={currentUser.username}
+        initialTab={userListInitialTab}
+        followersCount={currentUser.followersCount}
+        followingCount={currentUser.followingCount}
+      />
     </AppShell>
   );
 };

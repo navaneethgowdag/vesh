@@ -297,16 +297,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       syncSettingsFromUser(user);
       setAuthError(null);
 
-      const [items, feedPosts, cols, notifs] = await Promise.all([
+      const [items, feedPosts, cols, notifs, followingUsers] = await Promise.all([
         api.wardrobe.list().catch(() => []),
         api.posts.listFeed().catch(() => []),
         api.saved.listCollections().catch(() => []),
         api.notifications.list().catch(() => []),
+        api.social.getFollowing(user.id).catch(() => []),
       ]);
       setWardrobe(items);
       setPosts(feedPosts);
       setCollections(cols);
       setNotifications(notifs);
+      setFollowingIds(followingUsers.map((u) => u.id));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setCurrentUserState(null);
@@ -476,6 +478,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         api.posts.listFeed().then(setPosts),
         api.saved.listCollections().then(setCollections),
         api.notifications.list().then(setNotifications),
+        api.social.getFollowing(user.id).then((users) => setFollowingIds(users.map((u) => u.id))),
       ]).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
@@ -502,6 +505,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         api.posts.listFeed().then(setPosts),
         api.saved.listCollections().then(setCollections),
         api.notifications.list().then(setNotifications),
+        api.social.getFollowing(user.id).then((users) => setFollowingIds(users.map((u) => u.id))),
       ]).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
@@ -720,16 +724,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Follow actions (persisted in Neon `follows`)
   const toggleFollowUser = async (userId: string) => {
     const isCurrentlyFollowing = followingIds.includes(userId);
-    if (isCurrentlyFollowing) {
-      await api.social.unfollow(userId);
-      setFollowingIds((prev) => prev.filter((id) => id !== userId));
-      showToast('Unfollowed', 'info');
-      return false;
+    const prevFollowingIds = [...followingIds];
+    const prevFollowingCount = currentUser?.followingCount ?? 0;
+
+    // Optimistic UI updates
+    setFollowingIds((prev) =>
+      isCurrentlyFollowing ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+    if (currentUser) {
+      setCurrentUserState((prev) =>
+        prev
+          ? {
+              ...prev,
+              followingCount: Math.max(0, prev.followingCount + (isCurrentlyFollowing ? -1 : 1)),
+            }
+          : prev
+      );
     }
-    await api.social.follow(userId);
-    setFollowingIds((prev) => [...prev, userId]);
-    showToast('Followed creator', 'info');
-    return true;
+
+    try {
+      if (isCurrentlyFollowing) {
+        await api.social.unfollow(userId);
+        showToast('Unfollowed', 'info');
+        return false;
+      } else {
+        await api.social.follow(userId);
+        showToast('Followed creator', 'info');
+        return true;
+      }
+    } catch (err) {
+      // Rollback on failure
+      setFollowingIds(prevFollowingIds);
+      if (currentUser) {
+        setCurrentUserState((prev) =>
+          prev ? { ...prev, followingCount: prevFollowingCount } : prev
+        );
+      }
+      showToast(err instanceof Error ? err.message : 'Follow action failed', 'info');
+      throw err;
+    }
   };
 
   const isFollowingUser = (userId: string) => {

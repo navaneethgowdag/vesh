@@ -13,6 +13,7 @@ import { AppShell } from '../components/layout/AppShell';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { PostCard } from '../components/feed/PostCard';
+import { UserListModal } from '../components/social/UserListModal';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { User } from '../types';
@@ -25,6 +26,24 @@ export const UserProfile: React.FC = () => {
   const [creator, setCreator] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Outfits' | 'Saved'>('Outfits');
+  const [userListModalOpen, setUserListModalOpen] = useState(false);
+  const [userListInitialTab, setUserListInitialTab] = useState<'followers' | 'following'>('followers');
+
+  const formatStatCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 10000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toLocaleString();
+  };
+
+  const openFollowersModal = () => {
+    setUserListInitialTab('followers');
+    setUserListModalOpen(true);
+  };
+
+  const openFollowingModal = () => {
+    setUserListInitialTab('following');
+    setUserListModalOpen(true);
+  };
 
   useEffect(() => {
     if (!username) return;
@@ -118,7 +137,27 @@ export const UserProfile: React.FC = () => {
                   variant={isFollowing ? 'outline' : 'primary'}
                   size="md"
                   onClick={async () => {
-                    await toggleFollowUser(creator.id);
+                    const willFollow = !isFollowing;
+                    setCreator((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            followersCount: Math.max(0, (prev.followersCount || 0) + (willFollow ? 1 : -1)),
+                          }
+                        : prev
+                    );
+                    try {
+                      await toggleFollowUser(creator.id);
+                    } catch {
+                      setCreator((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              followersCount: Math.max(0, (prev.followersCount || 0) + (willFollow ? -1 : 1)),
+                            }
+                          : prev
+                      );
+                    }
                   }}
                   className="px-6"
                 >
@@ -157,24 +196,36 @@ export const UserProfile: React.FC = () => {
 
             {/* Social Stats */}
             <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-sand-200/80">
-              <div>
+              <div className="text-center sm:text-left">
                 <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
                   {creator.postsCount ?? creatorPosts.length}
                 </span>
                 <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Posts</span>
               </div>
-              <div>
-                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {creator.followersCount}
+              <button
+                type="button"
+                onClick={openFollowersModal}
+                className="text-center sm:text-left group cursor-pointer focus:outline-none"
+              >
+                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block group-hover:text-cognac-700 transition-colors">
+                  {formatStatCount(creator.followersCount || 0)}
                 </span>
-                <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Followers</span>
-              </div>
-              <div>
-                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block">
-                  {creator.followingCount}
+                <span className="text-[11px] text-charcoal-500 uppercase font-semibold group-hover:text-charcoal-800 transition-colors">
+                  Followers
                 </span>
-                <span className="text-[11px] text-charcoal-500 uppercase font-semibold">Following</span>
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={openFollowingModal}
+                className="text-center sm:text-left group cursor-pointer focus:outline-none"
+              >
+                <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 block group-hover:text-cognac-700 transition-colors">
+                  {formatStatCount(creator.followingCount || 0)}
+                </span>
+                <span className="text-[11px] text-charcoal-500 uppercase font-semibold group-hover:text-charcoal-800 transition-colors">
+                  Following
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -207,6 +258,16 @@ export const UserProfile: React.FC = () => {
           </div>
         )}
       </div>
+
+      <UserListModal
+        isOpen={userListModalOpen}
+        onClose={() => setUserListModalOpen(false)}
+        userId={creator.id}
+        username={creator.username}
+        initialTab={userListInitialTab}
+        followersCount={creator.followersCount}
+        followingCount={creator.followingCount}
+      />
     </AppShell>
   );
 };

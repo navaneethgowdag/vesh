@@ -61,10 +61,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure static upload directory exists and mount static file serving
+# Ensure static upload directory exists and mount static file serving with CORS support
+class CORSStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
+
+
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
 os.makedirs(os.path.join(static_dir, "uploads"), exist_ok=True)
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/static", CORSStaticFiles(directory=static_dir), name="static")
 
 
 @app.get("/health", tags=["health"])

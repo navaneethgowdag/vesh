@@ -18,6 +18,7 @@ import { Avatar } from '../ui/Avatar';
 import { CommentModal } from '../social/CommentDrawer';
 import { ShareModal } from '../social/ShareModal';
 import { cn } from '../../utils/cn';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 
 interface PostCardProps {
   post: Post;
@@ -141,8 +142,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           className="relative bg-sand-200/50 aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
         >
           <img
-            src={post.image}
+            src={resolveImageUrl(post.image) || FALLBACK_POST_IMAGE}
             alt={post.caption}
+            onError={(e) => {
+              if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                e.currentTarget.src = FALLBACK_POST_IMAGE;
+              }
+            }}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
             loading="lazy"
           />
@@ -199,8 +205,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-sand-100 transition-colors cursor-pointer"
                 >
                   <img
-                    src={item.image}
+                    src={resolveImageUrl(item.image) || FALLBACK_POST_IMAGE}
                     alt={item.name}
+                    onError={(e) => {
+                      if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                        e.currentTarget.src = FALLBACK_POST_IMAGE;
+                      }
+                    }}
                     className="w-9 h-9 rounded-lg object-cover"
                   />
                   <div className="min-w-0 flex-1">

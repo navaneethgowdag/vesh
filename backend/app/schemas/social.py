@@ -12,6 +12,7 @@ class UserSummary(BaseModel):
     avatar: Optional[str] = None
     is_verified: bool = False
     is_following: bool = False
+    is_me: bool = False
 
 
 class CommentCreate(BaseModel):

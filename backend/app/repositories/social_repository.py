@@ -257,7 +257,7 @@ class SocialRepository:
             .first()
         )
         if existing:
-            return False
+            return True
 
         follow = Follow(follower_id=follower_id, following_id=following_id)
         self.db.add(follow)
@@ -302,15 +302,27 @@ class SocialRepository:
     def count_following(self, user_id: UUID) -> int:
         return self.db.query(func.count(Follow.id)).filter(Follow.follower_id == user_id).scalar() or 0
 
-    def list_followers(self, user_id: UUID) -> List[User]:
-        follows = self.db.query(Follow).filter(Follow.following_id == user_id).all()
-        follower_ids = [f.follower_id for f in follows]
-        return self.db.query(User).filter(User.id.in_(follower_ids)).all() if follower_ids else []
+    def list_followers(self, user_id: UUID, limit: int = 50, offset: int = 0) -> List[User]:
+        return (
+            self.db.query(User)
+            .join(Follow, Follow.follower_id == User.id)
+            .filter(Follow.following_id == user_id)
+            .order_by(Follow.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
-    def list_following(self, user_id: UUID) -> List[User]:
-        follows = self.db.query(Follow).filter(Follow.follower_id == user_id).all()
-        following_ids = [f.following_id for f in follows]
-        return self.db.query(User).filter(User.id.in_(following_ids)).all() if following_ids else []
+    def list_following(self, user_id: UUID, limit: int = 50, offset: int = 0) -> List[User]:
+        return (
+            self.db.query(User)
+            .join(Follow, Follow.following_id == User.id)
+            .filter(Follow.follower_id == user_id)
+            .order_by(Follow.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
     # --- Saved Items ---
     def save_item(self, user_id: UUID, post_id: UUID, **extra) -> Optional[SavedItem]:

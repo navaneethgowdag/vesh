@@ -18,7 +18,9 @@ import {
   CalendarEvent,
   OutfitMoment,
   UserSearchResult,
+  SocialUserSummary,
 } from '../types';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -152,7 +154,7 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email,
-        avatar: raw.profile_image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
         bio: raw.bio || '',
         location: raw.location || '',
         followersCount: raw.followers_count || 0,
@@ -197,7 +199,7 @@ export const api = {
         style: item.occasion || 'Casual',
         season: item.season || 'All-Season',
         brand: item.brand,
-        image: item.image_url,
+        image: resolveImageUrl(item.image_url),
         material: item.material,
         createdAt: item.created_at || new Date().toISOString(),
         timesWorn: item.wear_count || 0,
@@ -237,7 +239,7 @@ export const api = {
         style: res.occasion,
         season: res.season,
         brand: res.brand,
-        image: res.image_url,
+        image: resolveImageUrl(res.image_url),
         material: res.material,
         createdAt: res.created_at,
         timesWorn: res.wear_count || 0,
@@ -335,11 +337,11 @@ export const api = {
           id: String(p.user?.id || ''),
           name: p.user?.name || 'User',
           username: p.user?.username || 'user',
-          avatar: p.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+          avatar: resolveImageUrl(p.user?.avatar) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
           isVerified: p.user?.is_verified,
           isFollowing: p.user?.is_following,
         },
-        image: p.image_url,
+        image: resolveImageUrl(p.image_url),
         caption: p.caption,
         tags: p.tags || [],
         taggedItems: (p.tagged_items || []).map((ti: any) => ({
@@ -349,7 +351,7 @@ export const api = {
           color: ti.color,
           style: ti.occasion || 'Casual',
           season: ti.season || 'All-Season',
-          image: ti.image_url,
+          image: resolveImageUrl(ti.image_url),
           createdAt: ti.created_at || new Date().toISOString(),
         })),
         occasion: (p.occasion as Occasion) || 'Casual Daily',
@@ -366,7 +368,7 @@ export const api = {
             id: String(c.user?.id || ''),
             name: c.user?.name || 'User',
             username: c.user?.username || 'user',
-            avatar: c.user?.avatar || '',
+            avatar: resolveImageUrl(c.user?.avatar) || '',
           },
           text: c.text,
           createdAt: c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now',
@@ -395,10 +397,10 @@ export const api = {
           id: String(p.user?.id || ''),
           name: p.user?.name || 'User',
           username: p.user?.username || 'user',
-          avatar: p.user?.avatar || '',
+          avatar: resolveImageUrl(p.user?.avatar) || '',
           isVerified: p.user?.is_verified,
         },
-        image: p.image_url,
+        image: resolveImageUrl(p.image_url),
         caption: p.caption,
         tags: p.tags || [],
         taggedItems: p.tagged_items || [],
@@ -444,10 +446,10 @@ export const api = {
           id: String(m.user?.id || ''),
           name: m.user?.name || 'User',
           username: m.user?.username || 'user',
-          avatar: m.user?.avatar || '',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
           isVerified: m.user?.is_verified,
         },
-        imageUrl: m.image_url,
+        imageUrl: resolveImageUrl(m.image_url),
         caption: m.caption,
         occasion: m.occasion || 'Casual Daily',
         tags: m.tags || [],
@@ -467,10 +469,10 @@ export const api = {
           id: String(m.user?.id || ''),
           name: m.user?.name || 'User',
           username: m.user?.username || 'user',
-          avatar: m.user?.avatar || '',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
           isVerified: m.user?.is_verified,
         },
-        imageUrl: m.image_url,
+        imageUrl: resolveImageUrl(m.image_url),
         caption: m.caption,
         occasion: m.occasion || 'Casual Daily',
         tags: m.tags || [],
@@ -498,10 +500,10 @@ export const api = {
           id: String(m.user?.id || ''),
           name: m.user?.name || 'User',
           username: m.user?.username || 'user',
-          avatar: m.user?.avatar || '',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
           isVerified: m.user?.is_verified,
         },
-        imageUrl: m.image_url,
+        imageUrl: resolveImageUrl(m.image_url),
         caption: m.caption,
         occasion: m.occasion || 'Casual Daily',
         tags: m.tags || [],
@@ -521,10 +523,10 @@ export const api = {
           id: String(m.user?.id || ''),
           name: m.user?.name || 'User',
           username: m.user?.username || 'user',
-          avatar: m.user?.avatar || '',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
           isVerified: m.user?.is_verified,
         },
-        imageUrl: m.image_url,
+        imageUrl: resolveImageUrl(m.image_url),
         caption: m.caption,
         occasion: m.occasion || 'Casual Daily',
         tags: m.tags || [],
@@ -572,7 +574,11 @@ export const api = {
       if (!res.ok) {
         throw new Error('Failed to upload image asset');
       }
-      return res.json();
+      const data = await res.json();
+      return {
+        image_url: resolveImageUrl(data.image_url),
+        thumbnail_url: resolveImageUrl(data.thumbnail_url),
+      };
     },
   },
 
@@ -604,7 +610,7 @@ export const api = {
         id: String(c.id),
         name: c.name,
         description: c.description,
-        coverImage: c.cover_image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+        coverImage: resolveImageUrl(c.cover_image) || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
         itemCount: c.item_count || 0,
         outfitIds: c.outfit_ids || [],
         createdAt: c.created_at,
@@ -638,7 +644,7 @@ export const api = {
         username: u.username,
         displayName: u.display_name,
         bio: u.bio || '',
-        avatar: u.avatar || '',
+        avatar: resolveImageUrl(u.avatar || u.profile_image_url),
         isVerified: u.is_verified || false,
         followersCount: u.followers_count || 0,
         followingCount: u.following_count || 0,
@@ -655,7 +661,7 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email || '',
-        avatar: raw.profile_image_url || raw.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
         bio: raw.bio || '',
         location: raw.location || '',
         followersCount: raw.followers_count || 0,
@@ -728,7 +734,7 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email,
-        avatar: raw.profile_image_url || raw.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
         bio: raw.bio || '',
         location: raw.location || '',
         followersCount: raw.followers_count || 0,
@@ -751,12 +757,38 @@ export const api = {
 
   // --- SOCIAL (follows persisted in Neon) ---
   social: {
-    async follow(userId: string): Promise<void> {
-      await request<void>(`/social/follow/${userId}`, { method: 'POST' });
+    async follow(userId: string): Promise<{ following: boolean; follower_count?: number; following_count?: number }> {
+      return await request<any>(`/social/follow/${userId}`, { method: 'POST' });
     },
 
-    async unfollow(userId: string): Promise<void> {
-      await request<void>(`/social/follow/${userId}`, { method: 'DELETE' });
+    async unfollow(userId: string): Promise<{ following: boolean; follower_count?: number; following_count?: number }> {
+      return await request<any>(`/social/follow/${userId}`, { method: 'DELETE' });
+    },
+
+    async getFollowers(userId: string, limit: number = 50, offset: number = 0): Promise<SocialUserSummary[]> {
+      const items = await request<any[]>(`/social/followers/${userId}?limit=${limit}&offset=${offset}`);
+      return items.map((u) => ({
+        id: String(u.id),
+        username: u.username,
+        name: u.name || u.display_name || u.username,
+        avatar: resolveImageUrl(u.avatar || u.profile_image_url),
+        isVerified: u.is_verified || false,
+        isFollowing: u.is_following || false,
+        isMe: u.is_me || false,
+      }));
+    },
+
+    async getFollowing(userId: string, limit: number = 50, offset: number = 0): Promise<SocialUserSummary[]> {
+      const items = await request<any[]>(`/social/following/${userId}?limit=${limit}&offset=${offset}`);
+      return items.map((u) => ({
+        id: String(u.id),
+        username: u.username,
+        name: u.name || u.display_name || u.username,
+        avatar: resolveImageUrl(u.avatar || u.profile_image_url),
+        isVerified: u.is_verified || false,
+        isFollowing: u.is_following || false,
+        isMe: u.is_me || false,
+      }));
     },
   },
 

@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { ClothingCategory, ClothingColor, Season, StyleVibe } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 
 interface AddClothingModalProps {
   isOpen: boolean;
@@ -142,7 +143,16 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
           <div className="sm:col-span-4 aspect-square rounded-2xl bg-sand-100 overflow-hidden border border-sand-300 relative group shadow-inner flex items-center justify-center">
             {imageUrl ? (
               <>
-                <img src={imageUrl} alt="Clothing preview" className="w-full h-full object-cover" />
+                <img
+                  src={resolveImageUrl(imageUrl) || FALLBACK_POST_IMAGE}
+                  alt="Clothing preview"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                      e.currentTarget.src = FALLBACK_POST_IMAGE;
+                    }
+                  }}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <span className="text-white text-xs font-medium">Garment Preview</span>
                 </div>

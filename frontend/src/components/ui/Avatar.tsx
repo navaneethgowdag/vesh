@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn, DEFAULT_AVATAR } from '../../utils/cn';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 interface AvatarProps {
   src?: string;
@@ -36,7 +37,8 @@ export const Avatar: React.FC<AvatarProps> = ({
         .toUpperCase()
     : 'SP';
 
-  const imageSrc = !imageError && src ? src : DEFAULT_AVATAR;
+  const resolvedSrc = resolveImageUrl(src);
+  const imageSrc = !imageError && resolvedSrc ? resolvedSrc : DEFAULT_AVATAR;
 
   return (
     <div className={cn('relative inline-block flex-shrink-0', className)}>

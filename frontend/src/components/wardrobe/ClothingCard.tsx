@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Edit3, Sparkles } from 'lucide-react';
 import { ClothingItem } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -33,8 +34,13 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
       {/* Garment Image */}
       <div className="relative aspect-[3/4] bg-sand-200/60 overflow-hidden">
         <img
-          src={item.image}
+          src={resolveImageUrl(item.image) || FALLBACK_POST_IMAGE}
           alt={item.name}
+          onError={(e) => {
+            if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+              e.currentTarget.src = FALLBACK_POST_IMAGE;
+            }
+          }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />

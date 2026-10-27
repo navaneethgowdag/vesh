@@ -20,6 +20,7 @@ import { Button } from '../components/ui/Button';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
 import { Occasion } from '../types';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
 
 const OCCASIONS: Occasion[] = [
   'Casual Daily',
@@ -239,8 +240,13 @@ export const CreatePost: React.FC = () => {
               {image ? (
                 <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-sand-200 border border-sand-300 shadow-inner group mb-3">
                   <img
-                    src={image}
+                    src={resolveImageUrl(image) || FALLBACK_POST_IMAGE}
                     alt="Post preview"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                        e.currentTarget.src = FALLBACK_POST_IMAGE;
+                      }
+                    }}
                     className="w-full h-full object-cover"
                   />
 

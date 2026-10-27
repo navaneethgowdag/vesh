@@ -5,6 +5,7 @@ import { X, Heart, Sparkles, Compass, RotateCcw, Clock, PlusCircle } from 'lucid
 import { OutfitMoment } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 
 interface DiscoveryDeckProps {
   moments: OutfitMoment[];
@@ -204,8 +205,13 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             }}
           >
             <img
-              src={nextMoment2.imageUrl}
+              src={resolveImageUrl(nextMoment2.imageUrl) || FALLBACK_POST_IMAGE}
               alt="Upcoming look"
+              onError={(e) => {
+                if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                  e.currentTarget.src = FALLBACK_POST_IMAGE;
+                }
+              }}
               className="w-full h-full object-cover opacity-50 filter blur-[1px]"
               loading="lazy"
             />
@@ -222,8 +228,13 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             }}
           >
             <img
-              src={nextMoment1.imageUrl}
+              src={resolveImageUrl(nextMoment1.imageUrl) || FALLBACK_POST_IMAGE}
               alt="Next look"
+              onError={(e) => {
+                if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                  e.currentTarget.src = FALLBACK_POST_IMAGE;
+                }
+              }}
               className="w-full h-full object-cover opacity-80"
               loading="lazy"
             />
@@ -251,8 +262,13 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
           >
             {/* Visual Focus: Full Outfit Image */}
             <img
-              src={currentMoment.imageUrl}
+              src={resolveImageUrl(currentMoment.imageUrl) || FALLBACK_POST_IMAGE}
               alt={currentMoment.caption || 'Outfit discovery'}
+              onError={(e) => {
+                if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                  e.currentTarget.src = FALLBACK_POST_IMAGE;
+                }
+              }}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
               fetchPriority="high"
             />

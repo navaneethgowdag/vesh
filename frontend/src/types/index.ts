@@ -307,3 +307,14 @@ export interface UserSearchResult {
   isFollowing: boolean;
   isMe: boolean;
 }
+
+export interface SocialUserSummary {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string;
+  isVerified: boolean;
+  isFollowing: boolean;
+  isMe: boolean;
+}
+
