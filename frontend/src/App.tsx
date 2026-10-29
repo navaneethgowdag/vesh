@@ -1,6 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ProtectedRoute, PublicOnlyRoute } from './components/auth/ProtectedRoute';
 
 // Pages
 import { Landing } from './pages/Landing';
@@ -19,37 +21,147 @@ import { Profile } from './pages/Profile';
 import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Calendar } from './pages/Calendar';
+import { NotFound } from './pages/NotFound';
 
 export const App: React.FC = () => {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public / Auth routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+    <ThemeProvider>
+      <AppProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public landing */}
+            <Route path="/" element={<Landing />} />
 
-          {/* Core Application routes */}
-          <Route path="/home" element={<Home />} />
-          <Route path="/daily-fit" element={<DailyFit />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/wardrobe" element={<Wardrobe />} />
-          <Route path="/wardrobe/:id" element={<ClothingDetail />} />
-          <Route path="/create" element={<CreatePost />} />
-          <Route path="/saved" element={<Saved />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/:username" element={<UserProfile />} />
-          <Route path="/settings" element={<Settings />} />
+            {/* Auth routes (redirects to /home if already logged in) */}
+            <Route
+              path="/login"
+              element={
+                <PublicOnlyRoute>
+                  <Login />
+                </PublicOnlyRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <PublicOnlyRoute>
+                  <Signup />
+                </PublicOnlyRoute>
+              }
+            />
 
-          {/* Catch-all fallback */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+            {/* Protected Application Routes */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/daily-fit"
+              element={
+                <ProtectedRoute>
+                  <DailyFit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <Calendar />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/explore"
+              element={
+                <ProtectedRoute>
+                  <Explore />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wardrobe"
+              element={
+                <ProtectedRoute>
+                  <Wardrobe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wardrobe/:id"
+              element={
+                <ProtectedRoute>
+                  <ClothingDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create"
+              element={
+                <ProtectedRoute>
+                  <CreatePost />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/saved"
+              element={
+                <ProtectedRoute>
+                  <Saved />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:username"
+              element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all 404 Page */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AppProvider>
+    </ThemeProvider>
   );
 };
 

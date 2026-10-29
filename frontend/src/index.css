@@ -4,23 +4,55 @@
 
 @layer base {
   :root {
-    --cream-bg: #FAF7F2;
+    --luxury-bg: #F7F4EE;
+    --luxury-surface: #FFFFFF;
+    --luxury-elevated: #FBF9F5;
+    --luxury-primary: #25211E;
+    --luxury-secondary: #82796F;
+    --luxury-muted: #A39B90;
+    --luxury-champagne: #C3A36B;
+    --luxury-olive: #525744;
+    --luxury-border: #E5DED3;
+    --luxury-border-subtle: #EFE9DF;
+
+    /* Legacy compatibility variables */
+    --cream-bg: #F7F4EE;
     --card-bg: #FFFFFF;
-    --sand-subtle: #F4EFEA;
-    --charcoal-main: #181615;
-    --cognac-accent: #8C5E37;
+    --sand-subtle: #F4EFE6;
+    --charcoal-main: #25211E;
+    --cognac-accent: #C3A36B;
+  }
+
+  .dark {
+    --luxury-bg: #171715;
+    --luxury-surface: #22221F;
+    --luxury-elevated: #2A2A26;
+    --luxury-primary: #F4F0E8;
+    --luxury-secondary: #B2AA9E;
+    --luxury-muted: #7E786E;
+    --luxury-champagne: #D1B47A;
+    --luxury-olive: #6C725B;
+    --luxury-border: #393832;
+    --luxury-border-subtle: #2C2C27;
+
+    /* Legacy compatibility in dark mode */
+    --cream-bg: #171715;
+    --card-bg: #22221F;
+    --sand-subtle: #2A2A26;
+    --charcoal-main: #F4F0E8;
+    --cognac-accent: #D1B47A;
   }
 
   body {
-    background-color: #FAF7F2;
-    color: #181615;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--luxury-bg);
+    color: var(--luxury-primary);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
 
-  /* Custom scrollbar for clean luxury feel */
+  /* Custom luxury scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -29,11 +61,14 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #D4CDC5;
+    background: #D9D2C7;
     border-radius: 9999px;
   }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #393832;
+  }
   ::-webkit-scrollbar-thumb:hover {
-    background: #A8764B;
+    background: #C3A36B;
   }
 }
 
@@ -47,8 +82,33 @@
     font-family: 'Cormorant Garamond', Georgia, serif;
   }
 
-  .glass-card {
+  .editorial-caps {
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .luxury-card {
+    background-color: var(--luxury-surface);
+    border: 1px solid var(--luxury-border);
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px -1px rgba(37, 33, 30, 0.04);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .dark .luxury-card {
+    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+  }
+
+  .luxury-glass {
     background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dark .luxury-glass {
+    background: rgba(34, 34, 31, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -61,4 +121,3 @@
     display: none;
   }
 }
-

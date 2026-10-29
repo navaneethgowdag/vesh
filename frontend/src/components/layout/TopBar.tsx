@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Sparkles } from 'lucide-react';
-import { useApp, useCurrentUser } from '../../context/AppContext';
-import { Avatar } from '../ui/Avatar';
+import { Search, Bell, Loader2 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 const getWeatherEmoji = (icon: string) => {
   if (icon === 'sun') return '☀️';
@@ -15,42 +14,46 @@ const getWeatherEmoji = (icon: string) => {
 };
 
 export const TopBar: React.FC = () => {
-  const { unreadNotifsCount, weather } = useApp();
-  const currentUser = useCurrentUser();
+  const { unreadNotifsCount, weather, weatherStatus, isWeatherLoading } = useApp();
   const navigate = useNavigate();
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-cream-50/90 backdrop-blur-md border-b border-sand-200/80 px-4 py-3 flex items-center justify-between">
+    <header className="lg:hidden sticky top-0 z-30 bg-[#F7F4EE]/95 dark:bg-[#171715]/95 backdrop-blur-md border-b border-[#E5DED3] dark:border-[#393832] px-4 py-3 flex items-center justify-between transition-colors">
       {/* Brand */}
       <div
         onClick={() => navigate('/home')}
-        className="flex items-center gap-2.5 cursor-pointer"
+        className="flex items-center gap-2.5 cursor-pointer group"
       >
-        <div className="w-8 h-8 rounded-xl bg-charcoal-900 flex items-center justify-center text-cream-50 font-serif font-bold text-sm shadow-soft">
+        <div className="w-8 h-8 rounded-xl bg-[#25211E] dark:bg-[#22221F] border border-[#C3A36B]/30 flex items-center justify-center text-[#F7F4EE] dark:text-[#F4F0E8] font-serif font-bold text-sm shadow-subtle group-hover:bg-[#C3A36B] transition-colors">
           S
         </div>
-        <span className="font-serif text-lg font-bold tracking-tight text-charcoal-900">
+        <span className="font-serif text-lg font-bold tracking-tight text-[#25211E] dark:text-[#F4F0E8]">
           StyleSphere
         </span>
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Weather chip */}
         <button
           onClick={() => navigate('/daily-fit')}
-          className="flex items-center gap-1.5 bg-sand-100 hover:bg-sand-200 text-charcoal-700 px-2.5 py-1 rounded-full text-xs font-medium border border-sand-200 transition-colors"
-          title={weather.city ? `${weather.city} · ${weather.temp}°C ${weather.condition}` : 'Set location for live weather'}
+          className="flex items-center gap-1.5 bg-[#FFFFFF] dark:bg-[#22221F] hover:bg-[#EFE9DF] dark:hover:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] px-2.5 py-1.5 rounded-full text-xs font-medium border border-[#E5DED3] dark:border-[#393832] shadow-subtle transition-colors"
+          title={weather.city ? `${weather.city} · ${weather.temp}°C ${weather.condition}` : 'Check Weather & Recommendations'}
         >
-          {weather.city ? (
+          {isWeatherLoading ? (
             <>
-              <span>{getWeatherEmoji(weather.icon)}</span>
-              <span>{weather.temp}°C</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#96633B]" />
+              <span className="text-[11px]">Updating...</span>
+            </>
+          ) : weather.city && weatherStatus === 'available' ? (
+            <>
+              <span className="text-sm">{getWeatherEmoji(weather.icon)}</span>
+              <span className="font-semibold">{weather.temp}°C</span>
             </>
           ) : (
             <>
-              <span>📍</span>
-              <span>Set City</span>
+              <span>🌤️</span>
+              <span className="text-[11px]">Weather</span>
             </>
           )}
         </button>
@@ -58,33 +61,24 @@ export const TopBar: React.FC = () => {
         {/* Search */}
         <button
           onClick={() => navigate('/explore')}
-          className="p-2 text-charcoal-600 hover:text-charcoal-900 rounded-full hover:bg-sand-200 transition-colors"
-          aria-label="Search"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#EFE9DF]/60 dark:hover:bg-[#2A2A26] transition-colors"
+          aria-label="Explore and Search"
         >
-          <Search className="w-5 h-5" />
+          <Search className="w-4 h-4" />
         </button>
 
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}
-          className="relative p-2 text-charcoal-600 hover:text-charcoal-900 rounded-full hover:bg-sand-200 transition-colors"
+          className="relative w-9 h-9 rounded-xl flex items-center justify-center text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#EFE9DF]/60 dark:hover:bg-[#2A2A26] transition-colors"
           aria-label="Notifications"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="w-4 h-4" />
           {unreadNotifsCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cognac-600 rounded-full ring-2 ring-cream-50" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#C3A36B] dark:bg-[#D1B47A] ring-2 ring-[#F7F4EE] dark:ring-[#171715]" />
           )}
-        </button>
-
-        {/* Profile Avatar */}
-        <button
-          onClick={() => navigate('/profile')}
-          className="p-0.5 rounded-full ring-1 ring-sand-300"
-        >
-          <Avatar src={currentUser.avatar} alt={currentUser.name} size="sm" />
         </button>
       </div>
     </header>
   );
 };
-

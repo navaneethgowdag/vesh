@@ -6,239 +6,253 @@ import {
   Shirt,
   Compass,
   ArrowRight,
-  CheckCircle,
   CloudSun,
   ShieldCheck,
-  TrendingUp,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useApp } from '../context/AppContext';
 
 export const Landing: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useApp();
 
-  const features = [
+  const editorialPillars = [
     {
-      icon: Sparkles,
-      title: 'AI Daily Fit Stylist',
-      desc: 'Smart outfit algorithms calibrate for your local weather, calendar occasion, and aesthetic taste signature.',
-    },
-    {
-      icon: Shirt,
-      title: 'Digital Capsule Wardrobe',
-      desc: 'Catalog your physical clothing into an organized digital collection with zero duplicate styling.',
-    },
-    {
-      icon: Compass,
-      title: 'Editorial Style Community',
-      desc: 'Discover authentic outfits from creators worldwide, tag real garments, and curate collaborative moodboards.',
-    },
-    {
+      num: '01',
+      title: 'The Daily Atelier',
+      subtitle: 'Context-Aware Curation',
+      desc: 'Smart algorithms calibrate against your physical garments, microclimate humidity, and day calendar so you never freeze in linen or overheat in wool.',
       icon: CloudSun,
-      title: 'Context & Weather Engine',
-      desc: 'Never freeze in linen or overheat in cashmere. Seamless thermal and humidity balancing for any city.',
+    },
+    {
+      num: '02',
+      title: 'The Digital Capsule',
+      subtitle: 'Intelligent Garment Catalog',
+      desc: 'Digitize your pieces with neural vision categorization. Track cost-per-wear, maximize versatility, and dress with intentional minimalism.',
+      icon: Shirt,
+    },
+    {
+      num: '03',
+      title: 'The Editorial Collective',
+      subtitle: 'Social Style Journal',
+      desc: 'Share 24-hour outfit moments with accounts you follow, curate permanent lookbooks, and discover tastemakers across fashion capitals.',
+      icon: Compass,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-cream-100 text-charcoal-900 selection:bg-cognac-200">
+    <div className="min-h-screen bg-[#F7F4EE] dark:bg-[#171715] text-[#25211E] dark:text-[#F4F0E8] selection:bg-[#C3A36B]/30 transition-colors duration-200">
       {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-cream-100/90 backdrop-blur-md border-b border-sand-200/80">
+      <header className="sticky top-0 z-40 bg-[#F7F4EE]/90 dark:bg-[#171715]/90 backdrop-blur-md border-b border-[#E5DED3] dark:border-[#393832] transition-colors">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-charcoal-900 flex items-center justify-center text-cream-50 font-serif font-bold text-xl shadow-soft group-hover:bg-cognac-700 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#25211E] dark:bg-[#22221F] border border-[#C3A36B]/30 flex items-center justify-center text-[#F7F4EE] dark:text-[#F4F0E8] font-serif font-bold text-lg shadow-subtle group-hover:bg-[#C3A36B] transition-colors">
               S
             </div>
             <div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-charcoal-900">
+              <span className="font-serif text-2xl font-bold tracking-tight text-[#25211E] dark:text-[#F4F0E8]">
                 StyleSphere
               </span>
-              <span className="block text-[9px] tracking-widest uppercase font-semibold text-cognac-600 -mt-1">
+              <span className="block text-[9px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] -mt-1 font-sans">
                 AI Atelier
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/login')}
-              className="text-xs sm:text-sm font-semibold"
-            >
-              Sign In
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate('/signup')}
-              className="text-xs sm:text-sm"
-            >
-              Get Started
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate('/home')}
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                Enter Atelier
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                  className="hidden sm:inline-flex"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate('/signup')}
+                >
+                  Join Atelier
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="lg:col-span-7 space-y-6"
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sand-200/80 border border-sand-300 text-cognac-800 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-cognac-600" />
-              <span>Next-Gen AI Fashion Social Network</span>
+      <section className="max-w-7xl mx-auto px-6 pt-16 sm:pt-24 pb-20 sm:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Hero Text */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#EFE9DF] dark:bg-[#2A2A26] border border-[#E5DED3] dark:border-[#393832] text-xs font-medium text-[#82796F] dark:text-[#B2AA9E]">
+              <Sparkles className="w-3.5 h-3.5 text-[#C3A36B] dark:text-[#D1B47A]" />
+              <span className="tracking-wide">Autumn/Winter Atelier Engine 2.0</span>
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-6xl xl:text-7xl font-bold tracking-tight text-charcoal-950 leading-[1.08]">
-              Your style. <br />
-              Your wardrobe. <br />
-              <span className="text-cognac-700 italic font-serif">Your daily fit.</span>
+            <h1 className="font-serif text-5xl sm:text-6xl xl:text-7xl font-normal tracking-tight text-[#25211E] dark:text-[#F4F0E8] leading-[1.08]">
+              The Art of Effortless Dressing,{' '}
+              <span className="italic font-light text-[#C3A36B] dark:text-[#D1B47A]">
+                Intelligently Curated.
+              </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-charcoal-600 max-w-xl leading-relaxed">
-              Discover what to wear, build your digital wardrobe, and share your style with a
-              community that inspires you.
+            <p className="text-base sm:text-lg text-[#82796F] dark:text-[#B2AA9E] max-w-xl font-sans font-normal leading-relaxed">
+              StyleSphere translates your physical wardrobe into a living digital capsule. Calibrated for real-world weather, your calendar engagements, and aesthetic nuance.
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => navigate('/signup')}
-                icon={<ArrowRight className="w-4 h-4" />}
-                className="text-sm sm:text-base px-7 py-3.5"
-              >
-                Get Started
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => navigate('/explore')}
-                className="text-sm sm:text-base px-7 py-3.5"
-              >
-                Explore Styles
-              </Button>
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+              {isAuthenticated ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate('/home')}
+                  icon={<ArrowRight className="w-5 h-5" />}
+                >
+                  Open Your Wardrobe
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => navigate('/signup')}
+                    icon={<ArrowRight className="w-5 h-5" />}
+                  >
+                    Start Your Capsule
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => navigate('/login')}
+                  >
+                    Sign In to Account
+                  </Button>
+                </>
+              )}
             </div>
 
-            {/* Micro proof badges */}
-            <div className="pt-6 border-t border-sand-200/90 flex flex-wrap items-center gap-6 text-xs text-charcoal-500">
+            <div className="pt-6 flex items-center gap-6 text-xs text-[#82796F] dark:text-[#B2AA9E]">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-cognac-600" />
-                <span>Zero guesswork daily dressing</span>
+                <CheckCircle2 className="w-4 h-4 text-[#525744] dark:text-[#8C967E]" />
+                <span>Zero Fake Data</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-cognac-600" />
-                <span>Capsule wardrobe rotation</span>
+                <CheckCircle2 className="w-4 h-4 text-[#525744] dark:text-[#8C967E]" />
+                <span>Live Open-Meteo Sync</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-cognac-600" />
-                <span>Real weather calibration</span>
+                <CheckCircle2 className="w-4 h-4 text-[#525744] dark:text-[#8C967E]" />
+                <span>End-to-End Privacy</span>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Right Fashion Visual Collage */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="lg:col-span-5 relative"
-          >
-            <div className="relative mx-auto max-w-md">
-              {/* Main Fashion Card */}
-              <div className="relative rounded-3xl overflow-hidden shadow-soft-xl border border-sand-300 bg-cream-50 aspect-[3/4]">
+          {/* Hero Editorial Imagery Composition */}
+          <div className="lg:col-span-5 relative">
+            <div className="relative mx-auto max-w-md lg:max-w-none">
+              {/* Primary Main Look */}
+              <div className="relative rounded-2xl overflow-hidden border border-[#E5DED3] dark:border-[#393832] shadow-soft-lg aspect-[3/4] bg-[#22221F]">
                 <img
-                  src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80"
-                  alt="StyleSphere editorial look"
+                  src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80"
+                  alt="Editorial styling composition"
+                  className="w-full h-full object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5 text-white">
+                  <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#D1B47A] block mb-1">
+                    Editorial Curation
+                  </span>
+                  <p className="font-serif text-lg font-medium">Cashmere Trench & Structured Linen</p>
+                  <p className="text-xs text-white/80 font-sans mt-0.5">Milan · 16°C Clear</p>
+                </div>
+              </div>
+
+              {/* Offset secondary tile */}
+              <div className="hidden sm:block absolute -bottom-8 -left-8 w-44 rounded-xl overflow-hidden border border-[#E5DED3] dark:border-[#393832] shadow-soft-xl aspect-[4/5] bg-white dark:bg-[#22221F]">
+                <img
+                  src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80"
+                  alt="Minimal capsule garments"
                   className="w-full h-full object-cover"
                 />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/80 via-transparent to-transparent flex flex-col justify-end p-6">
-                  <div className="inline-flex items-center gap-2 bg-cream-50/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-charcoal-900 mb-2 w-max shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-cognac-600" />
-                    <span>98% Daily Fit Match</span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold text-white">
-                    SoHo Minimalist Tailoring
-                  </h3>
-                  <p className="text-xs text-cream-200 mt-0.5">
-                    24°C Sunny · Linen, Poplin & Cognac Box Leather
-                  </p>
-                </div>
               </div>
 
-              {/* Floating Overlay Card 1: Weather */}
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -top-4 -left-6 bg-cream-50/95 backdrop-blur-md p-3.5 rounded-2xl shadow-soft-lg border border-sand-200 hidden sm:flex items-center gap-3"
-              >
-                <div className="text-2xl">☀️</div>
-                <div>
-                  <p className="text-xs font-bold text-charcoal-900">24°C Clear</p>
-                  <p className="text-[10px] text-charcoal-500">SoHo, New York</p>
+              {/* Floating Match Badge */}
+              <div className="absolute top-6 -right-4 sm:-right-6 bg-white/95 dark:bg-[#22221F]/95 backdrop-blur-md border border-[#E5DED3] dark:border-[#393832] rounded-2xl p-3.5 shadow-soft">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-[#C3A36B]/20 text-[#C3A36B] dark:text-[#D1B47A] flex items-center justify-center font-bold text-xs">
+                    98%
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#25211E] dark:text-[#F4F0E8]">Thermal Compatibility</p>
+                    <p className="text-[10px] text-[#82796F] dark:text-[#B2AA9E]">Optimized for today's forecast</p>
+                  </div>
                 </div>
-              </motion.div>
-
-              {/* Floating Overlay Card 2: Wardrobe Tag */}
-              <motion.div
-                animate={{ y: [0, 6, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -bottom-6 -right-4 bg-charcoal-900 text-cream-50 p-3.5 rounded-2xl shadow-soft-xl border border-charcoal-700 hidden sm:flex items-center gap-3"
-              >
-                <div className="w-9 h-9 rounded-xl bg-cognac-700 flex items-center justify-center">
-                  <Shirt className="w-4 h-4 text-cream-50" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold">Capsule Matched</p>
-                  <p className="text-[10px] text-sand-300">4 items from your closet</p>
-                </div>
-              </motion.div>
+              </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Feature Section */}
-      <section className="py-20 bg-sand-50 border-y border-sand-200/80">
+      {/* Editorial Pillars */}
+      <section className="border-t border-[#E5DED3] dark:border-[#393832] bg-[#FFFFFF] dark:bg-[#1E1E1B] py-20 sm:py-28 transition-colors">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
-              The StyleSphere Ecosystem
+          <div className="max-w-2xl mb-16 space-y-3">
+            <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] block font-sans">
+              The Architecture of Style
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950 mt-2">
-              Where personal styling meets social inspiration
+            <h2 className="font-serif text-3xl sm:text-4xl text-[#25211E] dark:text-[#F4F0E8] font-normal tracking-tight">
+              Three Disciplines, One Living Wardrobe.
             </h2>
-            <p className="text-sm sm:text-base text-charcoal-600 mt-3">
-              No more morning decision paralysis. An intelligent digital wardrobe that knows your
-              pieces, respects your aesthetic, and connects you with modern tastemakers.
+            <p className="text-sm text-[#82796F] dark:text-[#B2AA9E] font-sans">
+              Designed for those who view what they wear as a conscious, artistic expression.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => {
-              const Icon = f.icon;
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {editorialPillars.map((p) => {
+              const Icon = p.icon;
               return (
                 <div
-                  key={i}
-                  className="bg-cream-50 p-7 rounded-3xl border border-sand-200/90 shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1"
+                  key={p.num}
+                  className="bg-[#F7F4EE] dark:bg-[#252522] border border-[#E5DED3] dark:border-[#393832] rounded-2xl p-8 space-y-5 transition-all hover:border-[#C3A36B]/60"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-sand-100 border border-sand-200 flex items-center justify-center mb-5 text-cognac-700">
-                    <Icon className="w-6 h-6" />
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif text-2xl font-light text-[#C3A36B] dark:text-[#D1B47A]">
+                      {p.num}
+                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#2E2E2A] border border-[#E5DED3] dark:border-[#393832] flex items-center justify-center text-[#25211E] dark:text-[#F4F0E8]">
+                      <Icon className="w-5 h-5 text-[#C3A36B] dark:text-[#D1B47A]" />
+                    </div>
                   </div>
-                  <h3 className="font-serif text-lg font-bold text-charcoal-900 mb-2">
-                    {f.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed">
-                    {f.desc}
+
+                  <div>
+                    <h3 className="font-serif text-xl font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                      {p.title}
+                    </h3>
+                    <p className="text-xs uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] font-semibold mt-1">
+                      {p.subtitle}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] leading-relaxed font-sans">
+                    {p.desc}
                   </p>
                 </div>
               );
@@ -247,122 +261,50 @@ export const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Interactive Flow Preview Showcase */}
-      <section className="py-20 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 space-y-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
-              Personalized AI Stylist
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950">
-              Why settle for generic fashion advice when you can have an AI Atelier?
-            </h2>
-            <p className="text-sm text-charcoal-600 leading-relaxed">
-              Every morning, StyleSphere looks at your digital wardrobe inventory, checks your local
-              forecast, factors in your calendar occasion, and generates high-scoring outfit
-              combinations with detailed reasoning.
-            </p>
+      {/* Secondary CTA section */}
+      <section className="py-20 sm:py-28 max-w-5xl mx-auto px-6 text-center space-y-6">
+        <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] block font-sans">
+          Join the Collective
+        </span>
+        <h2 className="font-serif text-4xl sm:text-5xl font-normal text-[#25211E] dark:text-[#F4F0E8] tracking-tight">
+          Curate with Clarity. Dress with Purpose.
+        </h2>
+        <p className="text-sm sm:text-base text-[#82796F] dark:text-[#B2AA9E] max-w-xl mx-auto font-sans leading-relaxed">
+          Create an account to begin building your intelligent capsule wardrobe today.
+        </p>
 
-            <div className="space-y-3 pt-2">
-              {[
-                "✓ Analyzes current temperature, rain probability & humidity",
-                "✓ Respects your personal aesthetic (Minimal, Smart Casual, Streetwear)",
-                "✓ Balances capsule rotation so all your clothes get loved",
-                "✓ Instant 'Try Another' alternative outfit variations",
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-charcoal-800">
-                  <span className="text-cognac-600 font-bold">{item}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-4">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => navigate('/signup')}
-              >
-                Experience Your First Daily Fit
-              </Button>
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 grid grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <img
-                src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=700&q=80"
-                alt="Studio outfit"
-                className="rounded-3xl shadow-soft object-cover w-full aspect-[3/4]"
-              />
-              <div className="p-4 bg-sand-100 rounded-2xl border border-sand-200">
-                <p className="font-serif font-bold text-xs text-charcoal-900">Workwear Chic</p>
-                <p className="text-[11px] text-charcoal-500">95% match · Pleated sand trousers</p>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-6">
-              <div className="p-4 bg-charcoal-900 text-cream-50 rounded-2xl shadow-soft">
-                <p className="text-xs uppercase font-bold text-cognac-300">Today's Fit</p>
-                <p className="font-serif text-sm font-bold mt-1">24°C · Casual · Minimal</p>
-                <p className="text-[11px] text-sand-300 mt-1">White Tee + Vintage Denim</p>
-              </div>
-              <img
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=700&q=80"
-                alt="Autumn Trench"
-                className="rounded-3xl shadow-soft object-cover w-full aspect-[3/4]"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Banner */}
-      <section className="py-20 bg-charcoal-900 text-cream-50">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
-          <div className="w-12 h-12 rounded-2xl bg-cognac-700 flex items-center justify-center mx-auto text-white shadow-soft">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight">
-            Elevate your daily ritual with StyleSphere.
-          </h2>
-          <p className="text-sm sm:text-base text-sand-200 max-w-xl mx-auto">
-            Join thousands of design lovers, capsule curators, and creators building their timeless
-            wardrobes.
-          </p>
-          <div className="pt-2">
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => navigate('/signup')}
-              className="bg-cream-50 text-charcoal-900 hover:bg-cognac-100 px-8 py-3.5"
-            >
-              Build Your Digital Wardrobe Now
-            </Button>
-          </div>
+        <div className="pt-4 flex justify-center">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => navigate('/signup')}
+            icon={<ArrowRight className="w-5 h-5" />}
+          >
+            Create Your Account
+          </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-cream-50 border-t border-sand-200/90 py-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-charcoal-500">
-          <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-charcoal-900 text-sm">StyleSphere</span>
-            <span>— The AI Fashion Social Network</span>
+      <footer className="border-t border-[#E5DED3] dark:border-[#393832] py-10 bg-[#FFFFFF] dark:bg-[#1A1A18] text-xs text-[#82796F] dark:text-[#B2AA9E] transition-colors">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-[#25211E] dark:bg-[#2A2A26] text-[#F7F4EE] flex items-center justify-center font-serif font-bold text-xs">
+              S
+            </div>
+            <span className="font-serif font-semibold text-[#25211E] dark:text-[#F4F0E8]">
+              StyleSphere
+            </span>
+            <span className="text-[10px] text-[#A39B90]">&copy; {new Date().getFullYear()} All rights reserved.</span>
           </div>
+
           <div className="flex items-center gap-6">
-            <button onClick={() => navigate('/explore')} className="hover:underline">
-              Explore
-            </button>
-            <button onClick={() => navigate('/login')} className="hover:underline">
-              Sign In
-            </button>
-            <button onClick={() => navigate('/signup')} className="hover:underline">
-              Register
-            </button>
+            <span className="hover:text-[#25211E] dark:hover:text-[#F4F0E8] cursor-pointer">Terms of Service</span>
+            <span className="hover:text-[#25211E] dark:hover:text-[#F4F0E8] cursor-pointer">Privacy Policy</span>
+            <span className="hover:text-[#25211E] dark:hover:text-[#F4F0E8] cursor-pointer">Editorial Manifesto</span>
           </div>
         </div>
       </footer>
     </div>
   );
 };
-

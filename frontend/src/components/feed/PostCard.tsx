@@ -8,7 +8,6 @@ import {
   Share2,
   Tag,
   MapPin,
-  Sparkles,
   Trash2,
   AlertTriangle,
 } from 'lucide-react';
@@ -31,7 +30,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     toggleFollowUser,
     isFollowingUser,
     deletePost,
-    wardrobe,
   } = useApp();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
@@ -60,22 +58,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   };
 
-  // Resolve tagged wardrobe items
-  const taggedItems = post.taggedItems && post.taggedItems.length > 0
-    ? post.taggedItems
-    : [];
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await deletePost(post.id);
+      setIsDeleteDialogOpen(false);
+    } catch {
+      // Handled via toast in AppContext
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
-      <article className="bg-cream-50 rounded-3xl border border-sand-200/90 shadow-soft overflow-hidden transition-all duration-300 hover:shadow-soft-lg mb-8">
+      <article className="bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle hover:shadow-soft overflow-hidden transition-all duration-200">
         {/* Post Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5">
+        <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() =>
                 navigate(isMe ? '/profile' : `/profile/${post.user.username}`)
               }
-              className="cursor-pointer"
+              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C3A36B] rounded-full"
             >
               <Avatar
                 src={post.user.avatar}
@@ -91,21 +97,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   onClick={() =>
                     navigate(isMe ? '/profile' : `/profile/${post.user.username}`)
                   }
-                  className="font-bold text-xs sm:text-sm text-charcoal-900 hover:text-cognac-700 transition-colors"
+                  className="font-bold text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] hover:text-[#C3A36B] dark:hover:text-[#D1B47A] transition-colors"
                 >
                   {post.user.name}
                 </button>
-                <span className="text-[11px] text-charcoal-400">@{post.user.username}</span>
+                <span className="text-[11px] text-[#82796F] dark:text-[#B2AA9E]">@{post.user.username}</span>
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] text-charcoal-400 mt-0.5">
+              <div className="flex items-center gap-2 text-[11px] text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
                 {post.location && (
-                  <span className="flex items-center gap-1 text-charcoal-500">
-                    <MapPin className="w-3 h-3 text-cognac-600" />
+                  <span className="flex items-center gap-1 text-[#82796F] dark:text-[#B2AA9E]">
+                    <MapPin className="w-3 h-3 text-[#C3A36B] dark:text-[#D1B47A]" />
                     {post.location}
                   </span>
                 )}
-                <span>·</span>
+                <span>&middot;</span>
                 <span>{post.createdAt}</span>
               </div>
             </div>
@@ -115,7 +121,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {isMe ? (
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="p-1.5 text-charcoal-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
+              className="p-2 text-[#82796F] dark:text-[#B2AA9E] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors"
               title="Delete post"
               aria-label="Delete post"
             >
@@ -127,8 +133,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               className={cn(
                 'text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200',
                 isFollowing
-                  ? 'bg-sand-200/70 text-charcoal-700 hover:bg-sand-300'
-                  : 'bg-charcoal-900 text-cream-50 hover:bg-cognac-700'
+                  ? 'bg-[#EFE9DF] dark:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] hover:bg-[#E5DED3] dark:hover:bg-[#393832]'
+                  : 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] hover:bg-[#C3A36B] dark:hover:bg-[#D1B47A]'
               )}
             >
               {isFollowing ? 'Following' : '+ Follow'}
@@ -139,7 +145,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         {/* Post Image Container */}
         <div
           onDoubleClick={handleDoubleTap}
-          className="relative bg-sand-200/50 aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
+          className="relative bg-[#F7F4EE] dark:bg-[#171715] aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
         >
           <img
             src={resolveImageUrl(post.image) || FALLBACK_POST_IMAGE}
@@ -158,220 +164,162 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1.2, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+              exit={{ scale: 1.6, opacity: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+              <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                <Heart className="w-10 h-10 text-rose-500 fill-rose-500" />
+              </div>
             </motion.div>
           )}
 
-          {/* Tagged Items Toggle Button */}
-          {taggedItems.length > 0 && (
+          {/* Tagged Items Button Overlay */}
+          {post.taggedItems && post.taggedItems.length > 0 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowTags(!showTags);
               }}
-              className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-charcoal-900/75 hover:bg-charcoal-900 text-cream-50 text-xs backdrop-blur-md transition-all shadow-soft"
+              className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-[11px] font-medium flex items-center gap-1.5 transition-colors"
             >
-              <Tag className="w-3.5 h-3.5 text-cognac-300" />
-              <span>{showTags ? 'Hide Pieces' : `${taggedItems.length} Wardrobe Pieces`}</span>
+              <Tag className="w-3 h-3 text-[#D1B47A]" />
+              <span>{post.taggedItems.length} {post.taggedItems.length === 1 ? 'piece' : 'pieces'}</span>
             </button>
-          )}
-
-          {/* Occasion Badge */}
-          <div className="absolute top-4 right-4 z-10 px-3 py-1 rounded-full bg-cream-50/90 backdrop-blur-md text-charcoal-800 text-[11px] font-semibold tracking-wide border border-sand-200 shadow-soft-sm">
-            {post.occasion}
-          </div>
-
-          {/* Overlay Tagged Garment Drawer */}
-          {showTags && taggedItems.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute inset-x-4 bottom-14 z-20 bg-cream-50/95 backdrop-blur-md rounded-2xl p-3 border border-sand-200 shadow-soft-xl max-h-48 overflow-y-auto space-y-2"
-            >
-              <p className="text-[10px] uppercase font-bold tracking-wider text-charcoal-400 mb-1">
-                Tagged in this outfit
-              </p>
-              {taggedItems.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/wardrobe/${item.id}`);
-                  }}
-                  className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-sand-100 transition-colors cursor-pointer"
-                >
-                  <img
-                    src={resolveImageUrl(item.image) || FALLBACK_POST_IMAGE}
-                    alt={item.name}
-                    onError={(e) => {
-                      if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
-                        e.currentTarget.src = FALLBACK_POST_IMAGE;
-                      }
-                    }}
-                    className="w-9 h-9 rounded-lg object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-charcoal-900 truncate">
-                      {item.name}
-                    </p>
-                    <p className="text-[10px] text-charcoal-500">
-                      {item.brand ? `${item.brand} · ` : ''}
-                      {item.category}
-                    </p>
-                  </div>
-                  <span className="text-[10px] bg-sand-200 text-charcoal-700 px-2 py-0.5 rounded-full">
-                    Inspect
-                  </span>
-                </div>
-              ))}
-            </motion.div>
           )}
         </div>
 
-        {/* Post Actions Bar */}
-        <div className="p-4 sm:p-5 pt-3">
-          <div className="flex items-center justify-between mb-3">
+        {/* Tagged Clothing drawer / pills */}
+        {showTags && post.taggedItems && post.taggedItems.length > 0 && (
+          <div className="p-3 bg-[#F7F4EE] dark:bg-[#171715] border-t border-[#E5DED3] dark:border-[#393832] flex items-center gap-2 overflow-x-auto hide-scrollbar">
+            {post.taggedItems.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => navigate(`/wardrobe/${item.id}`)}
+                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-white dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] flex-shrink-0 cursor-pointer hover:border-[#C3A36B] transition-colors"
+              >
+                <img
+                  src={resolveImageUrl(item.image)}
+                  alt={item.name}
+                  className="w-7 h-7 rounded-lg object-cover"
+                />
+                <div className="text-[11px] leading-tight">
+                  <p className="font-semibold text-[#25211E] dark:text-[#F4F0E8]">{item.name}</p>
+                  <p className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] capitalize">{item.category}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Post Actions & Meta */}
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Like Button */}
+              {/* Like */}
               <button
                 onClick={handleLike}
-                className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-700 hover:text-rose-600 transition-colors group"
-                aria-label={post.isLiked ? 'Unlike post' : 'Like post'}
+                className="flex items-center gap-1.5 text-xs font-semibold group focus:outline-none"
               >
                 <Heart
                   className={cn(
-                    'w-5 h-5 transition-transform group-hover:scale-110',
+                    'w-5 h-5 transition-transform group-hover:scale-110 active:scale-90',
                     post.isLiked
                       ? 'text-rose-500 fill-rose-500'
-                      : 'text-charcoal-600 group-hover:text-rose-500'
+                      : 'text-[#82796F] dark:text-[#B2AA9E] group-hover:text-rose-500'
                   )}
                 />
-                <span>{post.likesCount}</span>
+                <span className={cn(post.isLiked ? 'text-rose-600 dark:text-rose-400' : 'text-[#82796F] dark:text-[#B2AA9E]')}>
+                  {post.likesCount}
+                </span>
               </button>
 
-              {/* Comment Button */}
+              {/* Comments */}
               <button
                 onClick={() => setCommentModalOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-700 hover:text-charcoal-950 transition-colors group"
-                aria-label="View comments"
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] transition-colors focus:outline-none"
               >
-                <MessageCircle className="w-5 h-5 text-charcoal-600 group-hover:scale-110 transition-transform" />
-                <span>{post.commentsCount}</span>
+                <MessageCircle className="w-5 h-5" />
+                <span>{post.comments?.length || 0}</span>
               </button>
 
-              {/* Share Button */}
+              {/* Share */}
               <button
                 onClick={() => setShareModalOpen(true)}
-                className="text-charcoal-600 hover:text-charcoal-950 transition-colors hover:scale-110"
+                className="text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] transition-colors focus:outline-none"
                 aria-label="Share post"
               >
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Save Bookmark Button */}
+            {/* Bookmark / Save */}
             <button
               onClick={() => toggleSavePost(post.id)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-700 hover:text-cognac-700 transition-colors group"
+              className="text-[#82796F] dark:text-[#B2AA9E] hover:text-[#C3A36B] dark:hover:text-[#D1B47A] transition-colors focus:outline-none"
               aria-label={post.isSaved ? 'Remove from saved' : 'Save outfit'}
             >
               <Bookmark
                 className={cn(
-                  'w-5 h-5 transition-transform group-hover:scale-110',
-                  post.isSaved
-                    ? 'text-cognac-700 fill-cognac-700'
-                    : 'text-charcoal-600 group-hover:text-cognac-700'
+                  'w-5 h-5 transition-transform active:scale-90',
+                  post.isSaved ? 'text-[#C3A36B] dark:text-[#D1B47A] fill-[#C3A36B] dark:fill-[#D1B47A]' : ''
                 )}
               />
-              <span className="hidden sm:inline">{post.savesCount}</span>
             </button>
           </div>
 
           {/* Caption */}
-          <div className="space-y-1.5 text-xs sm:text-sm">
-            <p className="text-charcoal-800 leading-relaxed">
-              <span className="font-bold text-charcoal-950 mr-2">
-                @{post.user.username}
-              </span>
+          {post.caption && (
+            <p className="text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] leading-relaxed font-sans">
+              <span className="font-bold mr-1.5">{post.user.username}</span>
               {post.caption}
             </p>
+          )}
 
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    onClick={() => navigate('/explore')}
-                    className="text-xs text-cognac-700 hover:underline cursor-pointer font-medium"
-                  >
-                    {tag.startsWith('#') ? tag : `#${tag}`}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Comments preview */}
-          {post.comments && post.comments.length > 0 && (
-            <button
-              onClick={() => setCommentModalOpen(true)}
-              className="text-xs text-charcoal-400 hover:text-charcoal-700 mt-2 block"
-            >
-              View all {post.comments.length} comments...
-            </button>
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {post.tags.map((t) => (
+                <span
+                  key={t}
+                  className="text-[11px] font-medium text-[#C3A36B] dark:text-[#D1B47A] hover:underline cursor-pointer"
+                >
+                  {t.startsWith('#') ? t : `#${t}`}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </article>
 
-      {/* Modals */}
-      <CommentModal
-        isOpen={commentModalOpen}
-        onClose={() => setCommentModalOpen(false)}
-        post={post}
-      />
-
       {/* Delete Confirmation Modal */}
       {isDeleteDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-950/50 backdrop-blur-xs">
-          <div className="bg-cream-50 rounded-2xl border border-sand-300 shadow-soft-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center mb-4">
-              <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-soft">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-5 h-5" />
             </div>
-            <h3 className="font-serif text-lg font-bold text-charcoal-900 mb-2">
-              Delete Outfit Post?
-            </h3>
-            <p className="text-xs text-charcoal-600 mb-6 leading-relaxed">
-              This action cannot be undone and will permanently remove this look from your profile and community feed.
-            </p>
-            <div className="flex items-center gap-3">
+            <div className="text-center">
+              <h4 className="font-serif text-lg font-bold text-[#25211E] dark:text-[#F4F0E8]">
+                Delete Lookbook Post?
+              </h4>
+              <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
+                This will permanently remove this post and its comments from the social feed and your profile.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                disabled={isDeleting}
                 onClick={() => setIsDeleteDialogOpen(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-sand-300 text-xs font-semibold text-charcoal-700 hover:bg-sand-100 transition-colors"
+                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#EFE9DF] dark:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] hover:bg-[#E5DED3]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 disabled={isDeleting}
-                onClick={async () => {
-                  setIsDeleting(true);
-                  try {
-                    await deletePost(post.id);
-                    setIsDeleteDialogOpen(false);
-                  } catch {
-                    // handled via toast
-                  } finally {
-                    setIsDeleting(false);
-                  }
-                }}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-cream-50 text-xs font-semibold shadow-soft transition-colors disabled:opacity-50"
+                onClick={handleDeleteConfirm}
+                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -379,7 +327,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         </div>
       )}
+
+      {/* Comments Drawer / Modal */}
+      <CommentModal
+        isOpen={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        post={post}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        post={post}
+      />
     </>
   );
 };
-

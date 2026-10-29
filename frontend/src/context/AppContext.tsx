@@ -12,6 +12,14 @@ import {
 } from '../types';
 import { api, ApiError } from '../services/api';
 
+export type WeatherStatus =
+  | 'idle'
+  | 'loading'
+  | 'available'
+  | 'permission_denied'
+  | 'location_unavailable'
+  | 'provider_unavailable';
+
 export interface ToastMessage {
   id: string;
   message: string;
@@ -35,9 +43,13 @@ interface AppContextType {
   dailyFit: Recommendation | null;
   dailyFitHistory: Recommendation[];
   dailyFitError: string | null;
+  isGeneratingDailyFit: boolean;
+  generateDailyFit: (targetVariation?: number, targetOccasion?: Occasion) => Promise<Recommendation | null>;
   weather: Weather;
+  weatherStatus: WeatherStatus;
   isWeatherLoading: boolean;
   weatherError: string | null;
+  requestWeather: (options?: { force?: boolean; city?: string; useGps?: boolean }) => Promise<Weather | null>;
   isLiveLocation: boolean;
   liveCoordinates: { latitude: number; longitude: number } | null;
   toggleLiveLocation: (enable?: boolean) => Promise<boolean>;
@@ -47,8 +59,8 @@ interface AppContextType {
   setSelectedOccasion: (occ: Occasion) => void;
   userSettings: UserSettings;
   updateUserSettings: (s: UserSettings) => Promise<void>;
-  theme: 'light' | 'dark';
-  setTheme: (t: 'light' | 'dark') => void;
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (t: 'light' | 'dark' | 'system') => void;
   toasts: ToastMessage[];
   showToast: (message: string, type?: 'success' | 'info' | 'heart' | 'save') => void;
   dismissToast: (id: string) => void;
@@ -158,26 +170,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedCity, setSelectedCityState] = useState<string>(() => {
     return localStorage.getItem('stylesphere_selected_city') || '';
   });
-  const setSelectedCity = useCallback((city: string) => {
-    setSelectedCityState(city);
-    if (city.trim()) {
-      localStorage.setItem('stylesphere_selected_city', city.trim());
-    } else {
-      localStorage.removeItem('stylesphere_selected_city');
-    }
-  }, []);
-  const [selectedOccasion, setSelectedOccasion] = useState<Occasion>('Casual Daily');
+  const [selectedOccasion, setSelectedOccasionState] = useState<Occasion>('Casual Daily');
   const [weather, setWeather] = useState<Weather>({ ...INITIAL_WEATHER });
+  const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle');
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [isGeneratingDailyFit, setIsGeneratingDailyFit] = useState<boolean>(false);
   const [isLiveLocation, setIsLiveLocation] = useState<boolean>(() => {
     return localStorage.getItem('stylesphere_live_location') === 'true';
   });
   const [liveCoordinates, setLiveCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [dailyFitVariation, setDailyFitVariation] = useState<number>(0);
   const [dailyFit, setDailyFit] = useState<Recommendation | null>(null);
-  // Theme is UI-only state; it never stores application/user data.
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Theme state: support 'light' | 'dark' | 'system'
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() => {
+    return (localStorage.getItem('stylesphere_theme') as 'light' | 'dark' | 'system') || 'light';
+  });
+
+  const applyTheme = useCallback((targetTheme: 'light' | 'dark' | 'system') => {
+    const isDark =
+      targetTheme === 'dark' ||
+      (targetTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const setTheme = useCallback(
+    (newTheme: 'light' | 'dark' | 'system') => {
+      setThemeState(newTheme);
+      try {
+        localStorage.setItem('stylesphere_theme', newTheme);
+      } catch {}
+      applyTheme(newTheme);
+    },
+    [applyTheme]
+  );
+
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme, applyTheme]);
+
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Toast dispatch
@@ -193,65 +235,223 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const toggleLiveLocation = useCallback(async (enable?: boolean): Promise<boolean> => {
-    const shouldEnable = enable !== undefined ? enable : !isLiveLocation;
-    if (!shouldEnable) {
-      setIsLiveLocation(false);
-      setLiveCoordinates(null);
-      localStorage.setItem('stylesphere_live_location', 'false');
-      showToast('Live GPS disabled. Using manual city selection.', 'info');
-      return false;
-    }
+  const activeWeatherPromiseRef = React.useRef<Promise<Weather | null> | null>(null);
+  const weatherCacheRef = React.useRef<{ weather: Weather; key: string; timestamp: number } | null>(null);
 
-    if (!navigator.geolocation) {
-      showToast('Geolocation is not supported by your browser.', 'info');
-      return false;
-    }
+  // User-controlled on-demand weather request with caching and deduplication
+  const requestWeather = useCallback(
+    async (options?: { force?: boolean; city?: string; useGps?: boolean }): Promise<Weather | null> => {
+      let targetLat: number | undefined = undefined;
+      let targetLon: number | undefined = undefined;
 
-    setIsWeatherLoading(true);
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          setLiveCoordinates(coords);
+      if (options?.useGps) {
+        if (!navigator.geolocation) {
+          setWeatherStatus('permission_denied');
+          setWeatherError('Geolocation is not supported by your browser.');
+          showToast('Geolocation is not supported by your browser.', 'info');
+          return null;
+        }
+
+        setIsWeatherLoading(true);
+        setWeatherStatus('loading');
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 10000,
+              enableHighAccuracy: true,
+            });
+          });
+          targetLat = pos.coords.latitude;
+          targetLon = pos.coords.longitude;
+          setLiveCoordinates({ latitude: targetLat, longitude: targetLon });
           setIsLiveLocation(true);
-          localStorage.setItem('stylesphere_live_location', 'true');
           try {
-            const w = await api.weather.getCurrent(undefined, coords.latitude, coords.longitude);
-            setWeather(w);
-            if (w.city) {
-              setSelectedCity(w.city);
-            }
-            setWeatherError(null);
-            showToast(`Live GPS active: ${w.city} (${w.temp}°C)`, 'success');
-            resolve(true);
-          } catch (err) {
-            setWeatherError(err instanceof Error ? err.message : 'Could not fetch live GPS weather');
-            showToast('Failed to fetch live GPS weather', 'info');
-            resolve(false);
-          } finally {
-            setIsWeatherLoading(false);
-          }
-        },
-        (error) => {
+            localStorage.setItem('stylesphere_live_location', 'true');
+          } catch {}
+        } catch (geoErr: any) {
           setIsLiveLocation(false);
           setLiveCoordinates(null);
-          localStorage.setItem('stylesphere_live_location', 'false');
+          try {
+            localStorage.setItem('stylesphere_live_location', 'false');
+          } catch {}
+          setWeatherStatus('permission_denied');
+          const deniedMsg =
+            geoErr?.code === 1
+              ? 'Location permission denied. Please choose your city manually.'
+              : 'Location request timed out. Please choose your city manually.';
+          setWeatherError(deniedMsg);
           setIsWeatherLoading(false);
-          let message = 'Location permission denied. Using manual city selection.';
-          if (error.code === error.TIMEOUT) {
-            message = 'Location request timed out. Using manual city selection.';
+          showToast(deniedMsg, 'info');
+          return null;
+        }
+      } else if (isLiveLocation && liveCoordinates) {
+        targetLat = liveCoordinates.latitude;
+        targetLon = liveCoordinates.longitude;
+      }
+
+      const targetCity =
+        options?.city?.trim() ||
+        (targetLat === undefined
+          ? selectedCity.trim() || currentUser?.location?.trim() || userSettings?.account?.location?.trim()
+          : undefined);
+
+      if (targetLat === undefined && !targetCity) {
+        setWeatherStatus('location_unavailable');
+        setWeatherError('Location not set. Please select a city or enable GPS.');
+        return null;
+      }
+
+      const locationKey =
+        targetLat !== undefined
+          ? `geo_${targetLat.toFixed(3)}_${targetLon?.toFixed(3)}`
+          : `city_${targetCity?.toLowerCase()}`;
+      const now = Date.now();
+      const CACHE_TTL_MS = 15 * 60 * 1000;
+
+      if (
+        !options?.force &&
+        weatherCacheRef.current &&
+        weatherCacheRef.current.key === locationKey &&
+        now - weatherCacheRef.current.timestamp < CACHE_TTL_MS
+      ) {
+        setWeather(weatherCacheRef.current.weather);
+        setWeatherStatus('available');
+        setWeatherError(null);
+        return weatherCacheRef.current.weather;
+      }
+
+      if (activeWeatherPromiseRef.current) {
+        return activeWeatherPromiseRef.current;
+      }
+
+      setIsWeatherLoading(true);
+      setWeatherStatus('loading');
+      setWeatherError(null);
+
+      const fetchPromise = (async () => {
+        try {
+          const w = await api.weather.getCurrent(targetCity, targetLat, targetLon);
+          setWeather(w);
+          setWeatherStatus('available');
+          setWeatherError(null);
+          weatherCacheRef.current = { weather: w, key: locationKey, timestamp: Date.now() };
+          if (w.city && w.city !== selectedCity) {
+            setSelectedCityState(w.city);
           }
-          showToast(message, 'info');
-          resolve(false);
-        },
-        { timeout: 8000, enableHighAccuracy: true }
-      );
-    });
-  }, [isLiveLocation, showToast]);
+          return w;
+        } catch (err: any) {
+          const errorMsg = err instanceof Error ? err.message : 'Live weather temporarily unavailable';
+          setWeatherStatus('provider_unavailable');
+          setWeatherError(errorMsg);
+          return null;
+        } finally {
+          setIsWeatherLoading(false);
+          activeWeatherPromiseRef.current = null;
+        }
+      })();
+
+      activeWeatherPromiseRef.current = fetchPromise;
+      return fetchPromise;
+    },
+    [isLiveLocation, liveCoordinates, selectedCity, currentUser?.location, userSettings?.account?.location, showToast]
+  );
+
+  const setSelectedCity = useCallback(
+    (city: string) => {
+      const clean = city.trim();
+      setSelectedCityState(clean);
+      try {
+        if (clean) {
+          localStorage.setItem('stylesphere_selected_city', clean);
+        } else {
+          localStorage.removeItem('stylesphere_selected_city');
+        }
+      } catch {}
+      if (isLiveLocation) {
+        setIsLiveLocation(false);
+        setLiveCoordinates(null);
+        try {
+          localStorage.setItem('stylesphere_live_location', 'false');
+        } catch {}
+      }
+      if (clean && weatherStatus !== 'idle') {
+        requestWeather({ force: true, city: clean });
+      }
+    },
+    [isLiveLocation, requestWeather, weatherStatus]
+  );
+
+  const toggleLiveLocation = useCallback(
+    async (enable?: boolean): Promise<boolean> => {
+      const shouldEnable = enable !== undefined ? enable : !isLiveLocation;
+      if (!shouldEnable) {
+        setIsLiveLocation(false);
+        setLiveCoordinates(null);
+        try {
+          localStorage.setItem('stylesphere_live_location', 'false');
+        } catch {}
+        showToast('Live GPS disabled. Using manual city selection.', 'info');
+        return false;
+      }
+
+      if (!navigator.geolocation) {
+        showToast('Geolocation is not supported by your browser.', 'info');
+        return false;
+      }
+
+      setIsWeatherLoading(true);
+      return new Promise<boolean>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const coords = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            };
+            setLiveCoordinates(coords);
+            setIsLiveLocation(true);
+            try {
+              localStorage.setItem('stylesphere_live_location', 'true');
+            } catch {}
+            try {
+              const w = await api.weather.getCurrent(undefined, coords.latitude, coords.longitude);
+              setWeather(w);
+              if (w.city) {
+                setSelectedCityState(w.city);
+              }
+              setWeatherStatus('available');
+              setWeatherError(null);
+              showToast(`Live GPS active: ${w.city} (${w.temp}°C)`, 'success');
+              resolve(true);
+            } catch (err) {
+              setWeatherStatus('provider_unavailable');
+              setWeatherError(err instanceof Error ? err.message : 'Could not fetch live GPS weather');
+              showToast('Failed to fetch live GPS weather', 'info');
+              resolve(false);
+            } finally {
+              setIsWeatherLoading(false);
+            }
+          },
+          (error) => {
+            setIsLiveLocation(false);
+            setLiveCoordinates(null);
+            try {
+              localStorage.setItem('stylesphere_live_location', 'false');
+            } catch {}
+            setIsWeatherLoading(false);
+            setWeatherStatus('permission_denied');
+            let message = 'Location permission denied. Using manual city selection.';
+            if (error.code === error.TIMEOUT) {
+              message = 'Location request timed out. Using manual city selection.';
+            }
+            showToast(message, 'info');
+            resolve(false);
+          },
+          { timeout: 8000, enableHighAccuracy: true }
+        );
+      });
+    },
+    [isLiveLocation, showToast]
+  );
 
   const isAuthenticated = currentUser !== null;
 
@@ -329,140 +529,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     refreshData();
   }, [refreshData]);
 
-  // Initial location bootstrap: check permission / saved live location preference
-  useEffect(() => {
-    if (!liveCoordinates && navigator.geolocation) {
-      if (isLiveLocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setLiveCoordinates({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            });
-          },
-          () => {
-            setIsLiveLocation(false);
-            localStorage.setItem('stylesphere_live_location', 'false');
-          },
-          { timeout: 6000 }
-        );
-      } else if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions
-          .query({ name: 'geolocation' })
-          .then((result) => {
-            if (result.state === 'granted') {
-              navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                  setLiveCoordinates({
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                  });
-                  setIsLiveLocation(true);
-                  localStorage.setItem('stylesphere_live_location', 'true');
-                },
-                () => {},
-                { timeout: 6000 }
-              );
-            }
-          })
-          .catch(() => {});
+  // User-initiated daily fit recommendation generation (no automatic fetch on mount)
+  const generateDailyFit = useCallback(
+    async (targetVariation?: number, targetOccasion?: Occasion): Promise<Recommendation | null> => {
+      if (!isAuthenticated || wardrobe.length === 0) {
+        setDailyFit(null);
+        return null;
       }
-    }
-  }, [isLiveLocation, liveCoordinates]);
+      setIsGeneratingDailyFit(true);
+      setDailyFitError(null);
 
-  // Real live weather fetching according to 5-level location hierarchy
-  useEffect(() => {
-    let cancelled = false;
+      const variationToUse = targetVariation !== undefined ? targetVariation : dailyFitVariation;
+      const occasionToUse = targetOccasion || selectedOccasion;
 
-    const fetchWeather = async () => {
-      // Priority 1-3: Browser/device geolocation with reverse geocoding
-      if (isLiveLocation && liveCoordinates) {
-        setIsWeatherLoading(true);
-        setWeatherError(null);
-        try {
-          const w = await api.weather.getCurrent(undefined, liveCoordinates.latitude, liveCoordinates.longitude);
-          if (!cancelled) {
-            setWeather(w);
-            if (w.city && w.city !== selectedCity) {
-              setSelectedCityState(w.city);
-            }
-          }
-        } catch (err) {
-          if (!cancelled) {
-            const msg = err instanceof Error ? err.message : 'Live GPS weather temporarily unavailable';
-            setWeatherError(msg);
-          }
-        } finally {
-          if (!cancelled) setIsWeatherLoading(false);
-        }
-        return;
-      }
+      const lat = isLiveLocation && liveCoordinates ? liveCoordinates.latitude : undefined;
+      const lon = isLiveLocation && liveCoordinates ? liveCoordinates.longitude : undefined;
+      const targetCity = selectedCity.trim() || currentUser?.location?.trim() || undefined;
 
-      // Priority 4: Saved location in user settings, or manually selected city
-      const cityToFetch = selectedCity.trim() || currentUser?.location?.trim() || userSettings.account.location?.trim();
-
-      // Priority 5: If neither available, do NOT fallback to "New York". Show location-unavailable state.
-      if (!cityToFetch) {
-        setIsWeatherLoading(false);
-        setWeather(INITIAL_WEATHER);
-        setWeatherError('Location not set. Enable GPS or choose your city.');
-        return;
-      }
-
-      setIsWeatherLoading(true);
-      setWeatherError(null);
       try {
-        const w = await api.weather.getCurrent(cityToFetch);
-        if (!cancelled) {
-          setWeather(w);
-          if (w.city && w.city !== selectedCity) {
-            setSelectedCityState(w.city);
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Live weather temporarily unavailable';
-          setWeatherError(msg);
-        }
+        const rec = await api.recommendations.getDailyFit(targetCity, occasionToUse, variationToUse, lat, lon);
+        setDailyFit(rec);
+        return rec;
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : 'Daily Fit unavailable';
+        setDailyFitError(msg);
+        showToast(msg, 'info');
+        return null;
       } finally {
-        if (!cancelled) setIsWeatherLoading(false);
+        setIsGeneratingDailyFit(false);
       }
-    };
+    },
+    [
+      isAuthenticated,
+      wardrobe.length,
+      dailyFitVariation,
+      selectedOccasion,
+      isLiveLocation,
+      liveCoordinates,
+      selectedCity,
+      currentUser?.location,
+      showToast,
+    ]
+  );
 
-    fetchWeather();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCity, isLiveLocation, liveCoordinates, currentUser?.location, userSettings.account.location]);
+  const setSelectedOccasion = useCallback(
+    (occ: Occasion) => {
+      setSelectedOccasionState(occ);
+      if (dailyFit) {
+        generateDailyFit(dailyFitVariation, occ);
+      }
+    },
+    [dailyFit, dailyFitVariation, generateDailyFit]
+  );
 
-  // Daily Fit is generated server-side from Neon data and real Open-Meteo weather
-  useEffect(() => {
-    if (!isAuthenticated || wardrobe.length === 0) {
-      setDailyFit(null);
-      return;
-    }
-    let cancelled = false;
-    setDailyFitError(null);
-    const lat = isLiveLocation && liveCoordinates ? liveCoordinates.latitude : undefined;
-    const lon = isLiveLocation && liveCoordinates ? liveCoordinates.longitude : undefined;
-
-    const targetCity = selectedCity.trim() || currentUser?.location?.trim() || undefined;
-
-    api.recommendations
-      .getDailyFit(targetCity, selectedOccasion, dailyFitVariation, lat, lon)
-      .then((rec) => {
-        if (!cancelled) setDailyFit(rec);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setDailyFit(null);
-          setDailyFitError(err instanceof Error ? err.message : 'Daily Fit unavailable');
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, wardrobe, selectedOccasion, dailyFitVariation, selectedCity, isLiveLocation, liveCoordinates]);
+  const cycleDailyFit = useCallback(() => {
+    const nextVariation = dailyFitVariation + 1;
+    setDailyFitVariation(nextVariation);
+    generateDailyFit(nextVariation, selectedOccasion);
+    showToast('Generated fresh combination', 'info');
+  }, [dailyFitVariation, generateDailyFit, selectedOccasion, showToast]);
 
   // --- Auth ---------------------------------------------------------------
   const login = async (emailOrUsername: string, password: string) => {
@@ -787,11 +912,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast('Logged today’s fit! Wear count updated.', 'success');
   };
 
-  const cycleDailyFit = () => {
-    setDailyFitVariation((v) => v + 1);
-    showToast('Generated fresh combination', 'info');
-  };
-
   // Collections (persisted in Neon)
   const createCollection = async (name: string, description?: string, coverImage?: string) => {
     const col = await api.saved.createCollection(name, description);
@@ -833,6 +953,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         preferred_categories: newSettings.preferences.favoriteCategories,
       });
       setUserSettings(newSettings);
+      if (newSettings.appearance?.theme) {
+        setTheme(newSettings.appearance.theme);
+      }
       setCurrentUserState(updatedUser);
       showToast('Settings saved successfully', 'success');
     } catch (err) {
@@ -876,9 +999,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         dailyFit,
         dailyFitHistory,
         dailyFitError,
+        isGeneratingDailyFit,
+        generateDailyFit,
         weather,
+        weatherStatus,
         isWeatherLoading,
         weatherError,
+        requestWeather,
         isLiveLocation,
         liveCoordinates,
         toggleLiveLocation,

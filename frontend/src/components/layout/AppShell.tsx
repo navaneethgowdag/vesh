@@ -15,7 +15,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   showRightSidebar = false,
 }) => {
   return (
-    <div className="min-h-screen bg-cream-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-[#F7F4EE] dark:bg-[#171715] text-[#25211E] dark:text-[#F4F0E8] flex flex-col antialiased transition-colors duration-200">
       {/* Top bar on Mobile / Tablet */}
       <TopBar />
 
@@ -24,7 +24,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         <Sidebar />
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 pb-24 lg:pb-12 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <main className="flex-1 min-w-0 pb-24 lg:pb-12 px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
           <div className="max-w-4xl mx-auto">{children}</div>
         </main>
 
@@ -40,4 +40,3 @@ export const AppShell: React.FC<AppShellProps> = ({
     </div>
   );
 };
-

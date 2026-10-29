@@ -1,18 +1,31 @@
 /**
- * StyleSphere API Base URL resolution utility.
- * Guarantees proper routing between local development (http://localhost:8000/api/v1)
+ * API configuration and base URL resolution for StyleSphere.
+ * Guarantees proper routing between local development (http://127.0.0.1:8000/api/v1)
  * and production deployment on Render (https://vesh-backend-5sx2.onrender.com/api/v1).
  *
- * Prevents "Failed to fetch" errors caused by Mixed Content or stale localhost inlining.
+ * Ensures all API calls use the registered /api/v1 prefix without duplication.
  */
 
-export const DEFAULT_DEV_API_BASE = 'http://localhost:8000/api/v1';
+export const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8000/api/v1';
 export const PRODUCTION_API_BASE = 'https://vesh-backend-5sx2.onrender.com/api/v1';
 
-export function getApiBaseUrl(): string {
-  const rawEnv = (import.meta.env.VITE_API_BASE_URL || '').trim();
+function normalizeApiBaseUrl(raw: string): string {
+  const cleaned = raw.trim().replace(/\/+$/, '');
+  if (!cleaned) return DEFAULT_DEV_API_BASE;
 
-  // If in browser runtime:
+  // Never duplicate /api/v1
+  if (cleaned.endsWith('/api/v1')) {
+    return cleaned;
+  }
+  if (cleaned.endsWith('/api')) {
+    return `${cleaned}/v1`;
+  }
+  return `${cleaned}/api/v1`;
+}
+
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '').trim();
+
   if (typeof window !== 'undefined' && window.location) {
     const isHttps = window.location.protocol === 'https:';
     const hostname = window.location.hostname.toLowerCase();
@@ -22,24 +35,23 @@ export function getApiBaseUrl(): string {
       hostname === '::1' ||
       hostname.endsWith('.local');
 
-    // Running on production / deployed origin (such as vesh.onrender.com)
+    // Deployed production environment (e.g. vesh.onrender.com)
     if (!isLocalhost) {
-      // If the env variable was omitted, or baked in as localhost/127.0.0.1/insecure http:
       if (
-        !rawEnv ||
-        rawEnv.includes('localhost') ||
-        rawEnv.includes('127.0.0.1') ||
-        (isHttps && rawEnv.startsWith('http:'))
+        !envUrl ||
+        envUrl.includes('localhost') ||
+        envUrl.includes('127.0.0.1') ||
+        (isHttps && envUrl.startsWith('http:'))
       ) {
         return PRODUCTION_API_BASE;
       }
-      return rawEnv.replace(/\/+$/, '');
+      return normalizeApiBaseUrl(envUrl);
     }
   }
 
-  // Local development fallback
-  if (rawEnv) {
-    return rawEnv.replace(/\/+$/, '');
+  // Local development
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
   }
   return DEFAULT_DEV_API_BASE;
 }
@@ -47,12 +59,9 @@ export function getApiBaseUrl(): string {
 export function getBackendOrigin(): string {
   const apiBase = getApiBaseUrl();
   try {
-    const parsed = new URL(
-      apiBase,
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000'
-    );
-    return parsed.origin;
+    const url = new URL(apiBase);
+    return url.origin;
   } catch {
-    return 'http://localhost:8000';
+    return apiBase.replace(/\/api\/v1\/?$/, '');
   }
 }

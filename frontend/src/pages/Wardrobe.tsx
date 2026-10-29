@@ -4,16 +4,16 @@ import {
   Plus,
   Shirt,
   Sparkles,
-  SlidersHorizontal,
   Search,
   Layers,
   ArrowUpDown,
+  RefreshCw,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
 import { AddClothingModal } from '../components/wardrobe/AddClothingModal';
 import { Button } from '../components/ui/Button';
-import { StyleChip } from '../components/ui/StyleChip';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
 import { ClothingCategory, ClothingItem } from '../types';
 
@@ -29,7 +29,7 @@ const CATEGORIES: (ClothingCategory | 'All')[] = [
 ];
 
 export const Wardrobe: React.FC = () => {
-  const { wardrobe } = useApp();
+  const { wardrobe, refreshData } = useApp();
   const navigate = useNavigate();
 
   const [activeCategory, setActiveCategory] = useState<ClothingCategory | 'All'>('All');
@@ -37,14 +37,12 @@ export const Wardrobe: React.FC = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'wears' | 'name'>('recent');
 
-  // Calculate dynamic stats
   const totalItems = wardrobe.length;
   const topsCount = wardrobe.filter((i) => i.category === 'Tops').length;
   const bottomsCount = wardrobe.filter((i) => i.category === 'Bottoms').length;
   const shoesCount = wardrobe.filter((i) => i.category === 'Shoes').length;
   const othersCount = totalItems - (topsCount + bottomsCount + shoesCount);
 
-  // Filter and sort items
   const filteredItems = useMemo(() => {
     return wardrobe
       .filter((item) => {
@@ -66,155 +64,136 @@ export const Wardrobe: React.FC = () => {
       .sort((a, b) => {
         if (sortBy === 'wears') return (b.timesWorn || 0) - (a.timesWorn || 0);
         if (sortBy === 'name') return a.name.localeCompare(b.name);
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
   }, [wardrobe, activeCategory, searchQuery, sortBy]);
 
   return (
     <AppShell>
-      {/* Page Header with Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-charcoal-900 text-cream-50 rounded-xl shadow-soft">
-              <Shirt className="w-4 h-4" />
+      <PullToRefresh onRefresh={refreshData}>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] block mb-1 font-sans">
+              Personal Inventory
             </span>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal-950">
-              My Digital Wardrobe
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-[#25211E] dark:text-[#F4F0E8] tracking-tight">
+              Capsule Wardrobe
             </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-charcoal-500 mt-1">
-            Curate your physical garments to unlock effortless AI daily fit recommendations.
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => setAddModalOpen(true)}
-          icon={<Plus className="w-4 h-4" />}
-          className="shadow-soft"
-        >
-          Add Clothing
-        </Button>
-      </div>
-
-      {/* Wardrobe Summary Stats Card */}
-      <div className="bg-sand-100/90 rounded-3xl p-5 border border-sand-200/90 shadow-soft mb-8">
-        <div className="flex items-center justify-between mb-3 border-b border-sand-200 pb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-charcoal-500 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-cognac-700" />
-            Capsule Analytics
-          </span>
-          <span className="text-xs text-cognac-800 font-semibold">96% Versatility Index</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="bg-cream-50 p-3 rounded-2xl border border-sand-200">
-            <span className="text-[11px] text-charcoal-400 uppercase font-semibold">Total Items</span>
-            <p className="text-xl sm:text-2xl font-serif font-bold text-charcoal-900">{totalItems}</p>
-          </div>
-          <div className="bg-cream-50 p-3 rounded-2xl border border-sand-200">
-            <span className="text-[11px] text-charcoal-400 uppercase font-semibold">Tops</span>
-            <p className="text-xl sm:text-2xl font-serif font-bold text-charcoal-900">{topsCount}</p>
-          </div>
-          <div className="bg-cream-50 p-3 rounded-2xl border border-sand-200">
-            <span className="text-[11px] text-charcoal-400 uppercase font-semibold">Bottoms</span>
-            <p className="text-xl sm:text-2xl font-serif font-bold text-charcoal-900">{bottomsCount}</p>
-          </div>
-          <div className="bg-cream-50 p-3 rounded-2xl border border-sand-200">
-            <span className="text-[11px] text-charcoal-400 uppercase font-semibold">Shoes</span>
-            <p className="text-xl sm:text-2xl font-serif font-bold text-charcoal-900">{shoesCount}</p>
-          </div>
-          <div className="bg-cream-50 p-3 rounded-2xl border border-sand-200 col-span-2 sm:col-span-1">
-            <span className="text-[11px] text-charcoal-400 uppercase font-semibold">Others</span>
-            <p className="text-xl sm:text-2xl font-serif font-bold text-charcoal-900">{othersCount}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Category Tabs */}
-      <div className="space-y-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-          {/* Search bar */}
-          <div className="relative w-full sm:max-w-md">
-            <input
-              type="text"
-              placeholder="Search wardrobe by name, brand, color..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600 shadow-soft-sm"
-            />
-            <Search className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-3" />
+            <p className="text-xs sm:text-sm text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
+              {totalItems} physical garments digitized & categorized in your atelier.
+            </p>
           </div>
 
-          {/* Sort Control */}
-          <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-charcoal-600">
-            <ArrowUpDown className="w-3.5 h-3.5 text-charcoal-400" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-cream-50 border border-sand-300 rounded-xl px-2.5 py-1.5 text-xs text-charcoal-800 focus:outline-none"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setAddModalOpen(true)}
+              icon={<Plus className="w-4 h-4" />}
             >
-              <option value="recent">Recently Added</option>
-              <option value="wears">Most Worn</option>
-              <option value="name">Name A-Z</option>
-            </select>
+              Add New Piece
+            </Button>
           </div>
         </div>
 
-        {/* Category Pill Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar">
-          {CATEGORIES.map((cat) => {
-            const count =
-              cat === 'All'
-                ? wardrobe.length
-                : wardrobe.filter((i) => i.category === cat).length;
-
-            return (
-              <StyleChip
-                key={cat}
-                label={cat}
-                count={count}
-                selected={activeCategory === cat}
-                onClick={() => setActiveCategory(cat)}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Wardrobe Items Grid */}
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-20 bg-cream-50 rounded-3xl border border-sand-200">
-          <Shirt className="w-12 h-12 text-sand-400 mx-auto mb-3" />
-          <h3 className="font-serif text-lg font-bold text-charcoal-900">
-            {wardrobe.length === 0 ? 'Your wardrobe is empty' : 'No items match your criteria'}
-          </h3>
-          <p className="text-xs text-charcoal-500 max-w-sm mx-auto mt-1">
-            {wardrobe.length === 0
-              ? 'Add your first clothing item and start creating personalized outfits.'
-              : 'Try clearing your search query or selecting a different category filter.'}
-          </p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setAddModalOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
-            className="mt-5"
-          >
-            + Add Clothing
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {filteredItems.map((item) => (
-            <ClothingCard key={item.id} item={item} />
+        {/* Quick Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Tops', count: topsCount },
+            { label: 'Bottoms', count: bottomsCount },
+            { label: 'Shoes', count: shoesCount },
+            { label: 'Other Pieces', count: othersCount },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-[#FFFFFF] dark:bg-[#22221F] p-3.5 rounded-xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle text-center sm:text-left"
+            >
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-[#82796F] dark:text-[#B2AA9E]">
+                {stat.label}
+              </p>
+              <p className="font-serif text-xl sm:text-2xl font-bold text-[#25211E] dark:text-[#F4F0E8] mt-0.5">
+                {stat.count}
+              </p>
+            </div>
           ))}
         </div>
-      )}
 
-      {/* Add Clothing Modal */}
+        {/* Search, Sort, Filter Bar */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search pieces by name, fabric, brand, color..."
+                className="w-full bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] placeholder:text-[#A39B90] dark:placeholder:text-[#7E786E] focus:outline-none focus:ring-2 focus:ring-[#C3A36B] shadow-subtle transition-colors"
+              />
+              <Search className="w-4 h-4 text-[#82796F] dark:text-[#7E786E] absolute left-3.5 top-3" />
+            </div>
+
+            <div className="flex items-center gap-1 bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-xl p-1 shadow-subtle text-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#82796F] dark:text-[#7E786E] ml-2" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-transparent border-none text-[#25211E] dark:text-[#F4F0E8] text-xs py-1.5 pr-3 pl-1 focus:outline-none cursor-pointer"
+              >
+                <option value="recent">Recently Added</option>
+                <option value="wears">Most Worn</option>
+                <option value="name">Alphabetical</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Categories Pill Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`text-xs px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium ${
+                  activeCategory === cat
+                    ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] border-[#25211E] dark:border-[#F4F0E8] font-semibold shadow-subtle'
+                    : 'bg-[#FFFFFF] dark:bg-[#22221F] border-[#E5DED3] dark:border-[#393832] text-[#82796F] dark:text-[#B2AA9E] hover:border-[#C3A36B]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Garment Grid */}
+        {filteredItems.length === 0 ? (
+          <div className="text-center py-20 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle">
+            <Shirt className="w-8 h-8 text-[#C3A36B] dark:text-[#D1B47A] mx-auto mb-2 opacity-60" />
+            <p className="font-serif font-medium text-[#25211E] dark:text-[#F4F0E8]">
+              {searchQuery ? `No garments matching "${searchQuery}"` : 'Your Capsule Closet is Empty'}
+            </p>
+            <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-1 max-w-sm mx-auto font-sans">
+              Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits.
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setAddModalOpen(true)}
+              className="mt-4"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add Garment
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredItems.map((item) => (
+              <ClothingCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </PullToRefresh>
+
       <AddClothingModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -222,4 +201,3 @@ export const Wardrobe: React.FC = () => {
     </AppShell>
   );
 };
-
