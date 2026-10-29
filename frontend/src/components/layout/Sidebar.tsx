@@ -48,22 +48,19 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 bg-[#FFFFFF]/90 dark:bg-[#1E1E1B]/95 border-r border-[#E5DED3] dark:border-[#393832] px-6 py-7 justify-between select-none transition-colors">
+    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 bg-white dark:bg-[#18181B] border-r border-zinc-200 dark:border-zinc-800 px-5 py-6 justify-between select-none transition-colors">
       {/* Brand Header */}
       <div>
         <div
           onClick={() => navigate('/home')}
-          className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-8"
+          className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-6"
         >
-          <div className="w-10 h-10 rounded-2xl bg-[#25211E] dark:bg-[#2A2A26] border border-[#C3A36B]/30 flex items-center justify-center text-[#F7F4EE] dark:text-[#F4F0E8] font-serif font-bold text-xl shadow-subtle group-hover:bg-[#C3A36B] transition-colors">
+          <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-base transition-colors">
             S
           </div>
           <div>
-            <span className="font-serif text-2xl font-bold tracking-tight text-[#25211E] dark:text-[#F4F0E8] group-hover:text-[#C3A36B] dark:group-hover:text-[#D1B47A] transition-colors">
+            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 transition-colors">
               StyleSphere
-            </span>
-            <span className="block text-[10px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] -mt-1 font-sans">
-              AI Atelier
             </span>
           </div>
         </div>
@@ -79,11 +76,11 @@ export const Sidebar: React.FC = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    'group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                    'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
                     isActive
-                      ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] font-semibold shadow-subtle'
-                      : 'text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#F7F4EE] dark:hover:bg-[#2A2A26]',
-                    item.highlight && !isActive && 'text-[#C3A36B] dark:text-[#D1B47A] font-semibold bg-[#F7F4EE] dark:bg-[#2A2A26]/60 border border-[#E5DED3] dark:border-[#393832]'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60',
+                    item.highlight && !isActive && 'text-amber-800 dark:text-amber-400 font-semibold bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20'
                   )
                 }
               >
@@ -94,10 +91,10 @@ export const Sidebar: React.FC = () => {
                         className={cn(
                           'w-4 h-4 transition-transform group-hover:scale-105',
                           isActive
-                            ? 'text-[#C3A36B] dark:text-[#25211E]'
+                            ? 'text-white dark:text-zinc-900'
                             : item.highlight
-                            ? 'text-[#C3A36B] dark:text-[#D1B47A]'
-                            : 'text-[#82796F] dark:text-[#B2AA9E]'
+                            ? 'text-amber-700 dark:text-amber-400'
+                            : 'text-zinc-500 dark:text-zinc-400'
                         )}
                       />
                       <span>{item.name}</span>
@@ -107,10 +104,10 @@ export const Sidebar: React.FC = () => {
                       {item.badge && (
                         <span
                           className={cn(
-                            'text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                            'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
                             isActive
-                              ? 'bg-[#C3A36B] text-[#171715]'
-                              : 'bg-[#C3A36B]/20 text-[#C3A36B] dark:text-[#D1B47A]'
+                              ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
+                              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                           )}
                         >
                           {item.badge}
@@ -120,10 +117,10 @@ export const Sidebar: React.FC = () => {
                       {typeof item.count === 'number' && item.count > 0 && (
                         <span
                           className={cn(
-                            'text-xs px-2 py-0.5 rounded-full font-semibold',
+                            'text-xs px-2 py-0.5 rounded font-semibold',
                             isActive
-                              ? 'bg-[#3D3732] dark:bg-[#E5DED3] text-[#F7F4EE] dark:text-[#171715]'
-                              : 'bg-[#EFE9DF] dark:bg-[#2A2A26] text-[#82796F] dark:text-[#B2AA9E]'
+                              ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
+                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                           )}
                         >
                           {item.count}
@@ -139,25 +136,25 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* User Card at Bottom */}
-      <div className="pt-4 border-t border-[#E5DED3] dark:border-[#393832]">
-        <div className="flex items-center justify-between p-2 rounded-xl hover:bg-[#F7F4EE] dark:hover:bg-[#2A2A26] transition-colors group">
+      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors group">
           <div
             onClick={() => navigate('/profile')}
             className="flex items-center gap-3 cursor-pointer min-w-0 flex-1"
           >
             <Avatar src={currentUser.avatar} alt={currentUser.name} size="md" isVerified={currentUser.isVerified} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#25211E] dark:text-[#F4F0E8] truncate group-hover:text-[#C3A36B] dark:group-hover:text-[#D1B47A] transition-colors">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                 {currentUser.name}
               </p>
-              <p className="text-[11px] text-[#82796F] dark:text-[#B2AA9E] truncate">@{currentUser.username}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">@{currentUser.username}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
             title="Log Out of StyleSphere"
             aria-label="Log Out"
-            className="p-2 text-[#82796F] dark:text-[#B2AA9E] hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+            className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>

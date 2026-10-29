@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, TrendingUp, Users } from 'lucide-react';
+import { Sparkles, Users } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { WeatherCard } from '../ui/WeatherCard';
 import { Avatar } from '../ui/Avatar';
@@ -20,35 +20,11 @@ export const RightSidebar: React.FC = () => {
     return Array.from(map.values()).slice(0, 3);
   }, [posts]);
 
-  const trendingTags = React.useMemo(() => {
-    const tagCountMap: Record<string, number> = {};
-    for (const p of posts) {
-      if (Array.isArray(p.tags)) {
-        for (const raw of p.tags) {
-          const t = raw.startsWith('#') ? raw : `#${raw}`;
-          tagCountMap[t] = (tagCountMap[t] || 0) + 1;
-        }
-      }
-    }
-    const entries = Object.entries(tagCountMap).sort((a, b) => b[1] - a[1]);
-    if (entries.length === 0) {
-      return [
-        { tag: '#QuietLuxury', posts: 'Explore' },
-        { tag: '#CapsuleWardrobe', posts: 'Explore' },
-        { tag: '#MinimalStyle', posts: 'Explore' },
-      ];
-    }
-    return entries.slice(0, 6).map(([tag, count]) => ({
-      tag,
-      posts: `${count} ${count === 1 ? 'look' : 'looks'}`,
-    }));
-  }, [posts]);
-
   return (
-    <aside className="hidden xl:flex flex-col w-80 2xl:w-96 h-screen sticky top-0 p-6 overflow-y-auto space-y-6 select-none border-l border-[#E5DED3] dark:border-[#393832] bg-[#FFFFFF]/60 dark:bg-[#1E1E1B]/60 transition-colors">
+    <aside className="hidden xl:flex flex-col w-80 2xl:w-96 h-screen sticky top-0 p-6 overflow-y-auto space-y-6 select-none border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181B] transition-colors">
       {/* Weather Widget */}
       <div>
-        <h4 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#82796F] dark:text-[#B2AA9E] mb-2.5">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2.5">
           Atmospheric Context
         </h4>
         <WeatherCard />
@@ -56,25 +32,25 @@ export const RightSidebar: React.FC = () => {
 
       {/* Daily Fit Highlight Teaser */}
       {dailyFit && (
-        <div className="bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-2xl p-4 shadow-subtle">
+        <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 rounded-md p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="p-1 rounded-lg bg-[#C3A36B]/15 text-[#C3A36B] dark:text-[#D1B47A]">
+              <span className="p-1 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
                 <Sparkles className="w-3.5 h-3.5" />
               </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#25211E] dark:text-[#F4F0E8]">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
                 Daily Curation
               </span>
             </div>
-            <span className="text-[10px] font-bold text-[#C3A36B] dark:text-[#D1B47A] bg-[#C3A36B]/10 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 px-2 py-0.5 rounded">
               {dailyFit.score}% Match
             </span>
           </div>
 
-          <p className="font-serif text-sm font-semibold text-[#25211E] dark:text-[#F4F0E8] line-clamp-1 mb-1">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1 mb-1">
             {dailyFit.outfit?.title || 'Calibrated Editorial Fit'}
           </p>
-          <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] line-clamp-2 mb-3 font-sans">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-3">
             {dailyFit.explanation?.weatherMatch || dailyFit.explanation?.styleMatch || dailyFit.outfit?.description || 'Composed specifically for today’s temperature and occasion profile.'}
           </p>
 
@@ -82,7 +58,7 @@ export const RightSidebar: React.FC = () => {
             size="sm"
             variant="outline"
             onClick={() => navigate('/daily-fit')}
-            className="w-full text-xs"
+            className="w-full text-xs min-h-[38px]"
           >
             Inspect Ensemble →
           </Button>
@@ -91,17 +67,17 @@ export const RightSidebar: React.FC = () => {
 
       {/* Suggested Curators */}
       {suggestedCreators.length > 0 && (
-        <div className="bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-2xl p-4 shadow-subtle">
+        <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 rounded-md p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-[#C3A36B] dark:text-[#D1B47A]" />
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#82796F] dark:text-[#B2AA9E]">
+              <Users className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Featured Tastemakers
               </h4>
             </div>
             <button
               onClick={() => navigate('/explore')}
-              className="text-[11px] text-[#C3A36B] dark:text-[#D1B47A] hover:underline font-medium"
+              className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:underline font-medium"
             >
               Explore
             </button>
@@ -119,10 +95,10 @@ export const RightSidebar: React.FC = () => {
                   >
                     <Avatar src={creator.avatar} alt={creator.name} size="sm" isVerified={creator.isVerified} />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#25211E] dark:text-[#F4F0E8] truncate group-hover:text-[#C3A36B] dark:group-hover:text-[#D1B47A] transition-colors">
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline">
                         {creator.name}
                       </p>
-                      <p className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] truncate">@{creator.username}</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">@{creator.username}</p>
                     </div>
                   </div>
 
@@ -130,7 +106,7 @@ export const RightSidebar: React.FC = () => {
                     size="sm"
                     variant={following ? 'outline' : 'secondary'}
                     onClick={() => toggleFollowUser(creator.id)}
-                    className="text-[11px] min-h-[32px] px-2.5 py-1 flex-shrink-0"
+                    className="text-xs min-h-[34px] px-3 py-1 flex-shrink-0"
                   >
                     {following ? 'Following' : 'Follow'}
                   </Button>
@@ -140,31 +116,6 @@ export const RightSidebar: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Trending Editorial Tags */}
-      <div className="bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-2xl p-4 shadow-subtle">
-        <div className="flex items-center gap-1.5 mb-3">
-          <TrendingUp className="w-3.5 h-3.5 text-[#C3A36B] dark:text-[#D1B47A]" />
-          <h4 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#82796F] dark:text-[#B2AA9E]">
-            Aesthetic Movements
-          </h4>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
-          {trendingTags.map((t) => (
-            <button
-              key={t.tag}
-              onClick={() => navigate('/explore')}
-              className="text-xs px-2.5 py-1 rounded-lg bg-[#F7F4EE] dark:bg-[#2A2A26] border border-[#E5DED3] dark:border-[#393832] text-[#25211E] dark:text-[#F4F0E8] hover:border-[#C3A36B] dark:hover:border-[#D1B47A] transition-colors"
-            >
-              <span className="font-medium">{t.tag}</span>
-              <span className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] ml-1.5 font-normal">
-                {t.posts}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
     </aside>
   );
 };

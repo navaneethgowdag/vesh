@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Sparkles, X, Bookmark, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, Sparkles, X, Bookmark } from 'lucide-react';
 import { Post } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -18,12 +18,12 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
 
   if (!posts || posts.length === 0) {
     return (
-      <div className="py-20 text-center rounded-3xl bg-luxury-surface dark:bg-luxury-dark-surface border border-luxury-border dark:border-luxury-dark-border p-8">
-        <Sparkles className="w-8 h-8 text-luxury-champagne dark:text-luxury-dark-champagne mx-auto mb-3" />
-        <h3 className="font-serif text-lg font-bold text-luxury-text dark:text-luxury-dark-text">
+      <div className="py-20 text-center rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8">
+        <Sparkles className="w-8 h-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
           No Silhouettes Matching Search
         </h3>
-        <p className="text-xs text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1 max-w-sm mx-auto">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
           Adjust your filters, search terms, or explore other seasonal style aesthetics.
         </p>
       </div>
@@ -61,7 +61,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
             <div
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className={`group relative rounded-3xl overflow-hidden cursor-pointer bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle border border-luxury-border/80 dark:border-luxury-dark-border/80 shadow-soft hover:shadow-soft-lg transition-all duration-500 ${spanClass}`}
+              className={`group relative rounded-lg overflow-hidden cursor-pointer bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-all duration-300 ${spanClass}`}
             >
               {/* Media Image */}
               <img
@@ -72,7 +72,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                     e.currentTarget.src = FALLBACK_POST_IMAGE;
                   }
                 }}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Gradient Backdrop on Hover */}
@@ -80,11 +80,11 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
 
               {/* Top Tags strip (visible on hover) */}
               <div className="absolute top-3 left-3 right-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-black/60 text-white backdrop-blur-md border border-white/20">
-                  {post.occasion || 'Atelier Look'}
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-black/70 text-white backdrop-blur-md border border-white/20">
+                  {post.occasion || 'Look'}
                 </span>
 
-                <div className="flex items-center gap-1.5 text-white text-xs font-semibold bg-black/60 px-2 py-1 rounded-full backdrop-blur-md border border-white/20">
+                <div className="flex items-center gap-1.5 text-white text-xs font-semibold bg-black/70 px-2 py-1 rounded backdrop-blur-md border border-white/20">
                   <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
                   <span>{post.likesCount}</span>
                 </div>
@@ -101,13 +101,13 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold truncate leading-tight">{post.user.name}</p>
-                    <p className="text-[10px] text-white/70 truncate">@{post.user.username}</p>
+                    <p className="text-[10px] text-zinc-300 truncate">@{post.user.username}</p>
                   </div>
                 </div>
 
                 {post.caption && (
-                  <p className="text-xs text-white/90 line-clamp-2 font-serif italic">
-                    &quot;{post.caption}&quot;
+                  <p className="text-xs text-white line-clamp-2 leading-relaxed">
+                    &ldquo;{post.caption}&rdquo;
                   </p>
                 )}
               </div>
@@ -118,10 +118,10 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
 
       {/* Post Modal Inspection */}
       {selectedPost && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-          <div className="bg-luxury-surface dark:bg-luxury-dark-surface rounded-3xl border border-luxury-border dark:border-luxury-dark-border shadow-soft-xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-luxury-border dark:border-luxury-dark-border">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <div
                 className="flex items-center gap-2.5 cursor-pointer"
                 onClick={() => {
@@ -136,10 +136,10 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                   isVerified={selectedPost.user.isVerified}
                 />
                 <div>
-                  <h4 className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text">
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     {selectedPost.user.name}
                   </h4>
-                  <p className="text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     @{selectedPost.user.username}
                   </p>
                 </div>
@@ -148,7 +148,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
               <button
                 type="button"
                 onClick={() => setSelectedPost(null)}
-                className="p-2 rounded-full hover:bg-luxury-surfaceSubtle dark:hover:bg-luxury-dark-surfaceSubtle text-luxury-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text transition-colors cursor-pointer"
+                className="p-2 min-h-[44px] min-w-[44px] rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -156,7 +156,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
 
             {/* Modal Body */}
             <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4">
-              <div className="rounded-2xl overflow-hidden aspect-[4/5] bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle border border-luxury-border dark:border-luxury-dark-border">
+              <div className="rounded-md overflow-hidden aspect-[4/5] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
                 <img
                   src={resolveImageUrl(selectedPost.image) || FALLBACK_POST_IMAGE}
                   alt={selectedPost.caption}
@@ -165,10 +165,10 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
               </div>
 
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-luxury-champagne dark:text-luxury-dark-champagne">
+                <span className="text-xs uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
                   {selectedPost.occasion}
                 </span>
-                <p className="font-serif text-sm sm:text-base text-luxury-text dark:text-luxury-dark-text mt-1">
+                <p className="text-sm sm:text-base text-zinc-900 dark:text-zinc-100 mt-1 leading-relaxed">
                   {selectedPost.caption}
                 </p>
               </div>
@@ -178,7 +178,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                   {selectedPost.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-champagne dark:text-luxury-dark-champagne border border-luxury-border dark:border-luxury-dark-border"
+                      className="text-xs font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
                     >
                       {tag}
                     </span>
@@ -189,8 +189,8 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
               {/* Tagged wardrobe items if present */}
               {selectedPost.taggedItems && selectedPost.taggedItems.length > 0 && (
                 <div className="pt-2">
-                  <h5 className="text-[11px] font-bold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-2">
-                    Tagged Wardrobe Staples
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+                    Tagged Wardrobe Pieces
                   </h5>
                   <div className="grid grid-cols-2 gap-2">
                     {selectedPost.taggedItems.map((item) => (
@@ -200,12 +200,12 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                           setSelectedPost(null);
                           navigate(`/wardrobe/${item.id}`);
                         }}
-                        className="flex items-center gap-2 p-2 rounded-xl bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border cursor-pointer hover:border-luxury-champagne"
+                        className="flex items-center gap-2 p-2 rounded-md bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-zinc-400"
                       >
-                        <img src={item.image} alt={item.name} className="w-8 h-8 rounded-lg object-cover" />
+                        <img src={item.image} alt={item.name} className="w-8 h-8 rounded object-cover" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text truncate">{item.name}</p>
-                          <p className="text-[10px] text-luxury-textMuted dark:text-luxury-dark-textMuted truncate">{item.category}</p>
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">{item.name}</p>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{item.category}</p>
                         </div>
                       </div>
                     ))}
@@ -215,12 +215,12 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="p-4 border-t border-luxury-border dark:border-luxury-dark-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <button
                   type="button"
                   onClick={() => toggleLikePost(selectedPost.id)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-luxury-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text cursor-pointer"
+                  className="flex items-center gap-1.5 min-h-[44px] text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
                 >
                   <Heart
                     className={`w-4 h-4 ${
@@ -232,11 +232,11 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                 <button
                   type="button"
                   onClick={() => toggleSavePost(selectedPost.id)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-luxury-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text cursor-pointer"
+                  className="flex items-center gap-1.5 min-h-[44px] text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
                 >
                   <Bookmark
                     className={`w-4 h-4 ${
-                      selectedPost.isSaved ? 'fill-luxury-champagne text-luxury-champagne' : ''
+                      selectedPost.isSaved ? 'fill-zinc-900 dark:fill-zinc-100 text-zinc-900 dark:text-zinc-100' : ''
                     }`}
                   />
                   <span>{selectedPost.savesCount}</span>
@@ -250,6 +250,7 @@ export const EditorialMosaic: React.FC<EditorialMosaicProps> = ({ posts }) => {
                   setSelectedPost(null);
                   navigate(`/profile/${selectedPost.user.username}`);
                 }}
+                className="min-h-[44px]"
               >
                 View Creator Profile
               </Button>

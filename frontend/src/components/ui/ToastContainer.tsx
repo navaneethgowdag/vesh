@@ -23,17 +23,17 @@ export const ToastContainer: React.FC = () => {
               exit={{ opacity: 0, y: -10, scale: 0.9 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-soft-lg border text-sm backdrop-blur-md transition-all',
-                isHeart && 'bg-cream-50/95 border-rose-200 text-charcoal-900',
-                isSave && 'bg-cream-50/95 border-amber-200 text-charcoal-900',
-                isSuccess && 'bg-charcoal-900 text-cream-50 border-charcoal-800',
-                toast.type === 'info' && 'bg-cream-50/95 border-sand-300 text-charcoal-900'
+                'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-md shadow-md border text-sm backdrop-blur-md transition-all',
+                isHeart && 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100',
+                isSave && 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100',
+                isSuccess && 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200',
+                toast.type === 'info' && 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100'
               )}
             >
               {isHeart && <Heart className="w-4 h-4 text-rose-500 fill-rose-500 flex-shrink-0 animate-pulse" />}
-              {isSave && <Bookmark className="w-4 h-4 text-cognac-600 fill-cognac-600 flex-shrink-0" />}
-              {isSuccess && <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
-              {toast.type === 'info' && <Info className="w-4 h-4 text-cognac-600 flex-shrink-0" />}
+              {isSave && <Bookmark className="w-4 h-4 text-zinc-900 dark:text-zinc-100 fill-zinc-900 dark:fill-zinc-100 flex-shrink-0" />}
+              {isSuccess && <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
+              {toast.type === 'info' && <Info className="w-4 h-4 text-zinc-900 dark:text-zinc-100 flex-shrink-0" />}
 
               <span className="flex-1 font-medium text-xs sm:text-sm">{toast.message}</span>
 

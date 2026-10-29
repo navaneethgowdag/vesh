@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Shirt,
-  Sparkles,
   Search,
-  Layers,
   ArrowUpDown,
-  RefreshCw,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
@@ -15,7 +12,7 @@ import { AddClothingModal } from '../components/wardrobe/AddClothingModal';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
-import { ClothingCategory, ClothingItem } from '../types';
+import { ClothingCategory } from '../types';
 
 const CATEGORIES: (ClothingCategory | 'All')[] = [
   'All',
@@ -74,14 +71,14 @@ export const Wardrobe: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] block mb-1 font-sans">
+            <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
               Personal Inventory
             </span>
-            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-[#25211E] dark:text-[#F4F0E8] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Capsule Wardrobe
             </h1>
-            <p className="text-xs sm:text-sm text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
-              {totalItems} physical garments digitized & categorized in your atelier.
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+              {totalItems} garments digitized & categorized in your wardrobe.
             </p>
           </div>
 
@@ -107,12 +104,12 @@ export const Wardrobe: React.FC = () => {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="bg-[#FFFFFF] dark:bg-[#22221F] p-3.5 rounded-xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle text-center sm:text-left"
+              className="bg-white dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center sm:text-left"
             >
-              <p className="text-[10px] uppercase font-semibold tracking-wider text-[#82796F] dark:text-[#B2AA9E]">
+              <p className="text-xs uppercase font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
                 {stat.label}
               </p>
-              <p className="font-serif text-xl sm:text-2xl font-bold text-[#25211E] dark:text-[#F4F0E8] mt-0.5">
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
                 {stat.count}
               </p>
             </div>
@@ -128,17 +125,17 @@ export const Wardrobe: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search pieces by name, fabric, brand, color..."
-                className="w-full bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] placeholder:text-[#A39B90] dark:placeholder:text-[#7E786E] focus:outline-none focus:ring-2 focus:ring-[#C3A36B] shadow-subtle transition-colors"
+                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
               />
-              <Search className="w-4 h-4 text-[#82796F] dark:text-[#7E786E] absolute left-3.5 top-3" />
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
             </div>
 
-            <div className="flex items-center gap-1 bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-xl p-1 shadow-subtle text-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#82796F] dark:text-[#7E786E] ml-2" />
+            <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md p-1 min-h-[44px] text-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 ml-2" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent border-none text-[#25211E] dark:text-[#F4F0E8] text-xs py-1.5 pr-3 pl-1 focus:outline-none cursor-pointer"
+                className="bg-transparent border-none text-zinc-900 dark:text-zinc-100 text-xs py-2 pr-3 pl-1 focus:outline-none cursor-pointer"
               >
                 <option value="recent">Recently Added</option>
                 <option value="wears">Most Worn</option>
@@ -153,10 +150,10 @@ export const Wardrobe: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`text-xs px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium ${
+                className={`text-xs px-3.5 py-2 min-h-[40px] rounded-md border whitespace-nowrap transition-all font-medium ${
                   activeCategory === cat
-                    ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] border-[#25211E] dark:border-[#F4F0E8] font-semibold shadow-subtle'
-                    : 'bg-[#FFFFFF] dark:bg-[#22221F] border-[#E5DED3] dark:border-[#393832] text-[#82796F] dark:text-[#B2AA9E] hover:border-[#C3A36B]'
+                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
+                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                 }`}
               >
                 {cat}
@@ -167,12 +164,12 @@ export const Wardrobe: React.FC = () => {
 
         {/* Garment Grid */}
         {filteredItems.length === 0 ? (
-          <div className="text-center py-20 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle">
-            <Shirt className="w-8 h-8 text-[#C3A36B] dark:text-[#D1B47A] mx-auto mb-2 opacity-60" />
-            <p className="font-serif font-medium text-[#25211E] dark:text-[#F4F0E8]">
+          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <Shirt className="w-8 h-8 text-zinc-400 mx-auto mb-2 opacity-60" />
+            <p className="font-bold text-zinc-900 dark:text-zinc-100">
               {searchQuery ? `No garments matching "${searchQuery}"` : 'Your Capsule Closet is Empty'}
             </p>
-            <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-1 max-w-sm mx-auto font-sans">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
               Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits.
             </p>
             <Button

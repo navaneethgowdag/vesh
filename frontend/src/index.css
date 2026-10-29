@@ -4,87 +4,109 @@
 
 @layer base {
   :root {
-    --luxury-bg: #F7F4EE;
+    --luxury-bg: #FBFBFB;
     --luxury-surface: #FFFFFF;
-    --luxury-elevated: #FBF9F5;
-    --luxury-primary: #25211E;
-    --luxury-secondary: #82796F;
-    --luxury-muted: #A39B90;
-    --luxury-champagne: #C3A36B;
-    --luxury-olive: #525744;
-    --luxury-border: #E5DED3;
-    --luxury-border-subtle: #EFE9DF;
+    --luxury-surface-subtle: #F4F4F5;
+    --luxury-elevated: #FFFFFF;
+    --luxury-text: #18181B;
+    --luxury-text-muted: #71717A;
+    --luxury-primary: #18181B;
+    --luxury-secondary: #52525B;
+    --luxury-muted: #71717A;
+    --luxury-champagne: #96633B;
+    --luxury-olive: #4B5542;
+    --luxury-border: #E4E4E7;
+    --luxury-border-subtle: #F4F4F5;
+    --luxury-espresso: #18181B;
 
-    /* Legacy compatibility variables */
-    --cream-bg: #F7F4EE;
+    /* Legacy compatibility variables in light mode */
+    --cream-bg: #FBFBFB;
     --card-bg: #FFFFFF;
-    --sand-subtle: #F4EFE6;
-    --charcoal-main: #25211E;
-    --cognac-accent: #C3A36B;
+    --sand-subtle: #F4F4F5;
+    --charcoal-main: #18181B;
+    --cognac-accent: #96633B;
   }
 
   .dark {
-    --luxury-bg: #171715;
-    --luxury-surface: #22221F;
-    --luxury-elevated: #2A2A26;
-    --luxury-primary: #F4F0E8;
-    --luxury-secondary: #B2AA9E;
-    --luxury-muted: #7E786E;
-    --luxury-champagne: #D1B47A;
-    --luxury-olive: #6C725B;
-    --luxury-border: #393832;
-    --luxury-border-subtle: #2C2C27;
+    --luxury-bg: #121214;
+    --luxury-surface: #1E1E21;
+    --luxury-surface-subtle: #27272A;
+    --luxury-elevated: #27272A;
+    --luxury-text: #F4F4F5;
+    --luxury-text-muted: #A1A1AA;
+    --luxury-primary: #F4F4F5;
+    --luxury-secondary: #D4D4D8;
+    --luxury-muted: #A1A1AA;
+    --luxury-champagne: #D4BBA5;
+    --luxury-olive: #8E9C82;
+    --luxury-border: #27272A;
+    --luxury-border-subtle: #1F1F23;
+    --luxury-espresso: #F4F4F5;
 
-    /* Legacy compatibility in dark mode */
-    --cream-bg: #171715;
-    --card-bg: #22221F;
-    --sand-subtle: #2A2A26;
-    --charcoal-main: #F4F0E8;
-    --cognac-accent: #D1B47A;
+    /* Legacy compatibility variables in dark mode */
+    --cream-bg: #121214;
+    --card-bg: #1E1E21;
+    --sand-subtle: #27272A;
+    --charcoal-main: #F4F4F5;
+    --cognac-accent: #D4BBA5;
+
+    /* Dark alias definitions for classes with dark- prefix */
+    --luxury-dark-bg: #121214;
+    --luxury-dark-surface: #1E1E21;
+    --luxury-dark-surface-subtle: #27272A;
+    --luxury-dark-text: #F4F4F5;
+    --luxury-dark-text-muted: #A1A1AA;
+    --luxury-dark-border: #27272A;
+    --luxury-dark-champagne: #D4BBA5;
+    --luxury-dark-espresso: #121214;
   }
 
   body {
     background-color: var(--luxury-bg);
-    color: var(--luxury-primary);
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--luxury-text);
+    font-family: Arial, Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    font-size: 15px;
+    line-height: 1.5;
   }
 
-  /* Custom luxury scrollbar */
+  /* Minimal clean scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #D9D2C7;
-    border-radius: 9999px;
+    background: #D4D4D8;
+    border-radius: 2px;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: #393832;
+    background: #3F3F46;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #C3A36B;
+    background: #71717A;
   }
 }
 
 @layer utilities {
   .editorial-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    letter-spacing: -0.02em;
+    font-family: Arial, Helvetica, sans-serif;
+    letter-spacing: -0.01em;
+    font-weight: 700;
   }
 
   .editorial-sub {
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--luxury-text-muted);
   }
 
   .editorial-caps {
-    font-size: 0.6875rem;
-    letter-spacing: 0.16em;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 600;
   }
@@ -92,25 +114,20 @@
   .luxury-card {
     background-color: var(--luxury-surface);
     border: 1px solid var(--luxury-border);
-    border-radius: 1rem;
-    box-shadow: 0 2px 8px -1px rgba(37, 33, 30, 0.04);
-    transition: all 0.2s ease-in-out;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
   }
 
   .dark .luxury-card {
-    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
   }
 
   .luxury-glass {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--luxury-surface);
   }
 
   .dark .luxury-glass {
-    background: rgba(34, 34, 31, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--luxury-surface);
   }
 
   .hide-scrollbar {

@@ -28,12 +28,12 @@ export const StyleChip: React.FC<StyleChipProps> = ({
       onClick={onClick}
       disabled={!isInteractive}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full transition-all duration-200 font-medium whitespace-nowrap',
-        size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-xs md:text-sm',
+        'inline-flex items-center gap-1.5 rounded-md transition-all duration-150 font-medium whitespace-nowrap border',
+        size === 'sm' ? 'px-2.5 py-1 min-h-[36px] text-xs' : 'px-3.5 py-2 min-h-[44px] text-xs sm:text-sm',
         selected
-          ? 'bg-charcoal-900 text-cream-50 shadow-soft-sm'
-          : 'bg-sand-100 text-charcoal-700 border border-sand-200/80 hover:bg-sand-200 hover:border-sand-300',
-        !isInteractive && 'cursor-default hover:bg-sand-100 hover:border-sand-200/80',
+          ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
+          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700',
+        !isInteractive && 'cursor-default hover:bg-white dark:hover:bg-zinc-800',
         className
       )}
     >
@@ -42,8 +42,10 @@ export const StyleChip: React.FC<StyleChipProps> = ({
       {typeof count === 'number' && (
         <span
           className={cn(
-            'text-[10px] px-1.5 py-0.5 rounded-full font-semibold',
-            selected ? 'bg-cream-100 text-charcoal-900' : 'bg-sand-200 text-charcoal-600'
+            'text-[10px] px-1.5 py-0.5 rounded font-semibold',
+            selected
+              ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
+              : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
           )}
         >
           {count}
@@ -52,4 +54,3 @@ export const StyleChip: React.FC<StyleChipProps> = ({
     </button>
   );
 };
-

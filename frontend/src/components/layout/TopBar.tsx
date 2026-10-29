@@ -18,16 +18,16 @@ export const TopBar: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-[#F7F4EE]/95 dark:bg-[#171715]/95 backdrop-blur-md border-b border-[#E5DED3] dark:border-[#393832] px-4 py-3 flex items-center justify-between transition-colors">
+    <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-4 py-2.5 flex items-center justify-between transition-colors">
       {/* Brand */}
       <div
         onClick={() => navigate('/home')}
         className="flex items-center gap-2.5 cursor-pointer group"
       >
-        <div className="w-8 h-8 rounded-xl bg-[#25211E] dark:bg-[#22221F] border border-[#C3A36B]/30 flex items-center justify-center text-[#F7F4EE] dark:text-[#F4F0E8] font-serif font-bold text-sm shadow-subtle group-hover:bg-[#C3A36B] transition-colors">
+        <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-sm transition-colors">
           S
         </div>
-        <span className="font-serif text-lg font-bold tracking-tight text-[#25211E] dark:text-[#F4F0E8]">
+        <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           StyleSphere
         </span>
       </div>
@@ -37,13 +37,13 @@ export const TopBar: React.FC = () => {
         {/* Weather chip */}
         <button
           onClick={() => navigate('/daily-fit')}
-          className="flex items-center gap-1.5 bg-[#FFFFFF] dark:bg-[#22221F] hover:bg-[#EFE9DF] dark:hover:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] px-2.5 py-1.5 rounded-full text-xs font-medium border border-[#E5DED3] dark:border-[#393832] shadow-subtle transition-colors"
+          className="flex items-center gap-1.5 min-h-[44px] bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-3 py-2 rounded-md text-xs font-medium border border-zinc-200 dark:border-zinc-700 transition-colors"
           title={weather.city ? `${weather.city} · ${weather.temp}°C ${weather.condition}` : 'Check Weather & Recommendations'}
         >
           {isWeatherLoading ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#96633B]" />
-              <span className="text-[11px]">Updating...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-600 dark:text-zinc-400" />
+              <span className="text-xs">Updating...</span>
             </>
           ) : weather.city && weatherStatus === 'available' ? (
             <>
@@ -53,7 +53,7 @@ export const TopBar: React.FC = () => {
           ) : (
             <>
               <span>🌤️</span>
-              <span className="text-[11px]">Weather</span>
+              <span className="text-xs">Weather</span>
             </>
           )}
         </button>
@@ -61,7 +61,7 @@ export const TopBar: React.FC = () => {
         {/* Search */}
         <button
           onClick={() => navigate('/explore')}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#EFE9DF]/60 dark:hover:bg-[#2A2A26] transition-colors"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           aria-label="Explore and Search"
         >
           <Search className="w-4 h-4" />
@@ -70,12 +70,12 @@ export const TopBar: React.FC = () => {
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}
-          className="relative w-9 h-9 rounded-xl flex items-center justify-center text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#EFE9DF]/60 dark:hover:bg-[#2A2A26] transition-colors"
+          className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4" />
           {unreadNotifsCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#C3A36B] dark:bg-[#D1B47A] ring-2 ring-[#F7F4EE] dark:ring-[#171715]" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-100 ring-2 ring-white dark:ring-[#18181B]" />
           )}
         </button>
       </div>

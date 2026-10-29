@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Share2, Twitter, Send } from 'lucide-react';
+import { Copy, Check, Share2, Twitter } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Post } from '../../types';
@@ -66,17 +66,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
     >
       <div className="space-y-5">
         {/* Post Preview Miniature */}
-        <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-sand-100 border border-sand-200">
+        <div className="flex items-center gap-3.5 p-3 rounded-md bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800">
           <img
             src={post.image}
             alt="Outfit preview"
-            className="w-14 h-14 rounded-xl object-cover shadow-sm flex-shrink-0"
+            className="w-14 h-14 rounded object-cover shadow-sm flex-shrink-0"
           />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-charcoal-900 truncate">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
               Fit by @{post.user.username}
             </p>
-            <p className="text-[11px] text-charcoal-500 line-clamp-2 mt-0.5">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5">
               {post.caption}
             </p>
           </div>
@@ -84,7 +84,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
 
         {/* URL Input with Copy Button */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
             Post Link
           </label>
           <div className="flex items-center gap-2">
@@ -92,13 +92,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
               type="text"
               readOnly
               value={shareUrl}
-              className="flex-1 bg-cream-50 border border-sand-300 rounded-xl px-3 py-2 text-xs text-charcoal-700 select-all focus:outline-none"
+              className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-xs text-zinc-900 dark:text-zinc-100 select-all focus:outline-none"
             />
             <Button
               size="sm"
               variant={copied ? 'secondary' : 'primary'}
               onClick={handleCopy}
-              className="flex-shrink-0"
+              className="flex-shrink-0 min-h-[44px]"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -112,8 +112,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
             variant="outline"
             size="md"
             onClick={handleNativeShare}
-            className="w-full text-xs"
-            icon={<Share2 className="w-4 h-4 text-cognac-700" />}
+            className="w-full text-xs min-h-[44px]"
+            icon={<Share2 className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />}
           >
             System Share
           </Button>
@@ -122,7 +122,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
             variant="outline"
             size="md"
             onClick={shareToTwitter}
-            className="w-full text-xs"
+            className="w-full text-xs min-h-[44px]"
             icon={<Twitter className="w-4 h-4 text-sky-500" />}
           >
             Share on X
@@ -132,4 +132,3 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
     </Modal>
   );
 };
-

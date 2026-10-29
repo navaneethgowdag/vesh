@@ -59,35 +59,35 @@ export const ScheduleOutfitModal: React.FC<ScheduleOutfitModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Schedule Planned Outfit">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Outfit Summary Card */}
-        <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-sand-50 border border-sand-200">
+        <div className="flex items-center gap-3.5 p-3.5 rounded-md bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
           {recommendation.outfit.image ? (
             <img
               src={recommendation.outfit.image}
               alt={recommendation.outfit.title}
-              className="w-16 h-16 rounded-xl object-cover shadow-soft-sm flex-shrink-0"
+              className="w-16 h-16 rounded object-cover flex-shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-xl bg-sand-200 flex items-center justify-center text-charcoal-400">
+            <div className="w-16 h-16 rounded bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-400">
               <Calendar className="w-6 h-6" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-cognac-700">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               {recommendation.outfit.occasion}
             </span>
-            <h4 className="text-sm font-bold text-charcoal-900 truncate">
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
               {recommendation.outfit.title}
             </h4>
-            <p className="text-xs text-charcoal-500 mt-0.5">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               {recommendation.outfit.pieces.length} curated garments · {recommendation.score}% Match
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+          <div className="flex items-center gap-2 p-3 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -96,37 +96,37 @@ export const ScheduleOutfitModal: React.FC<ScheduleOutfitModalProps> = ({
         {/* Date & Time Picker Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-cognac-600" />
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-zinc-500" />
               Event Date *
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-sand-300 bg-cream-50/50 text-sm font-medium text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-cognac-500/20 focus:border-cognac-600"
+              className="w-full px-3.5 py-2.5 min-h-[44px] rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-base sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-1.5 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-cognac-600" />
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-zinc-500" />
               Time (Optional)
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-sand-300 bg-cream-50/50 text-sm font-medium text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-cognac-500/20 focus:border-cognac-600"
+              className="w-full px-3.5 py-2.5 min-h-[44px] rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-base sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
             />
           </div>
         </div>
 
         {/* Occasion / Context */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-1.5 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-cognac-600" />
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-zinc-500" />
             Occasion / Destination
           </label>
           <input
@@ -134,14 +134,14 @@ export const ScheduleOutfitModal: React.FC<ScheduleOutfitModalProps> = ({
             value={occasion}
             onChange={(e) => setOccasion(e.target.value)}
             placeholder="e.g. Gallery Opening, Board Meeting, Dinner Date"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-sand-300 bg-cream-50/50 text-sm font-medium text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-cognac-500/20 focus:border-cognac-600"
+            className="w-full px-3.5 py-2.5 min-h-[44px] rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-base sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
           />
         </div>
 
         {/* Styling Notes */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-1.5 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-cognac-600" />
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-zinc-500" />
             Styling Notes (Optional)
           </label>
           <textarea
@@ -149,18 +149,18 @@ export const ScheduleOutfitModal: React.FC<ScheduleOutfitModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add accessory ideas, perfume pairings, or layer adjustments..."
-            className="w-full px-3.5 py-2.5 rounded-xl border border-sand-300 bg-cream-50/50 text-sm text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-cognac-500/20 focus:border-cognac-600 resize-none"
+            className="w-full px-3.5 py-2.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
           />
         </div>
 
-        {/* Notice: Does NOT count as worn */}
-        <p className="text-[11px] text-charcoal-400 bg-sand-100/60 p-2.5 rounded-xl border border-sand-200">
+        {/* Notice */}
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/60 p-2.5 rounded-md border border-zinc-200 dark:border-zinc-800">
           ℹ️ Scheduling this look adds it to your calendar as a planned outfit. It will not increment wear counts until you wear it.
         </p>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2.5 pt-2">
-          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={isSubmitting} className="min-h-[44px]">
             Cancel
           </Button>
           <Button
@@ -169,6 +169,7 @@ export const ScheduleOutfitModal: React.FC<ScheduleOutfitModalProps> = ({
             size="md"
             disabled={isSubmitting}
             icon={isSubmitting ? undefined : <Check className="w-4 h-4" />}
+            className="min-h-[44px]"
           >
             {isSubmitting ? 'Scheduling...' : 'Save to Calendar'}
           </Button>

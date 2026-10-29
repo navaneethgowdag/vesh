@@ -24,7 +24,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     return (
       <div
         className={cn(
-          'inline-flex items-center p-1 rounded-2xl bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle border border-luxury-border dark:border-luxury-dark-border',
+          'inline-flex items-center p-1 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
           className
         )}
         role="group"
@@ -38,10 +38,10 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
               type="button"
               onClick={() => setThemePreference(opt.id)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none',
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer select-none min-h-[36px]',
                 isActive
-                  ? 'bg-luxury-surface dark:bg-luxury-dark-surface text-luxury-text dark:text-luxury-dark-text shadow-soft-xs border border-luxury-border/60 dark:border-luxury-dark-border/60'
-                  : 'text-luxury-textMuted dark:text-luxury-dark-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
               )}
               aria-pressed={isActive}
             >
@@ -58,24 +58,24 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     return (
       <div
         className={cn(
-          'flex items-center justify-between p-2 rounded-2xl bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border',
+          'flex items-center justify-between p-2 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
           className
         )}
       >
         <div className="flex items-center gap-2 pl-2">
           {resolvedTheme === 'dark' ? (
-            <Moon className="w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne" />
+            <Moon className="w-4 h-4 text-zinc-100" />
           ) : (
-            <Sun className="w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne" />
+            <Sun className="w-4 h-4 text-zinc-900" />
           )}
-          <span className="text-xs font-medium text-luxury-text dark:text-luxury-dark-text">
-            {resolvedTheme === 'dark' ? 'Obsidian' : 'Ivory'} Mode
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+            {resolvedTheme === 'dark' ? 'Dark' : 'Light'} Mode
           </span>
         </div>
         <button
           type="button"
           onClick={toggleTheme}
-          className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-luxury-champagne bg-luxury-border dark:bg-luxury-dark-champagne"
+          className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 bg-zinc-300 dark:bg-zinc-600"
           role="switch"
           aria-checked={resolvedTheme === 'dark'}
           aria-label="Toggle dark mode"
@@ -97,16 +97,16 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       type="button"
       onClick={toggleTheme}
       className={cn(
-        'p-2 rounded-full border border-luxury-border dark:border-luxury-dark-border bg-luxury-surface dark:bg-luxury-dark-surface text-luxury-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text hover:bg-luxury-surfaceSubtle dark:hover:bg-luxury-dark-surfaceSubtle transition-all cursor-pointer shadow-soft-xs',
+        'w-11 h-11 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-sm',
         className
       )}
       title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
       aria-label="Toggle theme"
     >
       {resolvedTheme === 'dark' ? (
-        <Sun className="w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne transition-transform hover:rotate-45" />
+        <Sun className="w-4 h-4 text-zinc-100 transition-transform hover:rotate-45" />
       ) : (
-        <Moon className="w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne transition-transform hover:-rotate-12" />
+        <Moon className="w-4 h-4 text-zinc-900 transition-transform hover:-rotate-12" />
       )}
     </button>
   );

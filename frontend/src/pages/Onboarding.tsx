@@ -6,15 +6,12 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
-  Upload,
-  Shirt,
-  CheckCircle2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '../components/ui/Button';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
-import { StyleVibe, ClothingItem } from '../types';
+import { StyleVibe } from '../types';
 
 const STYLE_OPTIONS: { label: StyleVibe; desc: string; img: string }[] = [
   {
@@ -126,8 +123,6 @@ export const Onboarding: React.FC = () => {
   };
 
   const handleFinish = async () => {
-    // Persist the style profile into Neon via FastAPI, then mirror it into
-    // local context state so the UI reflects what was just saved.
     try {
       await api.users.updatePreferences({
         styles: selectedStyles,
@@ -153,22 +148,22 @@ export const Onboarding: React.FC = () => {
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#A8764B', '#1C1B1A', '#FAF7F2', '#DFCDB8'],
+      colors: ['#18181B', '#71717A', '#E4E4E7', '#A1A1AA'],
     });
 
-    showToast('Your AI Style Profile has been created! Welcome to StyleSphere.', 'success');
+    showToast('Your style profile has been created! Welcome to StyleSphere.', 'success');
     navigate('/home');
   };
 
   return (
-    <div className="min-h-screen bg-cream-100 flex flex-col justify-between py-8 px-4 sm:px-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col justify-between py-8 px-4 sm:px-6">
       {/* Top Header */}
-      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-6 border-b border-sand-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-charcoal-900 flex items-center justify-center text-cream-50 font-serif font-bold text-sm">
+      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-6 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-zinc-100 dark:text-zinc-900 font-bold text-sm">
             S
           </div>
-          <span className="font-serif text-lg font-bold text-charcoal-900">StyleSphere</span>
+          <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">StyleSphere</span>
         </div>
 
         {/* Steps indicator */}
@@ -176,16 +171,16 @@ export const Onboarding: React.FC = () => {
           {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-sm transition-all duration-300 ${
                 s === step
-                  ? 'w-8 bg-cognac-700'
+                  ? 'w-8 bg-zinc-900 dark:bg-zinc-100'
                   : s < step
-                  ? 'w-4 bg-charcoal-900'
-                  : 'w-4 bg-sand-300'
+                  ? 'w-4 bg-zinc-700 dark:bg-zinc-300'
+                  : 'w-4 bg-zinc-300 dark:bg-zinc-700'
               }`}
             />
           ))}
-          <span className="text-xs font-semibold text-charcoal-500 ml-2">Step {step} of 4</span>
+          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 ml-2">Step {step} of 4</span>
         </div>
       </div>
 
@@ -199,17 +194,17 @@ export const Onboarding: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div className="text-center sm:text-left">
-                <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Step 1
                 </span>
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
                   What is your style?
                 </h2>
-                <p className="text-sm text-charcoal-500 mt-1">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                   Choose the aesthetic vibes that feel most authentic to you. Select all that apply.
                 </p>
               </div>
@@ -222,30 +217,30 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={style.label}
                       onClick={() => toggleStyle(style.label)}
-                      className={`group relative rounded-2xl overflow-hidden cursor-pointer border-2 transition-all p-3 flex flex-col justify-between aspect-square shadow-soft ${
+                      className={`group relative rounded-md overflow-hidden cursor-pointer border transition-all p-3 flex flex-col justify-between aspect-square shadow-sm ${
                         isSelected
-                          ? 'border-cognac-700 bg-cognac-50/60 ring-2 ring-cognac-500/20'
-                          : 'border-sand-200 bg-cream-50 hover:border-sand-300'
+                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-900 dark:ring-zinc-100'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-sm text-charcoal-900">
+                        <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                           {style.label}
                         </span>
                         <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-cognac-700 text-white' : 'border border-sand-300'
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900' : 'border border-zinc-300 dark:border-zinc-600'
                           }`}
                         >
-                          {isSelected && <Check className="w-3 h-3" />}
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
                         </div>
                       </div>
 
-                      <div className="relative rounded-xl overflow-hidden aspect-[4/3] mt-2">
+                      <div className="relative rounded-md overflow-hidden aspect-[4/3] mt-2 border border-zinc-200 dark:border-zinc-800">
                         <img
                           src={style.img}
                           alt={style.label}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     </div>
@@ -262,17 +257,17 @@ export const Onboarding: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div className="text-center sm:text-left">
-                <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Step 2
                 </span>
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
                   What do you usually wear?
                 </h2>
-                <p className="text-sm text-charcoal-500 mt-1">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                   Select your daily wardrobe building blocks.
                 </p>
               </div>
@@ -286,16 +281,16 @@ export const Onboarding: React.FC = () => {
                       key={item}
                       type="button"
                       onClick={() => toggleWear(item)}
-                      className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                      className={`p-3.5 rounded-md border text-left transition-all flex items-center justify-between min-h-[44px] cursor-pointer ${
                         isSelected
-                          ? 'border-charcoal-900 bg-charcoal-900 text-cream-50 shadow-soft'
-                          : 'border-sand-200 bg-cream-50 text-charcoal-800 hover:bg-sand-100'
+                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}
                     >
                       <span className="font-medium text-sm">{item}</span>
                       <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                          isSelected ? 'bg-cream-50 text-charcoal-900' : 'border border-sand-300'
+                        className={`w-5 h-5 rounded-md flex items-center justify-center text-xs ${
+                          isSelected ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100' : 'border border-zinc-300 dark:border-zinc-600'
                         }`}
                       >
                         {isSelected && '✓'}
@@ -314,18 +309,18 @@ export const Onboarding: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div className="text-center sm:text-left">
-                <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Step 3
                 </span>
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
                   What's your typical lifestyle?
                 </h2>
-                <p className="text-sm text-charcoal-500 mt-1">
-                  This fine-tunes whether our AI recommends boardroom tailoring or weekend comfort.
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                  This fine-tunes whether our recommendations suggest formal tailoring or casual staples.
                 </p>
               </div>
 
@@ -337,19 +332,19 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={item.id}
                       onClick={() => setLifestyle(item.id)}
-                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                      className={`p-4 rounded-md border cursor-pointer transition-all flex items-center justify-between min-h-[52px] ${
                         isSelected
-                          ? 'border-cognac-700 bg-cognac-50/80 ring-2 ring-cognac-500/20 shadow-soft'
-                          : 'border-sand-200 bg-cream-50 hover:bg-sand-100'
+                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-900 dark:ring-zinc-100 shadow-sm'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}
                     >
                       <div>
-                        <p className="font-bold text-sm text-charcoal-900">{item.title}</p>
-                        <p className="text-xs text-charcoal-500 mt-0.5">{item.desc}</p>
+                        <p className="font-bold text-sm text-zinc-900 dark:text-zinc-100">{item.title}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{item.desc}</p>
                       </div>
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isSelected ? 'bg-cognac-700 text-white' : 'border border-sand-300'
+                        className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${
+                          isSelected ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900' : 'border border-zinc-300 dark:border-zinc-600'
                         }`}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5" />}
@@ -368,45 +363,45 @@ export const Onboarding: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div className="text-center sm:text-left">
-                <span className="text-xs font-bold uppercase tracking-wider text-cognac-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Step 4
                 </span>
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal-950 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
                   Build your wardrobe
                 </h2>
-                <p className="text-sm text-charcoal-500 mt-1">
-                  Add initial pieces to jumpstart your daily AI recommendations.
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                  Add initial pieces to jumpstart your daily outfit recommendations.
                 </p>
               </div>
 
               {/* Uploaded Items List */}
-              <div className="p-4 bg-sand-100/70 rounded-3xl border border-sand-200">
+              <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-charcoal-600">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                     Your Initial Capsule ({uploadedItems.length} pieces)
                   </span>
-                  <span className="text-xs text-cognac-700 font-medium">Ready for Stylist</span>
+                  <span className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold">Ready</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {uploadedItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="bg-cream-50 p-2 rounded-2xl border border-sand-200 shadow-sm"
+                      className="bg-white dark:bg-zinc-800 p-2.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
                     >
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full aspect-square rounded-xl object-cover"
+                        className="w-full aspect-square rounded-md object-cover"
                       />
-                      <p className="text-xs font-bold text-charcoal-900 mt-1.5 truncate">
+                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mt-1.5 truncate">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-charcoal-500">{item.category}</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{item.category}</p>
                     </div>
                   ))}
                 </div>
@@ -414,8 +409,8 @@ export const Onboarding: React.FC = () => {
 
               {/* Quick Add presets */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-500 mb-2">
-                  + One-Click Add Capsule Staples
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-2">
+                  + Quick Add Capsule Staples
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -465,7 +460,7 @@ export const Onboarding: React.FC = () => {
       </div>
 
       {/* Navigation Buttons */}
-      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pt-6 border-t border-sand-200">
+      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pt-6 border-t border-zinc-200 dark:border-zinc-800">
         {step > 1 ? (
           <Button
             variant="outline"
@@ -493,8 +488,8 @@ export const Onboarding: React.FC = () => {
             variant="primary"
             size="lg"
             onClick={handleFinish}
-            icon={<Sparkles className="w-4 h-4 text-cream-100" />}
-            className="px-7"
+            icon={<Sparkles className="w-4 h-4" />}
+            className="px-6"
           >
             Create My Style Profile
           </Button>
@@ -503,4 +498,3 @@ export const Onboarding: React.FC = () => {
     </div>
   );
 };
-

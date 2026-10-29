@@ -290,6 +290,8 @@ export interface OutfitMoment {
   createdAt: string;
   expiresAt: string;
   timeRemainingSeconds: number;
+  secondsRemaining?: number;
+  weatherSummary?: string;
   likesCount: number;
   isLiked: boolean;
 }

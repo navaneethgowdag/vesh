@@ -102,86 +102,83 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   );
 
   const handleDragEnd = (_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
-    const swipeThreshold = 90;
-    if (info.offset.x > swipeThreshold || info.velocity.x > 500) {
+    const swipeThreshold = 100;
+    const velocityThreshold = 400;
+
+    if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
       handleSwipeAction('right');
-    } else if (info.offset.x < -swipeThreshold || info.velocity.x < -500) {
+    } else if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
       handleSwipeAction('left');
-    } else {
-      x.set(0);
     }
   };
 
-  // Keyboard accessibility
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleSwipeAction('right');
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handleSwipeAction('left');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSwipeAction]);
-
-  const handleResetSession = () => {
+  const handleResetDeck = () => {
     setSessionSwipedIds(new Set());
     onRefresh?.();
   };
 
+  // Loading Skeleton State
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4">
-        <div className="w-80 sm:w-96 aspect-[3/4] rounded-3xl bg-sand-100/80 animate-pulse border border-sand-200/90 flex flex-col items-center justify-center p-6 text-center">
-          <Sparkles className="w-8 h-8 text-cognac-600 animate-spin mb-3" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-charcoal-700">
-            Curating 24-Hour Moments...
-          </p>
-          <p className="text-[11px] text-charcoal-400 mt-1 max-w-xs">
-            Fetching active outfit looks from style creators.
-          </p>
+      <div className="flex flex-col items-center justify-center py-8">
+        <div className="w-full max-w-[380px] sm:max-w-[420px] aspect-[3/4] sm:aspect-[4/5] bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse border border-zinc-200 dark:border-zinc-700 flex flex-col justify-end p-6">
+          <div className="space-y-3">
+            <div className="h-4 w-1/3 bg-zinc-300 dark:bg-zinc-700 rounded" />
+            <div className="h-6 w-3/4 bg-zinc-300 dark:bg-zinc-700 rounded" />
+            <div className="h-4 w-1/2 bg-zinc-300 dark:bg-zinc-700 rounded" />
+          </div>
         </div>
       </div>
     );
   }
 
-  // Empty state when all eligible moments have been swiped or none are active
+  // Empty State: All Moments Swiped or Zero Moments
   if (!currentMoment) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-full max-w-md bg-cream-50/90 border border-sand-200/90 rounded-3xl p-8 sm:p-10 shadow-soft text-center">
-          <div className="w-16 h-16 rounded-full bg-sand-100/90 flex items-center justify-center mx-auto mb-5 text-cognac-700 shadow-soft-sm">
-            <Sparkles className="w-8 h-8" />
+      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-8">
+          <div className="w-14 h-14 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="font-serif text-xl sm:text-2xl font-bold text-charcoal-900 mb-2">
+
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
             You're All Caught Up
           </h3>
-          <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed mb-6 max-w-xs mx-auto">
-            You've explored all active 24-hour outfit moments in today's rotation. Share your own look or discover creators in Explore!
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-6 max-w-xs mx-auto leading-relaxed">
+            {moments.length > 0
+              ? 'You have reviewed all available moments from creators you follow in this session.'
+              : 'Follow accounts that share 24-hour moments, or post today’s outfit to get started.'}
           </p>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetSession}
-              icon={<RotateCcw className="w-3.5 h-3.5" />}
-              className="w-full sm:w-auto"
-            >
-              Rewind Deck
-            </Button>
+            {moments.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetDeck}
+                icon={<RotateCcw className="w-3.5 h-3.5" />}
+                className="w-full sm:w-auto min-h-[44px]"
+              >
+                Review Moments Again
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/explore')}
+                icon={<Compass className="w-3.5 h-3.5" />}
+                className="w-full sm:w-auto min-h-[44px]"
+              >
+                Find Creators
+              </Button>
+            )}
+
             <Button
               variant="primary"
               size="sm"
               onClick={() => navigate('/create?type=moment')}
               icon={<PlusCircle className="w-3.5 h-3.5" />}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px]"
             >
               Post a Moment
             </Button>
@@ -198,9 +195,9 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         {/* Background Card 2 (Bottom layer) */}
         {nextMoment2 && (
           <div
-            className="absolute inset-0 rounded-3xl bg-sand-200/60 border border-sand-300/40 shadow-soft overflow-hidden transition-all duration-300"
+            className="absolute inset-0 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden transition-all duration-300"
             style={{
-              transform: 'scale(0.88) translateY(32px)',
+              transform: 'scale(0.92) translateY(24px)',
               zIndex: 1,
             }}
           >
@@ -221,9 +218,9 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         {/* Background Card 1 (Middle layer) */}
         {nextMoment1 && (
           <div
-            className="absolute inset-0 rounded-3xl bg-sand-100 border border-sand-200/80 shadow-soft overflow-hidden transition-all duration-300"
+            className="absolute inset-0 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden transition-all duration-300"
             style={{
-              transform: 'scale(0.94) translateY(16px)',
+              transform: 'scale(0.96) translateY(12px)',
               zIndex: 2,
             }}
           >
@@ -258,7 +255,7 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
                 : { x: 0, opacity: 1, rotate: 0 }
             }
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing rounded-3xl overflow-hidden bg-charcoal-900 border border-sand-200/90 shadow-soft-xl flex flex-col justify-end"
+            className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing rounded-lg overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-700 flex flex-col justify-end"
           >
             {/* Visual Focus: Full Outfit Image */}
             <img
@@ -273,39 +270,38 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
               fetchPriority="high"
             />
 
-            {/* Subtle Gradient Overlays for Readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/30 to-transparent pointer-events-none" />
+            {/* Gradient Overlays for Readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
 
             {/* Top Expiration Badge */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-charcoal-900/70 backdrop-blur-md border border-white/20 text-cream-50 text-[11px] font-medium shadow-soft">
-              <Clock className="w-3.5 h-3.5 text-cognac-400" />
-              <span>{formatTimeRemaining(currentMoment.timeRemainingSeconds)}</span>
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
+              <Clock className="w-3 h-3 text-zinc-300" />
+              <span>{formatTimeRemaining(currentMoment.timeRemainingSeconds ?? currentMoment.secondsRemaining ?? 0)}</span>
             </div>
 
-            {/* Visual Drag Indicator Badges */}
+            {/* Swipe Indicators */}
             <motion.div
               style={{ opacity: likeBadgeOpacity }}
-              className="absolute top-6 right-6 px-4 py-1.5 rounded-full border-2 border-cognac-400 bg-cognac-900/80 text-cream-50 font-serif font-bold text-sm tracking-widest uppercase shadow-soft pointer-events-none rotate-12"
+              className="absolute top-6 right-6 z-30 pointer-events-none px-4 py-1.5 border-2 border-emerald-400 bg-emerald-500/30 rounded text-emerald-300 font-bold uppercase tracking-wider text-sm rotate-12"
             >
-              LIKE
+              Love it
             </motion.div>
 
             <motion.div
               style={{ opacity: skipBadgeOpacity }}
-              className="absolute top-6 left-6 px-4 py-1.5 rounded-full border-2 border-sand-300 bg-charcoal-900/80 text-sand-200 font-serif font-bold text-sm tracking-widest uppercase shadow-soft pointer-events-none -rotate-12"
+              className="absolute top-6 left-6 z-30 pointer-events-none px-4 py-1.5 border-2 border-rose-400 bg-rose-500/30 rounded text-rose-300 font-bold uppercase tracking-wider text-sm -rotate-12"
             >
-              SKIP
+              Pass
             </motion.div>
 
-            {/* Bottom Card Information */}
-            <div className="relative z-20 p-5 sm:p-6 text-cream-50 pointer-events-auto">
-              {/* Creator Header */}
+            {/* Bottom Card Content: Creator Info, Caption, Occasion */}
+            <div className="relative z-20 p-5 space-y-2 pointer-events-auto">
               <div
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/profile/${currentMoment.user.username}`);
                 }}
-                className="flex items-center gap-3 cursor-pointer group mb-2.5"
+                className="flex items-center gap-2.5 cursor-pointer group"
               >
                 <Avatar
                   src={currentMoment.user.avatar}
@@ -314,71 +310,58 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
                   isVerified={currentMoment.user.isVerified}
                 />
                 <div>
-                  <p className="font-bold text-sm sm:text-base text-cream-50 group-hover:text-cognac-300 transition-colors leading-tight">
+                  <h4 className="text-white text-sm font-bold group-hover:underline">
                     {currentMoment.user.name}
-                  </p>
-                  <p className="text-[11px] text-cream-300/80">
-                    @{currentMoment.user.username}
-                  </p>
+                  </h4>
+                  <p className="text-xs text-zinc-300">@{currentMoment.user.username}</p>
                 </div>
               </div>
 
-              {/* Caption */}
               {currentMoment.caption && (
-                <p className="text-xs sm:text-sm text-cream-100 font-light leading-relaxed line-clamp-2 mb-3">
+                <p className="text-white text-sm line-clamp-2 leading-relaxed">
                   {currentMoment.caption}
                 </p>
               )}
 
-              {/* Tags & Occasion Badges */}
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 {currentMoment.occasion && (
-                  <span className="text-[10px] uppercase font-semibold tracking-wider px-2.5 py-0.5 rounded-full bg-cream-50/15 backdrop-blur-md text-cream-100 border border-white/10">
+                  <span className="text-xs uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-white/20 text-white border border-white/20">
                     {currentMoment.occasion}
                   </span>
                 )}
-                {currentMoment.tags?.slice(0, 3).map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-charcoal-900/60 backdrop-blur-sm text-cream-200 border border-white/10"
-                  >
-                    {tag.startsWith('#') ? tag : `#${tag}`}
+                {currentMoment.weatherSummary && (
+                  <span className="text-xs px-2 py-0.5 rounded bg-black/50 text-zinc-300 border border-white/10">
+                    {currentMoment.weatherSummary}
                   </span>
-                ))}
+                )}
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Control Actions Strictly Below the Card */}
-      <div className="flex items-center justify-center gap-8 mt-6 sm:mt-8">
-        {/* Skip Button (Neutral Light Circular Button with X Icon) */}
+      {/* Manual Action Buttons (Pass & Like) */}
+      <div className="flex items-center justify-center gap-6 mt-6">
         <button
+          type="button"
           onClick={() => handleSwipeAction('left')}
-          title="Skip Look (Left Arrow)"
-          aria-label="Skip Look"
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cream-50 hover:bg-sand-100 text-charcoal-700 border border-sand-300/80 shadow-soft hover:shadow-soft-md active:scale-95 transition-all duration-200 flex items-center justify-center group"
+          title="Pass moment"
+          aria-label="Pass moment"
+          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 transition-all flex items-center justify-center active:scale-95"
         >
-          <X className="w-6 h-6 sm:w-7 sm:h-7 text-charcoal-600 group-hover:text-charcoal-900 transition-transform group-hover:scale-110" />
+          <X className="w-6 h-6" />
         </button>
 
-        {/* Like Button (Prominent Brown Circular Button with Heart Icon) */}
         <button
+          type="button"
           onClick={() => handleSwipeAction('right')}
-          title="Like Look (Right Arrow)"
-          aria-label="Like Look"
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cognac-700 hover:bg-cognac-800 text-white shadow-soft-lg hover:shadow-soft-xl active:scale-95 transition-all duration-200 flex items-center justify-center group"
+          title="Love moment"
+          aria-label="Love moment"
+          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all flex items-center justify-center active:scale-95"
         >
-          <Heart className="w-6 h-6 sm:w-7 sm:h-7 fill-current group-hover:scale-110 transition-transform" />
+          <Heart className="w-6 h-6 fill-current" />
         </button>
       </div>
-
-      {/* Keyboard Hint */}
-      <p className="text-[11px] text-charcoal-400 mt-4 tracking-wide font-medium hidden sm:block">
-        Tip: Swipe or press <kbd className="px-1.5 py-0.5 rounded bg-sand-200 text-charcoal-700 text-[10px] font-mono">←</kbd> to skip or <kbd className="px-1.5 py-0.5 rounded bg-sand-200 text-charcoal-700 text-[10px] font-mono">→</kbd> to like
-      </p>
     </div>
   );
 };
-

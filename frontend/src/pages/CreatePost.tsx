@@ -52,14 +52,12 @@ export const CreatePost: React.FC = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = async (file: File) => {
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
     if (!validTypes.includes(file.type) && !file.type.startsWith('image/')) {
       showToast('Please select a valid image file (JPG, PNG, or WebP)', 'info');
       return;
     }
 
-    // Validate size (max 10MB)
     const MAX_SIZE_MB = 10;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       showToast(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max size is ${MAX_SIZE_MB}MB.`, 'info');
@@ -72,7 +70,6 @@ export const CreatePost: React.FC = () => {
       setImage(uploaded.image_url);
       showToast('Image uploaded and optimized to WebP', 'success');
     } catch (err) {
-      // Fallback to local data URL if server media storage is unreachable
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -104,22 +101,22 @@ export const CreatePost: React.FC = () => {
     e.preventDefault();
 
     if (!image) {
-      showToast('Please attach outfit photography', 'info');
+      showToast('Please upload or select an outfit photo', 'info');
       return;
     }
 
     if (!caption.trim()) {
-      showToast('Please write a styling caption', 'info');
+      showToast('Please add a caption for your look', 'info');
       return;
     }
 
     setIsPublishing(true);
+
     try {
       const parsedTags = hashtags
-        .split(' ')
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0)
-        .map((t) => (t.startsWith('#') ? t : `#${t}`));
+        .split(/[,\s#]+/)
+        .map((t) => t.trim().replace(/^#/, ''))
+        .filter(Boolean);
 
       if (publishType === 'post') {
         await publishPost({
@@ -156,27 +153,27 @@ export const CreatePost: React.FC = () => {
       <div className="max-w-4xl mx-auto pb-12">
         {/* Page Title */}
         <div className="mb-6">
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-luxury-text dark:text-luxury-dark-text">
+          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
             Publish Outfit Look
           </h1>
-          <p className="text-xs sm:text-sm text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             Share your daily styling with the StyleSphere community as a permanent look or a 24-hour discovery moment.
           </p>
         </div>
 
         {/* Publication Type Selector */}
-        <div className="mb-6 bg-luxury-surface dark:bg-luxury-dark-surface p-3.5 rounded-2xl border border-luxury-border dark:border-luxury-dark-border shadow-soft">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-2">
+        <div className="mb-6 bg-white dark:bg-zinc-900 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
             Publication Channel
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setPublishType('post')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
                 publishType === 'post'
-                  ? 'bg-luxury-espresso dark:bg-luxury-dark-champagne text-white dark:text-luxury-dark-espresso shadow-md ring-2 ring-luxury-champagne/50'
-                  : 'bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-text dark:text-luxury-dark-text hover:bg-luxury-border/30'
+                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
+                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
               }`}
             >
               <Layers className="w-4 h-4 flex-shrink-0" />
@@ -185,21 +182,21 @@ export const CreatePost: React.FC = () => {
             <button
               type="button"
               onClick={() => setPublishType('moment')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
                 publishType === 'moment'
-                  ? 'bg-luxury-espresso dark:bg-luxury-dark-champagne text-white dark:text-luxury-dark-espresso shadow-md ring-2 ring-luxury-champagne/50'
-                  : 'bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-text dark:text-luxury-dark-text hover:bg-luxury-border/30'
+                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
+                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
               }`}
             >
-              <Clock className="w-4 h-4 text-luxury-champagne flex-shrink-0" />
+              <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">24h Outfit Moment</span>
             </button>
           </div>
-          <div className="mt-2.5 px-2 text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted flex items-center gap-1.5">
+          <div className="mt-2.5 px-1 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
             {publishType === 'post' ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                <span>Permanent Post: Stays on your profile grid indefinitely and appears in your followers&apos; Following feed.</span>
+                <span>Permanent Post: Stays on your profile grid and appears in your followers&apos; Following feed.</span>
               </>
             ) : (
               <>
@@ -214,8 +211,8 @@ export const CreatePost: React.FC = () => {
           {/* Left Column: Image & Tagging */}
           <div className="lg:col-span-6 space-y-6">
             {/* Image Preview & Upload */}
-            <div className="bg-luxury-surface dark:bg-luxury-dark-surface p-5 rounded-3xl border border-luxury-border dark:border-luxury-dark-border shadow-soft">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-3">
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
                 Outfit Photography *
               </label>
 
@@ -237,66 +234,50 @@ export const CreatePost: React.FC = () => {
               />
 
               {image ? (
-                <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle border border-luxury-border dark:border-luxury-dark-border shadow-inner group mb-3">
+                <div className="relative rounded-md overflow-hidden aspect-[4/5] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 group mb-3">
                   <img
                     src={resolveImageUrl(image) || FALLBACK_POST_IMAGE}
-                    alt="Post preview"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
-                        e.currentTarget.src = FALLBACK_POST_IMAGE;
-                      }
-                    }}
+                    alt="Outfit capture"
                     className="w-full h-full object-cover"
                   />
-
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="cursor-pointer bg-white text-luxury-espresso px-3.5 py-2 rounded-full text-xs font-bold hover:bg-neutral-100 shadow-soft flex items-center gap-1.5"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" />
-                      <span>Change</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setImage('')}
-                      className="bg-white text-rose-600 px-3.5 py-2 rounded-full text-xs font-bold hover:bg-rose-50 shadow-soft flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Remove</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImage('')}
+                    className="absolute top-3 right-3 p-2 min-h-[44px] min-w-[44px] rounded-md bg-black/70 text-white hover:bg-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                    title="Remove image"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               ) : (
-                <div className="aspect-[4/5] rounded-2xl border-2 border-dashed border-luxury-border dark:border-luxury-dark-border bg-luxury-surfaceSubtle/40 dark:bg-luxury-dark-surfaceSubtle/40 p-6 flex flex-col items-center justify-center text-center mb-3">
-                  <div className="w-14 h-14 rounded-2xl bg-luxury-surface dark:bg-luxury-dark-surface border border-luxury-border dark:border-luxury-dark-border flex items-center justify-center text-luxury-champagne shadow-soft mb-3">
-                    <Upload className="w-6 h-6" />
+                <div className="border border-dashed border-zinc-300 dark:border-zinc-700 rounded-md aspect-[4/5] flex flex-col items-center justify-center p-6 text-center bg-zinc-50 dark:bg-zinc-800/40 mb-3">
+                  <div className="w-14 h-14 rounded-md bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 mb-3">
+                    <ImageIcon className="w-7 h-7" />
                   </div>
-                  <p className="font-serif font-semibold text-luxury-text dark:text-luxury-dark-text text-sm mb-1">
-                    Add Outfit Photography
-                  </p>
-                  <p className="text-xs text-luxury-textMuted dark:text-luxury-dark-textMuted max-w-xs mb-4">
-                    High resolution photography from your camera or gallery (JPG, PNG, WebP · Max 10MB)
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">
+                    Upload Lookbook Photo
+                  </h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-xs">
+                    Choose from device gallery or take an instant outfit photo.
                   </p>
 
-                  <div className="flex flex-col sm:flex-row gap-2.5 w-full max-w-xs">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
                     <button
                       type="button"
-                      onClick={() => galleryInputRef.current?.click()}
                       disabled={isUploadingImage}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-luxury-espresso dark:bg-luxury-dark-champagne text-white dark:text-luxury-dark-espresso rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-soft cursor-pointer"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 min-h-[44px] rounded-md text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
                     >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{isUploadingImage ? 'Uploading...' : 'Device Files'}</span>
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploadingImage ? 'Uploading...' : 'Choose File'}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => cameraInputRef.current?.click()}
                       disabled={isUploadingImage}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-text dark:text-luxury-dark-text rounded-xl text-xs font-semibold border border-luxury-border dark:border-luxury-dark-border hover:bg-luxury-border/30 transition-colors shadow-soft cursor-pointer"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 min-h-[44px] rounded-md text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
                     >
-                      <Camera className="w-3.5 h-3.5 text-luxury-champagne" />
+                      <Camera className="w-4 h-4" />
                       <span>Take Photo</span>
                     </button>
                   </div>
@@ -310,25 +291,25 @@ export const CreatePost: React.FC = () => {
                   placeholder="Or enter image URL (https://...)"
                   value={image.startsWith('http') ? image : ''}
                   onChange={(e) => setImage(e.target.value)}
-                  className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-xl px-3 py-1.5 text-xs text-luxury-text dark:text-luxury-dark-text placeholder:text-luxury-textMuted/60 focus:outline-none focus:ring-1 focus:ring-luxury-champagne"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 min-h-[44px] text-base sm:text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                 />
               </div>
             </div>
 
             {/* Tagged Wardrobe Items Section (Only for permanent posts) */}
             {publishType === 'post' && (
-              <div className="bg-luxury-surface dark:bg-luxury-dark-surface p-5 rounded-3xl border border-luxury-border dark:border-luxury-dark-border shadow-soft">
+              <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-luxury-text dark:text-luxury-dark-text">
+                    <Tag className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
                       Tag Wardrobe Items ({taggedItemIds.length})
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowWardrobePicker(!showWardrobePicker)}
-                    className="text-xs font-semibold text-luxury-champagne dark:text-luxury-dark-champagne hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline cursor-pointer"
                   >
                     {showWardrobePicker ? 'Done Tagging' : '+ Tag From Wardrobe'}
                   </button>
@@ -339,9 +320,9 @@ export const CreatePost: React.FC = () => {
                   {taggedItems.map((item) => (
                     <span
                       key={item.id}
-                      className="inline-flex items-center gap-1.5 bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-text dark:text-luxury-dark-text text-xs px-2.5 py-1 rounded-full border border-luxury-border dark:border-luxury-dark-border"
+                      className="inline-flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs px-2.5 py-1 rounded-md border border-zinc-200 dark:border-zinc-700"
                     >
-                      <img src={item.image} alt={item.name} className="w-4 h-4 rounded-full object-cover" />
+                      <img src={item.image} alt={item.name} className="w-4 h-4 rounded object-cover" />
                       <span>{item.name}</span>
                       <button
                         type="button"
@@ -356,8 +337,8 @@ export const CreatePost: React.FC = () => {
 
                 {/* Wardrobe picker drawer */}
                 {showWardrobePicker && (
-                  <div className="p-3 bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 rounded-2xl border border-luxury-border dark:border-luxury-dark-border max-h-52 overflow-y-auto space-y-1.5">
-                    <p className="text-[11px] font-bold text-luxury-textMuted dark:text-luxury-dark-textMuted mb-2">
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700 max-h-52 overflow-y-auto space-y-1.5">
+                    <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-2">
                       Click items from your digital closet to tag:
                     </p>
                     {wardrobe.map((item) => {
@@ -366,14 +347,14 @@ export const CreatePost: React.FC = () => {
                         <div
                           key={item.id}
                           onClick={() => toggleTagItem(item.id)}
-                          className={`flex items-center justify-between p-2 rounded-xl cursor-pointer text-xs transition-colors ${
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-xs transition-colors ${
                             isTagged
-                              ? 'bg-luxury-champagne/15 border border-luxury-champagne/40 font-bold text-luxury-champagne dark:text-luxury-dark-champagne'
-                              : 'bg-luxury-surface dark:bg-luxury-dark-surface hover:bg-luxury-surfaceSubtle border border-luxury-border dark:border-luxury-dark-border text-luxury-text dark:text-luxury-dark-text'
+                              ? 'bg-zinc-900 dark:bg-zinc-100 font-bold text-white dark:text-zinc-900'
+                              : 'bg-white dark:bg-zinc-800 hover:bg-zinc-100 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <img src={item.image} alt={item.name} className="w-8 h-8 rounded-lg object-cover" />
+                            <img src={item.image} alt={item.name} className="w-8 h-8 rounded object-cover" />
                             <span className="truncate">{item.name}</span>
                           </div>
                           <span>{isTagged ? '✓ Tagged' : '+ Add'}</span>
@@ -388,10 +369,10 @@ export const CreatePost: React.FC = () => {
 
           {/* Right Column: Metadata, Caption & Live Preview */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="bg-luxury-surface dark:bg-luxury-dark-surface p-6 rounded-3xl border border-luxury-border dark:border-luxury-dark-border shadow-soft space-y-4">
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-4">
               {/* Caption */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Caption / Styling Thoughts *
                 </label>
                 <textarea
@@ -400,13 +381,13 @@ export const CreatePost: React.FC = () => {
                   placeholder="Share the inspiration behind this look, styling advice, or garment fit notes..."
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl p-3.5 text-xs sm:text-sm text-luxury-text dark:text-luxury-dark-text placeholder:text-luxury-textMuted/60 focus:outline-none focus:ring-1 focus:ring-luxury-champagne resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
                 />
               </div>
 
               {/* Hashtags */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Hashtags
                 </label>
                 <input
@@ -414,20 +395,20 @@ export const CreatePost: React.FC = () => {
                   placeholder="#Minimal #QuietLuxury #Tailoring #DailyFit"
                   value={hashtags}
                   onChange={(e) => setHashtags(e.target.value)}
-                  className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl px-3.5 py-2.5 text-xs text-luxury-text dark:text-luxury-dark-text placeholder:text-luxury-textMuted/60 focus:outline-none focus:ring-1 focus:ring-luxury-champagne"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                 />
               </div>
 
               {/* Occasion & Location */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Occasion
                   </label>
                   <select
                     value={occasion}
                     onChange={(e) => setOccasion(e.target.value as Occasion)}
-                    className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl px-3 py-2 text-xs text-luxury-text dark:text-luxury-dark-text focus:outline-none focus:ring-1 focus:ring-luxury-champagne"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
                   >
                     {OCCASIONS.map((occ) => (
                       <option key={occ} value={occ}>
@@ -439,7 +420,7 @@ export const CreatePost: React.FC = () => {
 
                 {publishType === 'post' && (
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                       Location
                     </label>
                     <div className="relative">
@@ -448,9 +429,9 @@ export const CreatePost: React.FC = () => {
                         placeholder="e.g. SoHo, New York"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
-                        className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl pl-9 pr-3 py-2 text-xs text-luxury-text dark:text-luxury-dark-text focus:outline-none focus:ring-1 focus:ring-luxury-champagne"
+                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                       />
-                      <MapPin className="w-3.5 h-3.5 text-luxury-textMuted absolute left-3 top-2.5" />
+                      <MapPin className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-3.5" />
                     </div>
                   </div>
                 )}
@@ -458,33 +439,33 @@ export const CreatePost: React.FC = () => {
 
               {/* Live Card Preview Box */}
               <div className="pt-2">
-                <span className="block text-[11px] font-bold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-2 flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5 text-luxury-champagne dark:text-luxury-dark-champagne" />
+                <span className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
                   {publishType === 'post' ? 'Feed Preview' : 'Discovery Moment Preview'}
                 </span>
-                <div className="p-3 bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 rounded-2xl border border-luxury-border dark:border-luxury-dark-border text-xs">
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-bold text-luxury-text dark:text-luxury-dark-text">@{currentUser.username}</span>
-                    <span className="text-[10px] text-luxury-textMuted dark:text-luxury-dark-textMuted">
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">@{currentUser.username}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       {publishType === 'post' ? '· Permanent Post' : '· 24h Outfit Moment'}
                     </span>
-                    <span className="ml-auto text-[10px] bg-luxury-surface dark:bg-luxury-dark-surface border border-luxury-border dark:border-luxury-dark-border px-2 py-0.5 rounded-full font-semibold text-luxury-text dark:text-luxury-dark-text">
+                    <span className="ml-auto text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded font-semibold text-zinc-900 dark:text-zinc-100">
                       {occasion}
                     </span>
                   </div>
-                  <p className="text-luxury-text dark:text-luxury-dark-text line-clamp-2">{caption || '(Caption preview will appear here...)'}</p>
-                  {hashtags && <p className="text-luxury-champagne dark:text-luxury-dark-champagne text-[11px] mt-1 font-medium">{hashtags}</p>}
+                  <p className="text-zinc-900 dark:text-zinc-100 line-clamp-2">{caption || '(Caption preview will appear here...)'}</p>
+                  {hashtags && <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1 font-medium">{hashtags}</p>}
                 </div>
               </div>
 
               {/* Publish Button */}
-              <div className="pt-4 border-t border-luxury-border dark:border-luxury-dark-border">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <Button
                   type="submit"
                   variant="primary"
                   size="lg"
                   isLoading={isPublishing}
-                  className="w-full font-serif"
+                  className="w-full min-h-[44px]"
                 >
                   {publishType === 'post' ? 'Publish Outfit to Feed' : 'Publish 24h Outfit Moment'}
                 </Button>

@@ -119,16 +119,16 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           opacity: pullDistance > 10 || isRefreshing ? 1 : 0,
         }}
       >
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-luxury-surface dark:bg-luxury-dark-surface border border-luxury-border dark:border-luxury-dark-border shadow-soft-md">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <Loader2
-            className={`w-4 h-4 text-luxury-champagne dark:text-luxury-dark-champagne ${
+            className={`w-4 h-4 text-zinc-900 dark:text-zinc-100 ${
               isRefreshing ? 'animate-spin' : ''
             }`}
             style={{
               transform: isRefreshing ? undefined : `rotate(${progress * 360}deg)`,
             }}
           />
-          <span className="text-[11px] font-serif tracking-wider text-luxury-text dark:text-luxury-dark-text">
+          <span className="text-[11px] font-medium tracking-wide text-zinc-800 dark:text-zinc-200">
             {isRefreshing
               ? 'Refreshing...'
               : pullDistance >= pullThreshold

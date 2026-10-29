@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Sparkles,
   MapPin,
   Calendar,
   Grid,
@@ -26,7 +25,6 @@ export const UserProfile: React.FC = () => {
 
   const [creator, setCreator] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'Outfits' | 'Saved'>('Outfits');
   const [userListModalOpen, setUserListModalOpen] = useState(false);
   const [userListInitialTab, setUserListInitialTab] = useState<'followers' | 'following'>('followers');
 
@@ -76,7 +74,7 @@ export const UserProfile: React.FC = () => {
         <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] transition-colors"
+            className="inline-flex items-center gap-2 min-h-[44px] text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Return</span>
@@ -87,7 +85,7 @@ export const UserProfile: React.FC = () => {
               navigator.clipboard?.writeText(window.location.href);
               showToast('Profile link copied to clipboard', 'info');
             }}
-            className="p-2 rounded-xl border border-[#E5DED3] dark:border-[#393832] bg-[#FFFFFF] dark:bg-[#22221F] text-[#82796F] hover:text-[#25211E] dark:hover:text-[#F4F0E8] shadow-subtle transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center justify-center"
             title="Share profile"
           >
             <Share2 className="w-4 h-4" />
@@ -96,15 +94,15 @@ export const UserProfile: React.FC = () => {
 
         {isLoading ? (
           <div className="text-center py-24">
-            <RefreshCw className="w-6 h-6 text-[#C3A36B] animate-spin mx-auto mb-2" />
-            <p className="text-xs text-[#82796F]">Loading tastemaker profile...</p>
+            <RefreshCw className="w-6 h-6 text-zinc-600 dark:text-zinc-400 animate-spin mx-auto mb-2" />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Loading tastemaker profile...</p>
           </div>
         ) : !creator ? (
-          <div className="text-center py-20 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle p-8 max-w-md mx-auto">
-            <h3 className="font-serif text-xl font-medium text-[#25211E] dark:text-[#F4F0E8] mb-2">
+          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-8 max-w-md mx-auto">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
               Curator Not Found
             </h3>
-            <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mb-6 font-sans">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-6">
               The style profile for @{username} does not exist or has been relocated.
             </p>
             <Button variant="primary" size="sm" onClick={() => navigate('/explore')}>
@@ -114,7 +112,7 @@ export const UserProfile: React.FC = () => {
         ) : (
           <>
             {/* Profile Header Card */}
-            <div className="bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] p-6 sm:p-8 shadow-subtle mb-8 transition-colors">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 mb-8 transition-colors">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
                 <Avatar
                   src={creator.avatar}
@@ -126,10 +124,10 @@ export const UserProfile: React.FC = () => {
                 <div className="flex-1 text-center sm:text-left min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                     <div>
-                      <h1 className="font-serif text-2xl sm:text-3xl font-normal text-[#25211E] dark:text-[#F4F0E8] tracking-tight">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                         {creator.name}
                       </h1>
-                      <p className="text-xs sm:text-sm text-[#82796F] dark:text-[#B2AA9E]">@{creator.username}</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">@{creator.username}</p>
                     </div>
 
                     <Button
@@ -143,42 +141,42 @@ export const UserProfile: React.FC = () => {
                   </div>
 
                   {creator.bio && (
-                    <p className="text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] max-w-xl leading-relaxed mb-4 font-sans font-light">
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300 max-w-xl leading-relaxed mb-4">
                       {creator.bio}
                     </p>
                   )}
 
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#82796F] dark:text-[#B2AA9E] mb-6">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-zinc-500 dark:text-zinc-400 mb-6">
                     {creator.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#C3A36B] dark:text-[#D1B47A]" />
+                        <MapPin className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                         {creator.location}
                       </span>
                     )}
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#C3A36B] dark:text-[#D1B47A]" />
+                      <Calendar className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                       Member since {creator.joinedDate}
                     </span>
                   </div>
 
                   {/* Social Stats Row */}
-                  <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-[#E5DED3] dark:border-[#393832]">
+                  <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                     <div className="text-center sm:text-left">
-                      <span className="font-serif text-xl sm:text-2xl font-bold text-[#25211E] dark:text-[#F4F0E8] block">
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block">
                         {creatorPosts.length}
                       </span>
-                      <span className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] uppercase font-semibold">Posts</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Posts</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={openFollowersModal}
-                      className="text-center sm:text-left group cursor-pointer focus:outline-none"
+                      className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                     >
-                      <span className="font-serif text-xl sm:text-2xl font-bold text-[#25211E] dark:text-[#F4F0E8] block group-hover:text-[#C3A36B] dark:group-hover:text-[#D1B47A] transition-colors">
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block group-hover:underline transition-colors">
                         {formatStatCount(creator.followersCount || 0)}
                       </span>
-                      <span className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] uppercase font-semibold group-hover:text-[#25211E] dark:group-hover:text-[#F4F0E8] transition-colors">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                         Followers
                       </span>
                     </button>
@@ -186,12 +184,12 @@ export const UserProfile: React.FC = () => {
                     <button
                       type="button"
                       onClick={openFollowingModal}
-                      className="text-center sm:text-left group cursor-pointer focus:outline-none"
+                      className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                     >
-                      <span className="font-serif text-xl sm:text-2xl font-bold text-[#25211E] dark:text-[#F4F0E8] block group-hover:text-[#C3A36B] dark:group-hover:text-[#D1B47A] transition-colors">
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block group-hover:underline transition-colors">
                         {formatStatCount(creator.followingCount || 0)}
                       </span>
-                      <span className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] uppercase font-semibold group-hover:text-[#25211E] dark:group-hover:text-[#F4F0E8] transition-colors">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                         Following
                       </span>
                     </button>
@@ -201,22 +199,22 @@ export const UserProfile: React.FC = () => {
             </div>
 
             {/* Lookbook Posts Section */}
-            <div className="mb-6 flex items-center justify-between border-b border-[#E5DED3] dark:border-[#393832] pb-3">
-              <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+            <div className="mb-6 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 Curated Lookbook
               </h2>
-              <span className="text-xs text-[#82796F] dark:text-[#B2AA9E]">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
                 {creatorPosts.length} {creatorPosts.length === 1 ? 'Look' : 'Looks'}
               </span>
             </div>
 
             {creatorPosts.length === 0 ? (
-              <div className="text-center py-20 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle">
-                <Grid className="w-8 h-8 text-[#C3A36B] dark:text-[#D1B47A] mx-auto mb-2 opacity-60" />
-                <p className="font-serif font-medium text-[#25211E] dark:text-[#F4F0E8]">
+              <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <Grid className="w-8 h-8 text-zinc-400 mx-auto mb-2 opacity-60" />
+                <p className="font-bold text-zinc-900 dark:text-zinc-100">
                   No Public Looks Yet
                 </p>
-                <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                   @{creator.username} has not published any public lookbook ensembles.
                 </p>
               </div>

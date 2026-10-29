@@ -6,7 +6,6 @@ import {
   SunMoon,
   Shield,
   Save,
-  Lock,
   Sun,
   Moon,
   Laptop,
@@ -51,7 +50,6 @@ export const Settings: React.FC = () => {
   );
 
   const [formData, setFormData] = useState<UserSettings>(userSettings);
-  const [passwordState, setPasswordState] = useState({ current: '', new: '', confirm: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   const toggleStyle = (style: StyleVibe) => {
@@ -90,35 +88,25 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordState.new !== passwordState.confirm) {
-      showToast('New passwords do not match', 'info');
-      return;
-    }
-    showToast('Password updated securely!', 'success');
-    setPasswordState({ current: '', new: '', confirm: '' });
-  };
-
   return (
     <AppShell>
       <PullToRefresh onRefresh={refreshData}>
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#C3A36B] dark:text-[#D1B47A] block mb-1 font-sans">
-            Personalization & Atelier Controls
+          <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
+            Personalization & Controls
           </span>
-          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-[#25211E] dark:text-[#F4F0E8] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
             Settings & Aesthetic Profile
           </h1>
-          <p className="text-xs sm:text-sm text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             Configure your style signature, appearance theme, notification cadence, and account identity.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
           {/* Navigation Sidebar */}
-          <div className="md:col-span-4 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl p-2.5 border border-[#E5DED3] dark:border-[#393832] shadow-subtle space-y-1">
+          <div className="md:col-span-4 bg-white dark:bg-zinc-900 rounded-lg p-2.5 border border-zinc-200 dark:border-zinc-800 space-y-1">
             {[
               { id: 'Account', label: 'Account & Identity', icon: User },
               { id: 'Preferences', label: 'Style & Palette', icon: Sliders },
@@ -134,13 +122,13 @@ export const Settings: React.FC = () => {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all text-left ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-md text-xs sm:text-sm font-medium transition-all text-left ${
                     isCurrent
-                      ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] font-semibold shadow-subtle'
-                      : 'text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] hover:bg-[#F7F4EE] dark:hover:bg-[#2A2A26]'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isCurrent ? 'text-[#C3A36B] dark:text-[#171715]' : 'text-[#82796F] dark:text-[#B2AA9E]'}`} />
+                  <Icon className={`w-4 h-4 ${isCurrent ? 'text-white dark:text-zinc-900' : 'text-zinc-500'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -148,23 +136,23 @@ export const Settings: React.FC = () => {
           </div>
 
           {/* Form Content Area */}
-          <div className="md:col-span-8 bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl p-6 sm:p-8 border border-[#E5DED3] dark:border-[#393832] shadow-subtle">
+          <div className="md:col-span-8 bg-white dark:bg-zinc-900 rounded-lg p-6 sm:p-8 border border-zinc-200 dark:border-zinc-800">
             <form onSubmit={handleSaveAll} className="space-y-6">
               {/* 1. ACCOUNT TAB */}
               {activeTab === 'Account' && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                       Account & Public Profile
                     </h2>
-                    <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       Your public presence within the StyleSphere network.
                     </p>
                   </div>
 
                   <div className="space-y-3 pt-2">
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                         Display Name
                       </label>
                       <input
@@ -176,36 +164,36 @@ export const Settings: React.FC = () => {
                             account: { ...formData.account, name: e.target.value },
                           })
                         }
-                        className="w-full bg-[#F7F4EE]/60 dark:bg-[#2A2A26] border border-[#E5DED3] dark:border-[#393832] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] focus:outline-none focus:ring-2 focus:ring-[#C3A36B]"
+                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                         Username
                       </label>
                       <input
                         type="text"
                         disabled
                         value={formData.account.username}
-                        className="w-full bg-[#F7F4EE]/30 dark:bg-[#2A2A26]/50 border border-[#E5DED3] dark:border-[#393832] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#82796F] dark:text-[#7E786E] cursor-not-allowed"
+                        className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                         Email Address
                       </label>
                       <input
                         type="email"
                         disabled
                         value={formData.account.email}
-                        className="w-full bg-[#F7F4EE]/30 dark:bg-[#2A2A26]/50 border border-[#E5DED3] dark:border-[#393832] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#82796F] dark:text-[#7E786E] cursor-not-allowed"
+                        className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                         Editorial Bio
                       </label>
                       <textarea
@@ -218,12 +206,12 @@ export const Settings: React.FC = () => {
                           })
                         }
                         placeholder="Share your aesthetic philosophy..."
-                        className="w-full bg-[#F7F4EE]/60 dark:bg-[#2A2A26] border border-[#E5DED3] dark:border-[#393832] rounded-xl p-3 text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] focus:outline-none focus:ring-2 focus:ring-[#C3A36B]"
+                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                         Primary Location / City
                       </label>
                       <input
@@ -236,7 +224,7 @@ export const Settings: React.FC = () => {
                           })
                         }
                         placeholder="e.g. New York, London, Tokyo"
-                        className="w-full bg-[#F7F4EE]/60 dark:bg-[#2A2A26] border border-[#E5DED3] dark:border-[#393832] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] focus:outline-none focus:ring-2 focus:ring-[#C3A36B]"
+                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                       />
                     </div>
                   </div>
@@ -247,33 +235,33 @@ export const Settings: React.FC = () => {
               {activeTab === 'Preferences' && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                       Style Profile & Aesthetic Signatures
                     </h2>
-                    <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
-                      Used by the Atelier ML Engine to score candidate outfits and daily styling.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Used by the recommendation engine to score candidate outfits and daily styling.
                     </p>
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-2 font-sans">
+                    <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-2">
                       Aesthetic Vibes
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {STYLES_ALL.map((s) => {
-                        const isSelected = formData.preferences.styles.includes(s);
+                    <div className="flex flex-wrap gap-2">
+                      {STYLES_ALL.map((style) => {
+                        const isSelected = formData.preferences.styles.includes(style);
                         return (
                           <button
-                            key={s}
+                            key={style}
                             type="button"
-                            onClick={() => toggleStyle(s)}
-                            className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
+                            onClick={() => toggleStyle(style)}
+                            className={`px-3.5 py-2 min-h-[40px] rounded-md text-xs sm:text-sm font-medium transition-all border ${
                               isSelected
-                                ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] border-[#25211E] dark:border-[#F4F0E8] font-semibold'
-                                : 'bg-[#F7F4EE] dark:bg-[#2A2A26] border-[#E5DED3] dark:border-[#393832] text-[#82796F] dark:text-[#B2AA9E] hover:border-[#C3A36B]'
+                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
+                                : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
                             }`}
                           >
-                            {s}
+                            {style}
                           </button>
                         );
                       })}
@@ -281,10 +269,10 @@ export const Settings: React.FC = () => {
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-semibold uppercase tracking-wider text-[#82796F] dark:text-[#B2AA9E] mb-2 font-sans">
+                    <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-2">
                       Preferred Color Palette
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {COLORS_ALL.map((c) => {
                         const isSelected = formData.preferences.preferredColors.includes(c);
                         return (
@@ -292,10 +280,10 @@ export const Settings: React.FC = () => {
                             key={c}
                             type="button"
                             onClick={() => toggleColor(c)}
-                            className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
+                            className={`px-3.5 py-2 min-h-[40px] rounded-md text-xs sm:text-sm font-medium transition-all border ${
                               isSelected
-                                ? 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] border-[#25211E] dark:border-[#F4F0E8] font-semibold'
-                                : 'bg-[#F7F4EE] dark:bg-[#2A2A26] border-[#E5DED3] dark:border-[#393832] text-[#82796F] dark:text-[#B2AA9E] hover:border-[#C3A36B]'
+                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
+                                : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100'
                             }`}
                           >
                             {c}
@@ -311,10 +299,10 @@ export const Settings: React.FC = () => {
               {activeTab === 'Notifications' && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                       Notification Alerts
                     </h2>
-                    <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       Control which events alert your notification bell.
                     </p>
                   </div>
@@ -327,11 +315,11 @@ export const Settings: React.FC = () => {
                   ].map((item) => (
                     <div
                       key={item.key}
-                      className="flex items-center justify-between p-3.5 bg-[#F7F4EE] dark:bg-[#2A2A26] rounded-xl border border-[#E5DED3] dark:border-[#393832]"
+                      className="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-800"
                     >
                       <div>
-                        <p className="text-xs font-semibold text-[#25211E] dark:text-[#F4F0E8]">{item.title}</p>
-                        <p className="text-[11px] text-[#82796F] dark:text-[#B2AA9E]">{item.desc}</p>
+                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{item.title}</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{item.desc}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -345,21 +333,21 @@ export const Settings: React.FC = () => {
                             },
                           })
                         }
-                        className="w-4 h-4 rounded text-[#C3A36B] focus:ring-[#C3A36B] border-[#E5DED3] dark:border-[#393832]"
+                        className="w-4 h-4 rounded text-zinc-900 focus:ring-zinc-900 border-zinc-300 dark:border-zinc-700"
                       />
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* 4. APPEARANCE TAB (WORKING THEME SELECTOR) */}
+              {/* 4. APPEARANCE TAB (WORKING THEME SELECTOR - EXCLUSIVE TO SETTINGS) */}
               {activeTab === 'Appearance' && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                       Theme & Visual Aesthetic
                     </h2>
-                    <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       Select your preferred display theme. Applies instantly across all devices.
                     </p>
                   </div>
@@ -368,14 +356,14 @@ export const Settings: React.FC = () => {
                     {[
                       {
                         id: 'light' as const,
-                        name: 'Warm Ivory (Light)',
-                        desc: 'Classic editorial warm neutral with deep espresso typography',
+                        name: 'Light Mode',
+                        desc: 'Clean, bright minimal surface with sharp charcoal typography',
                         icon: Sun,
                       },
                       {
                         id: 'dark' as const,
-                        name: 'Obsidian Noir (Dark)',
-                        desc: 'Sleek luxury dark surfaces with champagne accents',
+                        name: 'Dark Mode',
+                        desc: 'Refined deep zinc surfaces with crisp white typography',
                         icon: Moon,
                       },
                       {
@@ -398,21 +386,21 @@ export const Settings: React.FC = () => {
                               appearance: { theme: t.id },
                             });
                           }}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all space-y-2 ${
+                          className={`p-4 rounded-md border cursor-pointer transition-all space-y-2 ${
                             isSelected
-                              ? 'border-[#C3A36B] dark:border-[#D1B47A] bg-[#C3A36B]/10 ring-2 ring-[#C3A36B]/30'
-                              : 'border-[#E5DED3] dark:border-[#393832] bg-[#F7F4EE] dark:bg-[#2A2A26] hover:border-[#C3A36B]/60'
+                              ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-100 dark:bg-zinc-800 ring-2 ring-zinc-900/20 dark:ring-zinc-100/20'
+                              : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 hover:border-zinc-400'
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <Icon className={`w-4 h-4 ${isSelected ? 'text-[#C3A36B] dark:text-[#D1B47A]' : 'text-[#82796F]'}`} />
+                            <Icon className={`w-4 h-4 ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500'}`} />
                             {isSelected && (
-                              <span className="w-2 h-2 rounded-full bg-[#C3A36B] dark:bg-[#D1B47A]" />
+                              <span className="w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-100" />
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-xs text-[#25211E] dark:text-[#F4F0E8]">{t.name}</p>
-                            <p className="text-[11px] text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans leading-relaxed">
+                            <p className="font-bold text-xs text-zinc-900 dark:text-zinc-100">{t.name}</p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
                               {t.desc}
                             </p>
                           </div>
@@ -427,18 +415,18 @@ export const Settings: React.FC = () => {
               {activeTab === 'Privacy' && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="font-serif text-lg font-medium text-[#25211E] dark:text-[#F4F0E8]">
+                    <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                       Privacy & Visibility Controls
                     </h2>
-                    <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       Control who can inspect your capsule garments and outfit wearing log.
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between p-3.5 bg-[#F7F4EE] dark:bg-[#2A2A26] rounded-xl border border-[#E5DED3] dark:border-[#393832]">
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-800">
                     <div>
-                      <p className="text-xs font-semibold text-[#25211E] dark:text-[#F4F0E8]">Private Closet</p>
-                      <p className="text-[11px] text-[#82796F] dark:text-[#B2AA9E]">
+                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Private Closet</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
                         Only approved followers can view your individual wardrobe pieces
                       </p>
                     </div>
@@ -451,15 +439,15 @@ export const Settings: React.FC = () => {
                           privacy: { ...formData.privacy, isPrivateAccount: e.target.checked },
                         })
                       }
-                      className="w-4 h-4 rounded text-[#C3A36B] focus:ring-[#C3A36B] border-[#E5DED3] dark:border-[#393832]"
+                      className="w-4 h-4 rounded text-zinc-900 focus:ring-zinc-900 border-zinc-300 dark:border-zinc-700"
                     />
                   </div>
                 </div>
               )}
 
               {/* Bottom Action Bar */}
-              <div className="pt-4 border-t border-[#E5DED3] dark:border-[#393832] flex items-center justify-between">
-                <span className="text-xs text-[#82796F] dark:text-[#B2AA9E]">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
                   Stored in Neon PostgreSQL
                 </span>
                 <Button
@@ -468,6 +456,7 @@ export const Settings: React.FC = () => {
                   size="md"
                   isLoading={isSaving}
                   icon={<Save className="w-4 h-4" />}
+                  className="min-h-[44px]"
                 >
                   Save Changes
                 </Button>

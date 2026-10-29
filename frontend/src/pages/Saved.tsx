@@ -57,15 +57,15 @@ export const Saved: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-luxury-champagne/15 text-luxury-champagne dark:text-luxury-dark-champagne rounded-xl border border-luxury-champagne/30">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-md border border-zinc-200 dark:border-zinc-700">
                 <Bookmark className="w-4 h-4" />
               </span>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-luxury-text dark:text-luxury-dark-text">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                 Saved & Moodboards
               </h1>
             </div>
-            <p className="text-xs sm:text-sm text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
               Curate style inspiration, moodboards, and staple outfits for future seasons.
             </p>
           </div>
@@ -75,10 +75,10 @@ export const Saved: React.FC = () => {
               onClick={handleRefresh}
               disabled={isRefreshing}
               title="Refresh saved items"
-              className="p-2.5 rounded-full border border-luxury-border dark:border-luxury-dark-border text-luxury-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text bg-luxury-surface dark:bg-luxury-dark-surface hover:bg-luxury-surfaceSubtle dark:hover:bg-luxury-dark-surfaceSubtle transition-all cursor-pointer shadow-soft-xs"
+              className="w-11 h-11 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-sm"
               aria-label="Refresh saved"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-luxury-champagne' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-zinc-900 dark:text-zinc-100' : ''}`} />
             </button>
 
             <Button
@@ -94,7 +94,7 @@ export const Saved: React.FC = () => {
 
         {/* Collections Row */}
         <div className="mb-8">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
             Curated Collections
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -102,9 +102,9 @@ export const Saved: React.FC = () => {
               <div
                 key={col.id}
                 onClick={() => setActiveSection('Outfits')}
-                className="group cursor-pointer bg-luxury-surface dark:bg-luxury-dark-surface rounded-2xl border border-luxury-border dark:border-luxury-dark-border overflow-hidden shadow-soft hover:shadow-soft-lg hover:border-luxury-champagne/50 transition-all"
+                className="group cursor-pointer bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm hover:border-zinc-400 dark:hover:border-zinc-600 transition-all"
               >
-                <div className="aspect-[4/3] bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle overflow-hidden">
+                <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                   <img
                     src={col.coverImage}
                     alt={col.name}
@@ -112,10 +112,10 @@ export const Saved: React.FC = () => {
                   />
                 </div>
                 <div className="p-3">
-                  <h3 className="font-serif font-bold text-xs text-luxury-text dark:text-luxury-dark-text truncate group-hover:text-luxury-champagne">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
                     {col.name}
                   </h3>
-                  <p className="text-[10px] text-luxury-textMuted dark:text-luxury-dark-textMuted mt-0.5">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {col.itemCount} outfits saved
                   </p>
                 </div>
@@ -125,15 +125,15 @@ export const Saved: React.FC = () => {
         </div>
 
         {/* Section Filter Tabs */}
-        <div className="flex items-center gap-4 border-b border-luxury-border dark:border-luxury-dark-border mb-6">
+        <div className="flex items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 mb-6">
           {(['All', 'Outfits', 'Clothing', 'Creators'] as const).map((sec) => (
             <button
               key={sec}
               onClick={() => setActiveSection(sec)}
-              className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide transition-all relative cursor-pointer ${
+              className={`h-11 px-1 text-sm font-semibold tracking-wide transition-all relative cursor-pointer ${
                 activeSection === sec
-                  ? 'text-luxury-text dark:text-luxury-dark-text font-bold border-b-2 border-luxury-champagne dark:border-luxury-dark-champagne -mb-px'
-                  : 'text-luxury-textMuted dark:text-luxury-dark-textMuted hover:text-luxury-text dark:hover:text-luxury-dark-text'
+                  ? 'text-zinc-900 dark:text-zinc-100 font-bold border-b-2 border-zinc-900 dark:border-zinc-100 -mb-px'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
               }`}
             >
               {sec} {sec === 'Outfits' ? `(${savedPosts.length})` : sec === 'Clothing' ? `(${savedClothing.length})` : ''}
@@ -145,16 +145,16 @@ export const Saved: React.FC = () => {
         {/* 1. Outfits section */}
         {(activeSection === 'All' || activeSection === 'Outfits') && (
           <div className="mb-10">
-            <h3 className="font-serif text-lg font-bold text-luxury-text dark:text-luxury-dark-text mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center justify-between">
               <span>Saved Outfits</span>
-              <span className="text-xs text-luxury-textMuted dark:text-luxury-dark-textMuted font-normal">{savedPosts.length} Looks</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">{savedPosts.length} Looks</span>
             </h3>
 
             {savedPosts.length === 0 ? (
-              <div className="text-center py-12 bg-luxury-surface dark:bg-luxury-dark-surface rounded-3xl border border-luxury-border dark:border-luxury-dark-border mb-6">
-                <Bookmark className="w-8 h-8 text-luxury-champagne/40 mx-auto mb-2" />
-                <p className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text">No saved outfits yet.</p>
-                <p className="text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1">
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 mb-6">
+                <Bookmark className="w-8 h-8 text-zinc-400 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">No saved outfits yet.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                   Discover a look you love on the Feed or Explore and bookmark it here.
                 </p>
               </div>
@@ -171,16 +171,16 @@ export const Saved: React.FC = () => {
         {/* 2. Clothing section */}
         {(activeSection === 'All' || activeSection === 'Clothing') && (
           <div className="mb-10">
-            <h3 className="font-serif text-lg font-bold text-luxury-text dark:text-luxury-dark-text mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center justify-between">
               <span>Staple Favorite Pieces</span>
-              <span className="text-xs text-luxury-textMuted dark:text-luxury-dark-textMuted font-normal">{savedClothing.length} Pieces</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">{savedClothing.length} Pieces</span>
             </h3>
 
             {savedClothing.length === 0 ? (
-              <div className="text-center py-12 bg-luxury-surface dark:bg-luxury-dark-surface rounded-3xl border border-luxury-border dark:border-luxury-dark-border mb-6">
-                <Shirt className="w-8 h-8 text-luxury-champagne/40 mx-auto mb-2" />
-                <p className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text">No staple garments marked.</p>
-                <p className="text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1">
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 mb-6">
+                <Shirt className="w-8 h-8 text-zinc-400 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">No staple garments marked.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                   Mark your most versatile pieces as favorites in your Digital Wardrobe.
                 </p>
               </div>
@@ -197,15 +197,15 @@ export const Saved: React.FC = () => {
         {/* 3. Creators section */}
         {(activeSection === 'All' || activeSection === 'Creators') && (
           <div className="mb-10">
-            <h3 className="font-serif text-lg font-bold text-luxury-text dark:text-luxury-dark-text mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center justify-between">
               <span>Followed Tastemakers</span>
-              <span className="text-xs text-luxury-textMuted dark:text-luxury-dark-textMuted font-normal">{savedCreators.length} Creators</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">{savedCreators.length} Creators</span>
             </h3>
 
             {savedCreators.length === 0 ? (
-              <div className="text-center py-12 bg-luxury-surface dark:bg-luxury-dark-surface rounded-3xl border border-luxury-border dark:border-luxury-dark-border mb-6">
-                <p className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text">No followed tastemakers yet.</p>
-                <p className="text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted mt-1">
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 mb-6">
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">No followed tastemakers yet.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                   Follow tastemakers on Explore or Feed to build your network.
                 </p>
               </div>
@@ -215,14 +215,14 @@ export const Saved: React.FC = () => {
                   <div
                     key={creator.id}
                     onClick={() => navigate(`/profile/${creator.username}`)}
-                    className="flex items-center gap-3 p-3.5 bg-luxury-surface dark:bg-luxury-dark-surface rounded-2xl border border-luxury-border dark:border-luxury-dark-border cursor-pointer hover:border-luxury-champagne/50 shadow-soft-xs transition-all"
+                    className="flex items-center gap-3 p-3.5 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 shadow-sm transition-all"
                   >
                     <Avatar src={creator.avatar} alt={creator.name} size="md" isVerified={creator.isVerified} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-luxury-text dark:text-luxury-dark-text truncate">{creator.name}</p>
-                      <p className="text-[11px] text-luxury-textMuted dark:text-luxury-dark-textMuted truncate">@{creator.username}</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{creator.name}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">@{creator.username}</p>
                     </div>
-                    <span className="text-[11px] bg-luxury-surfaceSubtle dark:bg-luxury-dark-surfaceSubtle text-luxury-text dark:text-luxury-dark-text px-3 py-1 rounded-full font-medium border border-luxury-border dark:border-luxury-dark-border">
+                    <span className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-3 py-1 rounded-md font-medium border border-zinc-200 dark:border-zinc-700">
                       Profile
                     </span>
                   </div>
@@ -242,7 +242,7 @@ export const Saved: React.FC = () => {
         >
           <form onSubmit={handleCreateCollection} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                 Collection Name *
               </label>
               <input
@@ -251,12 +251,12 @@ export const Saved: React.FC = () => {
                 placeholder="e.g. Summer in Milan, Studio Workwear, Weekend Casual"
                 value={collectionName}
                 onChange={(e) => setCollectionName(e.target.value)}
-                className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl px-3.5 py-2.5 text-xs text-luxury-text dark:text-luxury-dark-text focus:outline-none focus:ring-1 focus:ring-luxury-champagne"
+                className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 min-h-[44px]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-textMuted dark:text-luxury-dark-textMuted mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                 Description (Optional)
               </label>
               <textarea
@@ -264,11 +264,11 @@ export const Saved: React.FC = () => {
                 placeholder="Linen silhouettes, warm earth tones, and lightweight layering..."
                 value={collectionDesc}
                 onChange={(e) => setCollectionDesc(e.target.value)}
-                className="w-full bg-luxury-surfaceSubtle/60 dark:bg-luxury-dark-surfaceSubtle/60 border border-luxury-border dark:border-luxury-dark-border rounded-2xl px-3.5 py-2 text-xs text-luxury-text dark:text-luxury-dark-text focus:outline-none focus:ring-1 focus:ring-luxury-champagne resize-none"
+                className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none min-h-[60px]"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-luxury-border dark:border-luxury-dark-border">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
               <Button
                 type="button"
                 variant="outline"

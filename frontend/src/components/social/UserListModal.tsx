@@ -70,7 +70,6 @@ export const UserListModal: React.FC<UserListModalProps> = ({
     setActionLoadingIds((prev) => new Set(prev).add(targetUser.id));
     try {
       await toggleFollowUser(targetUser.id);
-      // Update local item follow status
       setUsers((prev) =>
         prev.map((u) =>
           u.id === targetUser.id ? { ...u, isFollowing: !u.isFollowing } : u
@@ -109,21 +108,21 @@ export const UserListModal: React.FC<UserListModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-cream-50 w-full max-w-md rounded-3xl border border-sand-200/90 shadow-soft-xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-sand-200">
+        <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-zinc-800">
           <div>
-            <h2 className="font-serif text-lg font-bold text-charcoal-950">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
               @{username}
             </h2>
-            <p className="text-xs text-charcoal-500">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Community styling network
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-charcoal-400 hover:text-charcoal-800 rounded-full hover:bg-sand-100 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -131,35 +130,35 @@ export const UserListModal: React.FC<UserListModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="grid grid-cols-2 border-b border-sand-200 bg-sand-50/50">
+        <div className="grid grid-cols-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
           <button
             onClick={() => setActiveTab('followers')}
-            className={`py-3 text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+            className={`py-3 min-h-[44px] text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
               activeTab === 'followers'
-                ? 'border-cognac-600 text-charcoal-950 bg-cream-50'
-                : 'border-transparent text-charcoal-500 hover:text-charcoal-800 hover:bg-sand-100/50'
+                ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900'
+                : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Users className="w-4 h-4 text-cognac-600" />
+            <Users className="w-4 h-4" />
             <span>Followers</span>
             {followersCount !== undefined && (
-              <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-sand-200 text-charcoal-700">
+              <span className="ml-1 text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
                 {followersCount.toLocaleString()}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('following')}
-            className={`py-3 text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+            className={`py-3 min-h-[44px] text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
               activeTab === 'following'
-                ? 'border-cognac-600 text-charcoal-950 bg-cream-50'
-                : 'border-transparent text-charcoal-500 hover:text-charcoal-800 hover:bg-sand-100/50'
+                ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900'
+                : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <UserCheck className="w-4 h-4 text-cognac-600" />
+            <UserCheck className="w-4 h-4" />
             <span>Following</span>
             {followingCount !== undefined && (
-              <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full bg-sand-200 text-charcoal-700">
+              <span className="ml-1 text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
                 {followingCount.toLocaleString()}
               </span>
             )}
@@ -167,51 +166,51 @@ export const UserListModal: React.FC<UserListModalProps> = ({
         </div>
 
         {/* Search Bar */}
-        <div className="p-3 border-b border-sand-200/70 bg-cream-50">
+        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
           <div className="relative">
-            <Search className="w-4 h-4 text-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${activeTab}...`}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-sand-100/70 border border-sand-200 focus:outline-none focus:ring-1 focus:ring-cognac-500 text-charcoal-800 placeholder-charcoal-400"
+              className="w-full pl-9 pr-3 py-2 min-h-[44px] text-base sm:text-xs rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
             />
           </div>
         </div>
 
         {/* Modal Body / User List */}
-        <div className="flex-1 overflow-y-auto p-3 divide-y divide-sand-100">
+        <div className="flex-1 overflow-y-auto p-3 divide-y divide-zinc-100 dark:divide-zinc-800">
           {isLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center text-charcoal-400 gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-cognac-600" />
+            <div className="py-12 flex flex-col items-center justify-center text-zinc-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-600 dark:text-zinc-400" />
               <p className="text-xs">Loading {activeTab}...</p>
             </div>
           ) : error ? (
             <div className="py-10 text-center px-4">
               <AlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
-              <p className="text-xs text-charcoal-600 mb-3">{error}</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3">{error}</p>
               <Button size="sm" variant="outline" onClick={fetchUsers}>
                 Try again
               </Button>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="py-12 text-center px-4">
-              <div className="w-12 h-12 rounded-full bg-sand-100 flex items-center justify-center mx-auto mb-2 text-charcoal-400">
+              <div className="w-12 h-12 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-2 text-zinc-400">
                 {activeTab === 'followers' ? (
                   <Users className="w-6 h-6" />
                 ) : (
                   <UserCheck className="w-6 h-6" />
                 )}
               </div>
-              <p className="text-sm font-semibold text-charcoal-800">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 {searchQuery
                   ? 'No users match your search'
                   : activeTab === 'followers'
                   ? 'No followers yet'
                   : 'Not following anyone yet'}
               </p>
-              <p className="text-xs text-charcoal-500 mt-0.5">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                 {searchQuery
                   ? 'Try searching with another name or username'
                   : activeTab === 'followers'
@@ -228,7 +227,7 @@ export const UserListModal: React.FC<UserListModalProps> = ({
               return (
                 <div
                   key={u.id}
-                  className="flex items-center justify-between py-2.5 px-2 rounded-2xl hover:bg-sand-100/60 transition-colors"
+                  className="flex items-center justify-between py-2.5 px-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div
                     onClick={() => handleUserClick(u)}
@@ -241,10 +240,10 @@ export const UserListModal: React.FC<UserListModalProps> = ({
                       isVerified={u.isVerified}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-bold text-charcoal-900 truncate hover:text-cognac-700 transition-colors">
+                      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate hover:underline">
                         {u.name || u.username}
                       </p>
-                      <p className="text-[11px] text-charcoal-500 truncate">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                         @{u.username}
                       </p>
                     </div>
@@ -255,10 +254,10 @@ export const UserListModal: React.FC<UserListModalProps> = ({
                       type="button"
                       disabled={isActionLoading}
                       onClick={() => handleToggleFollow(u)}
-                      className={`text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all shadow-sm ${
+                      className={`text-xs font-semibold px-3 py-1.5 min-h-[36px] rounded-md transition-all border ${
                         currentlyFollowing
-                          ? 'bg-sand-200 text-charcoal-800 hover:bg-sand-300'
-                          : 'bg-charcoal-900 text-cream-50 hover:bg-cognac-700'
+                          ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200'
+                          : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent hover:bg-zinc-800'
                       }`}
                     >
                       {isActionLoading ? (
@@ -279,4 +278,3 @@ export const UserListModal: React.FC<UserListModalProps> = ({
     </div>
   );
 };
-

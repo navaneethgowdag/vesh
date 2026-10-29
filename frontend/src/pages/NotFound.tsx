@@ -1,42 +1,41 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, Home, Compass } from 'lucide-react';
+import { ArrowLeft, Home, Compass } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export const NotFound: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-luxury-bg dark:bg-luxury-dark-bg text-luxury-text dark:text-luxury-dark-text flex flex-col justify-between p-6 sm:p-12 transition-colors duration-300">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col justify-between p-6 sm:p-12 transition-colors duration-200">
       {/* Top Bar */}
       <header className="flex items-center justify-between max-w-6xl mx-auto w-full">
-        <div className="flex items-center gap-2">
-          <span className="w-8 h-8 rounded-full bg-luxury-espresso dark:bg-luxury-dark-champagne text-white dark:text-luxury-dark-espresso flex items-center justify-center font-serif text-sm font-bold">
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center text-sm font-bold">
             S
           </span>
-          <span className="font-serif tracking-widest text-sm font-semibold uppercase">
-            StyleSphere Atelier
+          <span className="tracking-wide text-sm font-bold uppercase">
+            StyleSphere
           </span>
         </div>
       </header>
 
-      {/* Main Editorial Content */}
+      {/* Main Content */}
       <main className="max-w-xl mx-auto w-full text-center py-12">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest text-luxury-champagne dark:text-luxury-dark-champagne bg-luxury-surface dark:bg-luxury-dark-surface border border-luxury-champagne/30 mb-6">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Error 404 · Uncharted Silhouette</span>
-        </span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 mb-6">
+          <span>Error 404 · Page Not Found</span>
+        </div>
 
-        <h1 className="font-serif text-7xl sm:text-9xl font-bold tracking-tight text-luxury-espresso dark:text-luxury-dark-champagne mb-4">
+        <h1 className="text-7xl sm:text-9xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-4">
           404
         </h1>
 
-        <h2 className="font-serif text-2xl sm:text-3xl font-medium text-luxury-text dark:text-luxury-dark-text mb-4">
-          This look has departed the atelier.
+        <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+          This page does not exist.
         </h2>
 
-        <p className="text-sm sm:text-base text-luxury-textMuted dark:text-luxury-dark-textMuted leading-relaxed max-w-md mx-auto mb-8 font-sans">
-          The runway you are seeking is either private, expired, or has moved to another collection.
+        <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-md mx-auto mb-8">
+          The page you are looking for has been moved, deleted, or does not exist.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -52,9 +51,9 @@ export const NotFound: React.FC = () => {
             variant="outline"
             size="lg"
             onClick={() => navigate('/explore')}
-            icon={<Compass className="w-4 h-4 text-luxury-champagne" />}
+            icon={<Compass className="w-4 h-4" />}
           >
-            Explore Trends
+            Explore
           </Button>
           <Button
             variant="ghost"
@@ -68,8 +67,8 @@ export const NotFound: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="text-center text-xs text-luxury-textMuted/60 dark:text-luxury-dark-textMuted/60 max-w-6xl mx-auto w-full pt-8 border-t border-luxury-border/60 dark:border-luxury-dark-border/60 font-serif">
-        StyleSphere © {new Date().getFullYear()} · High Fashion Digital Wardrobe & Atelier
+      <footer className="text-center text-xs text-zinc-500 dark:text-zinc-400 max-w-6xl mx-auto w-full pt-8 border-t border-zinc-200 dark:border-zinc-800">
+        StyleSphere © {new Date().getFullYear()} · All rights reserved.
       </footer>
     </div>
   );

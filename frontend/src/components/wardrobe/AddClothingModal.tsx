@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Image as ImageIcon, Sparkles, Check } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { ClothingCategory, ClothingColor, Season, StyleVibe } from '../../types';
@@ -106,17 +106,16 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         name: name.trim(),
         category,
         color,
-        pattern: pattern || 'Solid',
+        pattern,
         style,
         season,
         brand: brand.trim() || undefined,
         notes: notes.trim() || undefined,
-        image: imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80',
-        tags: [category.toLowerCase(), style.toLowerCase(), color.toLowerCase()],
+        image: imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
         isFavorite: false,
       });
 
-      // Reset form
+      showToast(`Added "${name}" to your wardrobe!`, 'success');
       setName('');
       setBrand('');
       setNotes('');
@@ -137,10 +136,10 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
       subtitle="Catalog new pieces for your AI daily recommendations"
       maxWidth="xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Image Preview & Upload */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-          <div className="sm:col-span-4 aspect-square rounded-2xl bg-sand-100 overflow-hidden border border-sand-300 relative group shadow-inner flex items-center justify-center">
+          <div className="sm:col-span-4 aspect-square rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden border border-zinc-200 dark:border-zinc-700 relative group flex items-center justify-center">
             {imageUrl ? (
               <>
                 <img
@@ -153,25 +152,25 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                   }}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <span className="text-white text-xs font-medium">Garment Preview</span>
                 </div>
               </>
             ) : (
               <div className="text-center p-3">
-                <ImageIcon className="w-8 h-8 text-charcoal-400 mx-auto mb-1 opacity-60" />
-                <span className="text-[11px] text-charcoal-400 font-medium">No Image Uploaded</span>
+                <ImageIcon className="w-8 h-8 text-zinc-400 mx-auto mb-1 opacity-60" />
+                <span className="text-xs text-zinc-400 font-medium">No Image Uploaded</span>
               </div>
             )}
           </div>
 
           <div className="sm:col-span-8 space-y-2.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
               Clothing Image
             </label>
             <div className="flex gap-2">
-              <label className="cursor-pointer flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-sand-300 rounded-2xl text-xs font-medium text-charcoal-600 hover:border-cognac-600 hover:bg-sand-100 transition-colors">
-                <Upload className="w-4 h-4 text-cognac-600" />
+              <label className="cursor-pointer flex-1 flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] border border-dashed border-zinc-300 dark:border-zinc-700 rounded-md text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                <Upload className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
                 <span>{isUploading ? 'Uploading...' : 'Upload File from Device'}</span>
                 <input
                   type="file"
@@ -188,7 +187,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                 placeholder="Or paste image URL (e.g. Unsplash / brand URL)"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3 py-1.5 text-xs text-charcoal-800 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+                className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-base sm:text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
               />
             </div>
           </div>
@@ -197,7 +196,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         {/* Basic Information */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Clothing Name *
             </label>
             <input
@@ -206,12 +205,12 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
               placeholder="e.g. Oversized Poplin Button-Down"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Brand / Label
             </label>
             <input
@@ -219,7 +218,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
               placeholder="e.g. The Row, COS, Zara, Vintage"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
             />
           </div>
         </div>
@@ -227,13 +226,13 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         {/* Category & Color */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Category
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ClothingCategory)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -244,13 +243,13 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Primary Color
             </label>
             <select
               value={color}
               onChange={(e) => setColor(e.target.value as ClothingColor)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
             >
               {COLORS.map((c) => (
                 <option key={c} value={c}>
@@ -264,7 +263,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         {/* Pattern & Style & Season */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Pattern
             </label>
             <input
@@ -272,18 +271,18 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
               placeholder="e.g. Solid, Striped, Ribbed"
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Aesthetic Style
             </label>
             <select
               value={style}
               onChange={(e) => setStyle(e.target.value as StyleVibe)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
             >
               {STYLES.map((s) => (
                 <option key={s} value={s}>
@@ -294,13 +293,13 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
               Season
             </label>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value as Season)}
-              className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3 py-2 text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-cognac-600"
+              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
             >
               {SEASONS.map((s) => (
                 <option key={s} value={s}>
@@ -313,7 +312,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
             Care & Styling Notes
           </label>
           <textarea
@@ -321,16 +320,16 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
             placeholder="e.g. 100% French linen, dry clean only. Pairs great with loafers."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full bg-cream-50 border border-sand-300 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-cognac-600 resize-none"
+            className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
           />
         </div>
 
         {/* Modal Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-sand-200">
-          <Button type="button" variant="outline" size="md" onClick={onClose}>
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+          <Button type="button" variant="outline" size="md" onClick={onClose} className="min-h-[44px]">
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="md" disabled={!name.trim() || isSubmitting} isLoading={isSubmitting}>
+          <Button type="submit" variant="primary" size="md" disabled={!name.trim() || isSubmitting} isLoading={isSubmitting} className="min-h-[44px]">
             Add to Wardrobe
           </Button>
         </div>
@@ -338,4 +337,3 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
     </Modal>
   );
 };
-

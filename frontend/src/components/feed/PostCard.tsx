@@ -72,7 +72,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   return (
     <>
-      <article className="bg-[#FFFFFF] dark:bg-[#22221F] rounded-2xl border border-[#E5DED3] dark:border-[#393832] shadow-subtle hover:shadow-soft overflow-hidden transition-all duration-200">
+      <article className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-200">
         {/* Post Header */}
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               onClick={() =>
                 navigate(isMe ? '/profile' : `/profile/${post.user.username}`)
               }
-              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C3A36B] rounded-full"
+              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 rounded-full"
             >
               <Avatar
                 src={post.user.avatar}
@@ -97,17 +97,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   onClick={() =>
                     navigate(isMe ? '/profile' : `/profile/${post.user.username}`)
                   }
-                  className="font-bold text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] hover:text-[#C3A36B] dark:hover:text-[#D1B47A] transition-colors"
+                  className="font-bold text-sm text-zinc-900 dark:text-zinc-100 hover:underline transition-colors"
                 >
                   {post.user.name}
                 </button>
-                <span className="text-[11px] text-[#82796F] dark:text-[#B2AA9E]">@{post.user.username}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">@{post.user.username}</span>
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] text-[#82796F] dark:text-[#B2AA9E] mt-0.5">
+              <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                 {post.location && (
-                  <span className="flex items-center gap-1 text-[#82796F] dark:text-[#B2AA9E]">
-                    <MapPin className="w-3 h-3 text-[#C3A36B] dark:text-[#D1B47A]" />
+                  <span className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
+                    <MapPin className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
                     {post.location}
                   </span>
                 )}
@@ -121,7 +121,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {isMe ? (
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="p-2 text-[#82796F] dark:text-[#B2AA9E] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors"
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors"
               title="Delete post"
               aria-label="Delete post"
             >
@@ -131,10 +131,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             <button
               onClick={() => toggleFollowUser(post.user.id)}
               className={cn(
-                'text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200',
+                'text-xs font-semibold px-3 py-1.5 min-h-[36px] rounded-md transition-all duration-200 border',
                 isFollowing
-                  ? 'bg-[#EFE9DF] dark:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] hover:bg-[#E5DED3] dark:hover:bg-[#393832]'
-                  : 'bg-[#25211E] dark:bg-[#F4F0E8] text-[#F7F4EE] dark:text-[#171715] hover:bg-[#C3A36B] dark:hover:bg-[#D1B47A]'
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                  : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent hover:bg-zinc-800 dark:hover:bg-zinc-200'
               )}
             >
               {isFollowing ? 'Following' : '+ Follow'}
@@ -145,7 +145,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         {/* Post Image Container */}
         <div
           onDoubleClick={handleDoubleTap}
-          className="relative bg-[#F7F4EE] dark:bg-[#171715] aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
+          className="relative bg-zinc-100 dark:bg-zinc-950 aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
         >
           <img
             src={resolveImageUrl(post.image) || FALLBACK_POST_IMAGE}
@@ -155,7 +155,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 e.currentTarget.src = FALLBACK_POST_IMAGE;
               }
             }}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
             loading="lazy"
           />
 
@@ -168,7 +168,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               transition={{ duration: 0.5, ease: 'easeOut' }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+              <div className="w-20 h-20 rounded-md bg-black/60 backdrop-blur-sm flex items-center justify-center">
                 <Heart className="w-10 h-10 text-rose-500 fill-rose-500" />
               </div>
             </motion.div>
@@ -181,9 +181,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 e.stopPropagation();
                 setShowTags(!showTags);
               }}
-              className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-[11px] font-medium flex items-center gap-1.5 transition-colors"
+              className="absolute bottom-3 left-3 px-2.5 py-1.5 rounded-md bg-black/70 hover:bg-black/90 text-white backdrop-blur-md text-xs font-medium flex items-center gap-1.5 transition-colors"
             >
-              <Tag className="w-3 h-3 text-[#D1B47A]" />
+              <Tag className="w-3.5 h-3.5 text-zinc-300" />
               <span>{post.taggedItems.length} {post.taggedItems.length === 1 ? 'piece' : 'pieces'}</span>
             </button>
           )}
@@ -191,21 +191,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
         {/* Tagged Clothing drawer / pills */}
         {showTags && post.taggedItems && post.taggedItems.length > 0 && (
-          <div className="p-3 bg-[#F7F4EE] dark:bg-[#171715] border-t border-[#E5DED3] dark:border-[#393832] flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto hide-scrollbar">
             {post.taggedItems.map((item) => (
               <div
                 key={item.id}
                 onClick={() => navigate(`/wardrobe/${item.id}`)}
-                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-white dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] flex-shrink-0 cursor-pointer hover:border-[#C3A36B] transition-colors"
+                className="flex items-center gap-2 p-1.5 pr-3 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex-shrink-0 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
               >
                 <img
                   src={resolveImageUrl(item.image)}
                   alt={item.name}
-                  className="w-7 h-7 rounded-lg object-cover"
+                  className="w-7 h-7 rounded object-cover"
                 />
-                <div className="text-[11px] leading-tight">
-                  <p className="font-semibold text-[#25211E] dark:text-[#F4F0E8]">{item.name}</p>
-                  <p className="text-[10px] text-[#82796F] dark:text-[#B2AA9E] capitalize">{item.category}</p>
+                <div className="text-xs leading-tight">
+                  <p className="font-semibold text-zinc-900 dark:text-zinc-100">{item.name}</p>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 capitalize">{item.category}</p>
                 </div>
               </div>
             ))}
@@ -219,17 +219,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               {/* Like */}
               <button
                 onClick={handleLike}
-                className="flex items-center gap-1.5 text-xs font-semibold group focus:outline-none"
+                className="flex items-center gap-1.5 min-h-[40px] text-xs font-semibold group focus:outline-none"
               >
                 <Heart
                   className={cn(
                     'w-5 h-5 transition-transform group-hover:scale-110 active:scale-90',
                     post.isLiked
                       ? 'text-rose-500 fill-rose-500'
-                      : 'text-[#82796F] dark:text-[#B2AA9E] group-hover:text-rose-500'
+                      : 'text-zinc-500 dark:text-zinc-400 group-hover:text-rose-500'
                   )}
                 />
-                <span className={cn(post.isLiked ? 'text-rose-600 dark:text-rose-400' : 'text-[#82796F] dark:text-[#B2AA9E]')}>
+                <span className={cn(post.isLiked ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-zinc-700 dark:text-zinc-300')}>
                   {post.likesCount}
                 </span>
               </button>
@@ -237,16 +237,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               {/* Comments */}
               <button
                 onClick={() => setCommentModalOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] transition-colors focus:outline-none"
+                className="flex items-center gap-1.5 min-h-[40px] text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus:outline-none"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
                 <span>{post.comments?.length || 0}</span>
               </button>
 
               {/* Share */}
               <button
                 onClick={() => setShareModalOpen(true)}
-                className="text-[#82796F] dark:text-[#B2AA9E] hover:text-[#25211E] dark:hover:text-[#F4F0E8] transition-colors focus:outline-none"
+                className="min-h-[40px] flex items-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus:outline-none"
                 aria-label="Share post"
               >
                 <Share2 className="w-5 h-5" />
@@ -256,13 +256,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             {/* Bookmark / Save */}
             <button
               onClick={() => toggleSavePost(post.id)}
-              className="text-[#82796F] dark:text-[#B2AA9E] hover:text-[#C3A36B] dark:hover:text-[#D1B47A] transition-colors focus:outline-none"
+              className="min-h-[40px] flex items-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus:outline-none"
               aria-label={post.isSaved ? 'Remove from saved' : 'Save outfit'}
             >
               <Bookmark
                 className={cn(
                   'w-5 h-5 transition-transform active:scale-90',
-                  post.isSaved ? 'text-[#C3A36B] dark:text-[#D1B47A] fill-[#C3A36B] dark:fill-[#D1B47A]' : ''
+                  post.isSaved ? 'text-zinc-900 dark:text-zinc-100 fill-zinc-900 dark:fill-zinc-100' : ''
                 )}
               />
             </button>
@@ -270,7 +270,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
           {/* Caption */}
           {post.caption && (
-            <p className="text-xs sm:text-sm text-[#25211E] dark:text-[#F4F0E8] leading-relaxed font-sans">
+            <p className="text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed">
               <span className="font-bold mr-1.5">{post.user.username}</span>
               {post.caption}
             </p>
@@ -282,7 +282,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               {post.tags.map((t) => (
                 <span
                   key={t}
-                  className="text-[11px] font-medium text-[#C3A36B] dark:text-[#D1B47A] hover:underline cursor-pointer"
+                  className="text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:underline cursor-pointer"
                 >
                   {t.startsWith('#') ? t : `#${t}`}
                 </span>
@@ -295,15 +295,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* Delete Confirmation Modal */}
       {isDeleteDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#FFFFFF] dark:bg-[#22221F] border border-[#E5DED3] dark:border-[#393832] rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-soft">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-sm w-full p-6 space-y-4 shadow-xl">
+            <div className="w-10 h-10 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div className="text-center">
-              <h4 className="font-serif text-lg font-bold text-[#25211E] dark:text-[#F4F0E8]">
+              <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 Delete Lookbook Post?
               </h4>
-              <p className="text-xs text-[#82796F] dark:text-[#B2AA9E] mt-1 font-sans">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 This will permanently remove this post and its comments from the social feed and your profile.
               </p>
             </div>
@@ -311,7 +311,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               <button
                 type="button"
                 onClick={() => setIsDeleteDialogOpen(false)}
-                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#EFE9DF] dark:bg-[#2A2A26] text-[#25211E] dark:text-[#F4F0E8] hover:bg-[#E5DED3]"
+                className="flex-1 py-2.5 min-h-[44px] text-xs font-semibold rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
               >
                 Cancel
               </button>
@@ -319,7 +319,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDeleteConfirm}
-                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
+                className="flex-1 py-2.5 min-h-[44px] text-xs font-semibold rounded-md bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>

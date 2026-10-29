@@ -10,10 +10,10 @@ export const LuxuryPageLoader: React.FC = () => {
           <Sparkles className="w-6 h-6 text-cognac-600 dark:text-cognac-400 animate-pulse" />
         </div>
       </div>
-      <h2 className="font-serif text-xl tracking-wider text-charcoal-900 dark:text-sand-100 font-semibold mb-2">
+      <h2 className="text-xl tracking-wider text-zinc-900 dark:text-zinc-100 font-bold mb-2">
         STYLESPHERE
       </h2>
-      <p className="text-xs uppercase tracking-widest text-charcoal-500 dark:text-sand-400 font-medium">
+      <p className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-medium">
         Curating Wardrobe &amp; Intelligence
       </p>
     </div>

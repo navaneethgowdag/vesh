@@ -29,10 +29,10 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
   return (
     <div
       onClick={() => navigate(`/wardrobe/${item.id}`)}
-      className="group relative bg-cream-50 rounded-3xl border border-sand-200/90 shadow-soft overflow-hidden hover:shadow-soft-lg transition-all duration-300 cursor-pointer flex flex-col"
+      className="group relative bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-200 cursor-pointer flex flex-col"
     >
       {/* Garment Image */}
-      <div className="relative aspect-[3/4] bg-sand-200/60 overflow-hidden">
+      <div className="relative aspect-[3/4] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
         <img
           src={resolveImageUrl(item.image) || FALLBACK_POST_IMAGE}
           alt={item.name}
@@ -47,23 +47,23 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
 
         {/* Favorite Badge */}
         {item.isFavorite && (
-          <span className="absolute top-3 left-3 bg-cream-50/90 backdrop-blur-md text-cognac-700 p-1.5 rounded-full shadow-sm text-xs" title="Wardrobe Staple">
-            <Sparkles className="w-3.5 h-3.5 fill-cognac-600" />
+          <span className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white p-1.5 rounded text-xs" title="Wardrobe Staple">
+            <Sparkles className="w-3.5 h-3.5 fill-current" />
           </span>
         )}
 
         {/* Times Worn Badge */}
-        <span className="absolute top-3 right-3 bg-charcoal-900/80 backdrop-blur-md text-cream-50 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
+        <span className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded">
           {item.timesWorn || 0} wears
         </span>
 
         {/* Quick action overlay */}
-        <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
           <div className="flex gap-1.5 ml-auto">
             {onEdit && (
               <button
                 onClick={handleEdit}
-                className="p-2 bg-cream-50 text-charcoal-800 rounded-full hover:bg-sand-200 transition-colors shadow-soft"
+                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 rounded hover:bg-zinc-100 transition-colors shadow"
                 title="Edit item"
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -71,7 +71,7 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
             )}
             <button
               onClick={handleDelete}
-              className="p-2 bg-rose-50 text-rose-700 rounded-full hover:bg-rose-100 transition-colors shadow-soft"
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center bg-rose-600 text-white rounded hover:bg-rose-700 transition-colors shadow"
               title="Delete item"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -81,27 +81,27 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
       </div>
 
       {/* Info Block */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
+      <div className="p-3.5 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between text-[11px] text-cognac-700 font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider mb-1">
             <span>{item.category}</span>
-            {item.brand && <span className="text-charcoal-400 font-normal">{item.brand}</span>}
+            {item.brand && <span className="text-zinc-600 dark:text-zinc-400 font-normal">{item.brand}</span>}
           </div>
 
-          <h3 className="font-serif text-sm font-bold text-charcoal-900 line-clamp-1 group-hover:text-cognac-800 transition-colors">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1 group-hover:underline transition-colors">
             {item.name}
           </h3>
 
-          <p className="text-xs text-charcoal-500 mt-1">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
             {item.style} · {item.color}
           </p>
         </div>
 
-        <div className="pt-3 mt-3 border-t border-sand-200/60 flex items-center justify-between text-[11px] text-charcoal-400">
-          <span className="bg-sand-100 px-2 py-0.5 rounded-md text-charcoal-600 font-medium">
+        <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
+          <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-zinc-700 dark:text-zinc-300 font-medium">
             {item.season}
           </span>
-          <span className="text-cognac-700 font-semibold group-hover:underline">
+          <span className="text-zinc-900 dark:text-zinc-100 font-semibold group-hover:underline">
             View details →
           </span>
         </div>
@@ -109,4 +109,3 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
     </div>
   );
 };
-
