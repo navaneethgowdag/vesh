@@ -31,6 +31,7 @@ class RecommendationResponse(BaseModel):
 class RecommendationFeedbackCreate(BaseModel):
     recommendation_id: UUID
     action: str = Field(..., description="Action: view, like, save, wear, reject, skip")
+    reason: Optional[str] = Field(default=None, description="Optional feedback reason (e.g. not_my_style, dont_like_colors, too_formal, too_casual, not_suitable_for_occasion)")
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -38,10 +39,21 @@ class RecommendationFeedbackResponse(BaseModel):
     id: UUID
     recommendation_id: UUID
     action: str
+    reason: Optional[str] = None
     created_at: datetime
     message: str = "Feedback recorded and learned preferences updated successfully"
 
     model_config = {"from_attributes": True}
+
+
+class OutfitWearResponse(BaseModel):
+    success: bool = True
+    outfit_id: UUID
+    user_id: UUID
+    worn_at: datetime
+    wear_count_updated: bool = True
+    clothing_items_updated: List[UUID] = Field(default_factory=list)
+    message: str = "Outfit marked as worn. Wear history and personalization updated."
 
 
 class RecommendationGenerateRequest(BaseModel):

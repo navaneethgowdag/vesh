@@ -65,6 +65,16 @@ class Recommendation(Base):
         ]
 
     @property
+    def score_breakdown(self):
+        if hasattr(self, "_custom_score_breakdown") and self._custom_score_breakdown:
+            return self._custom_score_breakdown
+        return {"reasoning": self.reasoning}
+
+    @score_breakdown.setter
+    def score_breakdown(self, val):
+        self._custom_score_breakdown = val
+
+    @property
     def worn_status(self) -> str:
         return "suggested"
 

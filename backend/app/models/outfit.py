@@ -31,7 +31,13 @@ class Outfit(Base):
     # API compatibility properties
     @property
     def style(self) -> str:
+        if hasattr(self, "_custom_style") and self._custom_style:
+            return self._custom_style
         return "Minimal"
+
+    @style.setter
+    def style(self, val: str):
+        self._custom_style = val
 
     @property
     def compatibility_score(self) -> float:

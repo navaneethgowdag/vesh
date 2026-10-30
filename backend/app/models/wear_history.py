@@ -28,6 +28,10 @@ class WearHistory(Base):
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    @property
+    def worn_date(self):
+        return self.worn_at.date() if self.worn_at else None
+
     # Relationships
     user = relationship("User", back_populates="wear_history")
     outfit = relationship("Outfit", back_populates="wear_history")

@@ -284,6 +284,29 @@ export interface Weather {
   summary: string;
 }
 
+export interface LearnedPreferences {
+  id?: string;
+  userId?: string;
+  user_id?: string;
+  styleScores?: Record<string, number>;
+  colorScores?: Record<string, number>;
+  style_scores?: Record<string, number>;
+  color_scores?: Record<string, number>;
+  categoryScores?: Record<string, number>;
+  occasionScores?: Record<string, number>;
+  seasonScores?: Record<string, number>;
+  confidenceScore?: number;
+  confidence?: number;
+  interactionCount?: number;
+  total_interactions?: number;
+  topStyles?: Array<{ name?: string; style?: string; score: number }>;
+  top_styles?: Array<{ name?: string; style?: string; score: number }>;
+  topColors?: Array<{ name?: string; color?: string; score: number }>;
+  top_colors?: Array<{ name?: string; color?: string; score: number }>;
+  evidence_summary?: string;
+  updatedAt?: string;
+}
+
 export interface RecommendationExplanation {
   weatherMatch: string;
   styleMatch: string;
@@ -334,6 +357,11 @@ export interface UserSettings {
   preferences: {
     styles: StyleVibe[];
     preferredColors: ClothingColor[];
+    avoidedColors?: string[];
+    dislikedStyles?: string[];
+    personalizationEnabled?: boolean;
+    diversityPreference?: 'balanced' | 'high' | 'low';
+    avoidRecentlyWornDays?: number;
     clothingSizes: {
       tops: string;
       bottoms: string;

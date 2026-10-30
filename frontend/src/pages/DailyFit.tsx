@@ -17,6 +17,9 @@ import {
   Clock,
   Palette,
   ShieldCheck,
+  Heart,
+  ThumbsDown,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AppShell } from '../components/layout/AppShell';
@@ -77,11 +80,13 @@ export const DailyFit: React.FC = () => {
   const [acceptedSuccess, setAcceptedSuccess] = useState<boolean>(false);
   const [wornSuccess, setWornSuccess] = useState<boolean>(false);
 
-  // Modals
+  // Modals & Feedback
   const [whyModalOpen, setWhyModalOpen] = useState<boolean>(false);
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState<boolean>(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isLikedSuccess, setIsLikedSuccess] = useState<boolean>(false);
 
   // Active outfit to display: preferred multi-candidate or legacy dailyFit
   const currentRecommendation = candidateRecommendations.length > 0
@@ -219,16 +224,44 @@ export const DailyFit: React.FC = () => {
     }
   };
 
-  // Dismiss current recommendation
-  const handleDismissOutfit = async () => {
+  // Like outfit (positive feedback)
+  const handleLikeOutfit = async () => {
+    if (!currentRecommendation) return;
+    try {
+      await api.recommendations.sendFeedback(currentRecommendation.id, 'like');
+      setIsLikedSuccess(true);
+      showToast('Loved this outfit! Added to style signatures.', 'heart');
+    } catch (err) {
+      console.error('Failed to record like', err);
+    }
+  };
+
+  // Save outfit (positive feedback)
+  const handleSave = async () => {
+    if (!currentRecommendation) return;
+    try {
+      await api.recommendations.sendFeedback(currentRecommendation.id, 'save');
+      showToast(`Saved "${currentRecommendation.outfit.title}" to your Saved Outfits!`, 'save');
+    } catch (err) {
+      console.error('Failed to save outfit feedback', err);
+    }
+  };
+
+  // Dismiss with explicit or neutral feedback reason
+  const handleDismissWithReason = async (reason?: string) => {
     if (!currentRecommendation) return;
 
     try {
-      await api.recommendations.dismiss(currentRecommendation.id);
-      showToast('Outfit candidate dismissed', 'info');
+      if (reason) {
+        await api.recommendations.sendFeedback(currentRecommendation.id, 'reject', reason);
+        showToast('Feedback noted. Adjusting recommendations.', 'info');
+      } else {
+        await api.recommendations.dismiss(currentRecommendation.id);
+        showToast('Outfit candidate dismissed', 'info');
+      }
+      setRejectModalOpen(false);
 
       if (candidateRecommendations.length > 1) {
-        // Cycle to next candidate
         setActiveCandidateIndex((prev) => (prev + 1) % candidateRecommendations.length);
       } else {
         cycleDailyFit();
@@ -251,21 +284,22 @@ export const DailyFit: React.FC = () => {
     }
   };
 
-  const handleWear = () => {
-    wearDailyFit();
-    setWornSuccess(true);
-    confetti({
-      particleCount: 80,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#18181B', '#71717A', '#E4E4E7'],
-    });
-    setTimeout(() => setWornSuccess(false), 2500);
-  };
-
-  const handleSave = () => {
-    if (currentRecommendation) {
-      showToast(`Saved "${currentRecommendation.outfit.title}" to your Saved Outfits!`, 'save');
+  const handleWear = async () => {
+    if (!currentRecommendation) return;
+    try {
+      await api.recommendations.markWorn(currentRecommendation.id);
+      wearDailyFit();
+      setWornSuccess(true);
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#18181B', '#71717A', '#E4E4E7'],
+      });
+      setTimeout(() => setWornSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed to record wear confirmation', err);
+      wearDailyFit();
     }
   };
 
@@ -731,10 +765,20 @@ export const DailyFit: React.FC = () => {
                   <Button
                     variant="secondary"
                     size="md"
-                    onClick={handleDismissOutfit}
-                    icon={<RefreshCw className="w-4 h-4" />}
+                    onClick={() => setRejectModalOpen(true)}
+                    icon={<ThumbsDown className="w-4 h-4" />}
                   >
-                    Dismiss & Try Next
+                    Feedback & Dismiss
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={handleLikeOutfit}
+                    className={isLikedSuccess ? '!bg-rose-50 dark:!bg-rose-950/30 !text-rose-600 dark:!text-rose-400 !border-rose-200 dark:!border-rose-800' : ''}
+                    icon={<Heart className={`w-4 h-4 ${isLikedSuccess ? 'fill-rose-600 text-rose-600' : ''}`} />}
+                  >
+                    {isLikedSuccess ? 'Loved' : 'Love Look'}
                   </Button>
 
                   <Button
@@ -878,6 +922,67 @@ export const DailyFit: React.FC = () => {
                 loadCalendarEvents();
               }}
             />
+
+            {/* Rejection / Feedback Modal */}
+            {rejectModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-lg p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <ThumbsDown className="w-4 h-4 text-zinc-500" />
+                      Styling Feedback
+                    </h3>
+                    <button
+                      onClick={() => setRejectModalOpen(false)}
+                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    Help StyleSphere's Continuous Learning Engine refine your style signature. What didn't work with this look?
+                  </p>
+
+                  <div className="space-y-2">
+                    {[
+                      { id: 'not_my_style', label: 'Not my personal aesthetic or vibe' },
+                      { id: 'dont_like_colors', label: "Don't like these color combinations" },
+                      { id: 'too_formal', label: 'Too formal for what I have in mind' },
+                      { id: 'too_casual', label: 'Too casual / relaxed' },
+                      { id: 'not_suitable_for_occasion', label: 'Not suitable for this calendar event' },
+                      { id: 'prefer_different', label: 'Prefer something else right now' },
+                    ].map((reason) => (
+                      <button
+                        key={reason.id}
+                        type="button"
+                        onClick={() => handleDismissWithReason(reason.id)}
+                        className="w-full text-left p-3 rounded-md border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-all text-xs font-medium text-zinc-800 dark:text-zinc-200"
+                      >
+                        {reason.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 flex justify-between items-center text-xs">
+                    <button
+                      type="button"
+                      onClick={() => handleDismissWithReason()}
+                      className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
+                    >
+                      Skip without reason
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRejectModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </PullToRefresh>

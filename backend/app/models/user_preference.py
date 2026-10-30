@@ -35,7 +35,51 @@ class UserPreference(Base):
 
     @property
     def disliked_colors(self):
+        return self.avoided_colors
+
+    @property
+    def avoided_colors(self):
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("avoided_colors", [])
         return []
+
+    @property
+    def disliked_styles(self):
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("disliked_styles", [])
+        return []
+
+    @property
+    def personalization_enabled(self) -> bool:
+        if isinstance(self.preferred_fits, dict):
+            val = self.preferred_fits.get("personalization_enabled")
+            if val is not None:
+                return bool(val)
+        return True
+
+    @property
+    def diversity_preference(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return str(self.preferred_fits.get("diversity_preference", "balanced"))
+        return "balanced"
+
+    @property
+    def avoid_recently_worn_days(self) -> int:
+        if isinstance(self.preferred_fits, dict):
+            return int(self.preferred_fits.get("avoid_recently_worn_days", 7))
+        return 7
+
+    @property
+    def comfort_priority(self) -> float:
+        if isinstance(self.preferred_fits, dict):
+            return float(self.preferred_fits.get("comfort_priority", 0.5))
+        return 0.5
+
+    @property
+    def fits(self):
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("fits", [])
+        return self.preferred_fits or []
 
     @property
     def preferred_brands(self):

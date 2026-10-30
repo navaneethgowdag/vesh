@@ -10,6 +10,7 @@ from app.schemas.recommendation import (
     RecommendationAcceptResponse,
     RecommendationFeedbackCreate,
     RecommendationFeedbackResponse,
+    OutfitWearResponse,
 )
 from app.schemas.calendar import ScheduleRecommendationRequest, CalendarEventResponse
 from app.services.recommendation_service import RecommendationService
@@ -106,15 +107,71 @@ def record_recommendation_feedback(
         user_id=current_user.id,
         recommendation_id=feedback_in.recommendation_id,
         action=feedback_in.action,
+        reason=feedback_in.reason,
         metadata=feedback_in.metadata,
     )
     return {
         "id": fb.id,
         "recommendation_id": fb.recommendation_id,
         "action": fb.action,
+        "reason": fb.reason,
         "created_at": fb.created_at,
         "message": "Feedback recorded and learned preferences updated successfully",
     }
+
+
+@router.get("/feedback", response_model=List[RecommendationFeedbackResponse])
+def list_feedback_history(
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retrieve recommendation feedback history for the authenticated user."""
+    service = RecommendationService(db)
+    feedbacks = service.get_feedback_history(user_id=current_user.id, limit=limit)
+    return [
+        {
+            "id": f.id,
+            "recommendation_id": f.recommendation_id,
+            "action": f.action,
+            "reason": f.reason,
+            "created_at": f.created_at,
+            "message": "Feedback record retrieved",
+        }
+        for f in feedbacks
+    ]
+
+
+@router.post("/{recommendation_id}/wear", response_model=OutfitWearResponse)
+def mark_recommendation_as_worn(
+    recommendation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Phase 4: Mark a recommended outfit as worn.
+    Idempotently records wear in wear_history, increments clothing wear counts,
+    and updates continuous learning preferences.
+    """
+    rec_service = RecommendationService(db)
+    rec = rec_service.get_recommendation(recommendation_id, user_id=current_user.id)
+    if not rec or not rec.outfit_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recommendation or associated outfit not found",
+        )
+    return rec_service.mark_outfit_as_worn(
+        user_id=current_user.id,
+        outfit_id=rec.outfit_id,
+        recommendation_id=recommendation_id,
+        temperature=rec.temperature,
+        feels_like=rec.feels_like_temperature,
+        humidity=rec.humidity,
+        weather_condition=rec.weather_condition,
+        rain_probability=rec.rain_probability,
+        occasion=rec.occasion,
+        season=rec.season,
+    )
 
 
 @router.get("/{recommendation_id}", response_model=RecommendationResponse)

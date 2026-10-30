@@ -19,6 +19,7 @@ class FeedbackService:
         user_id: UUID,
         recommendation_id: UUID,
         action: str,
+        reason: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> RecommendationFeedback:
         action_clean = action.strip().lower()
@@ -42,11 +43,15 @@ class FeedbackService:
                 detail="Access denied to this recommendation",
             )
 
-        # 1. Save feedback in database
+        # Extract reason from argument or metadata
+        effective_reason = reason or (metadata.get("reason") if metadata else None)
+
+        # 1. Save feedback in database with deduplication and reason encoding
         feedback = self.rec_repo.save_feedback(
             user_id=user_id,
             recommendation_id=recommendation_id,
             action=action_clean,
+            reason=effective_reason,
             metadata=metadata,
         )
 
@@ -56,6 +61,7 @@ class FeedbackService:
                 user_id=user_id,
                 outfit=rec.outfit,
                 action=action_clean,
+                reason=effective_reason,
             )
 
         return feedback

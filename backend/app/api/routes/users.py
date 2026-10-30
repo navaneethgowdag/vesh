@@ -9,6 +9,7 @@ from app.schemas.user import (
     UserPreferenceBase,
     UserPreferenceResponse,
     LearnedPreferenceResponse,
+    PersonalizationResetResponse,
     UserSearchResponse,
 )
 from app.services.user_service import UserService
@@ -70,6 +71,18 @@ def get_learned_preferences(
     """Return the derived learned-preference profile for the current user."""
     service = UserService(db)
     lp = service.get_learned_preferences(current_user.id)
+    
+    top_styles = [
+        {"name": k, "style": k, "score": round(v, 2)}
+        for k, v in sorted((lp.style_scores or {}).items(), key=lambda x: x[1], reverse=True)
+        if v > 0.1
+    ][:5]
+    top_colors = [
+        {"name": k, "color": k, "score": round(v, 2)}
+        for k, v in sorted((lp.color_scores or {}).items(), key=lambda x: x[1], reverse=True)
+        if v > 0.1
+    ][:6]
+
     return {
         "id": lp.id,
         "user_id": lp.user_id,
@@ -84,8 +97,27 @@ def get_learned_preferences(
         "weather_scores": lp.weather_scores or {},
         "confidence_score": lp.confidence_score,
         "interaction_count": lp.interaction_count,
+        "top_styles": top_styles,
+        "top_colors": top_colors,
         "created_at": lp.created_at,
         "updated_at": lp.updated_at,
+    }
+
+
+@router.post("/me/personalization/reset", response_model=PersonalizationResetResponse)
+def reset_personalization_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Resets all learned preference scores back to initial cold-start baseline."""
+    service = UserService(db)
+    lp = service.reset_learned_preferences(current_user.id)
+    return {
+        "user_id": current_user.id,
+        "success": True,
+        "message": "Learned personalization preferences have been reset to baseline.",
+        "confidence_score": lp.confidence_score,
+        "interaction_count": lp.interaction_count,
     }
 
 

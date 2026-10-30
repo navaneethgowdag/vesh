@@ -10,6 +10,12 @@ class UserPreferenceBase(BaseModel):
     favorite_colors: List[str] = Field(default_factory=list)
     preferred_colors: List[str] = Field(default_factory=list)
     disliked_colors: List[str] = Field(default_factory=list)
+    avoided_colors: List[str] = Field(default_factory=list)
+    disliked_styles: List[str] = Field(default_factory=list)
+    personalization_enabled: bool = True
+    diversity_preference: str = "balanced"
+    avoid_recently_worn_days: int = 7
+    comfort_priority: float = 0.5
     preferred_categories: List[str] = Field(default_factory=list)
     preferred_fits: List[str] = Field(default_factory=list)
     preferred_patterns: List[str] = Field(default_factory=list)
@@ -35,6 +41,13 @@ class UserPreferenceResponse(BaseModel):
     preferred_seasons: List[str] = Field(default_factory=list)
     styles: List[str] = Field(default_factory=list)
     favorite_colors: List[str] = Field(default_factory=list)
+    disliked_colors: List[str] = Field(default_factory=list)
+    avoided_colors: List[str] = Field(default_factory=list)
+    disliked_styles: List[str] = Field(default_factory=list)
+    personalization_enabled: bool = True
+    diversity_preference: str = "balanced"
+    avoid_recently_worn_days: int = 7
+    comfort_priority: float = 0.5
     favorite_occasions: List[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
@@ -56,10 +69,29 @@ class LearnedPreferenceResponse(BaseModel):
     weather_scores: Dict[str, float] = Field(default_factory=dict)
     confidence_score: float = 0.1
     interaction_count: int = 0
+    confidence: Optional[float] = None
+    total_interactions: Optional[int] = None
+    evidence_summary: Optional[Dict[str, Any]] = None
+    top_styles: Optional[List[Dict[str, Any]]] = None
+    top_colors: Optional[List[Dict[str, Any]]] = None
     created_at: datetime
     updated_at: datetime
 
+    def model_post_init(self, __context: Any) -> None:
+        if self.confidence is None:
+            self.confidence = self.confidence_score
+        if self.total_interactions is None:
+            self.total_interactions = self.interaction_count
+
     model_config = {"from_attributes": True}
+
+
+class PersonalizationResetResponse(BaseModel):
+    user_id: UUID
+    success: bool = True
+    message: str = "Learned personalization preferences have been reset to baseline."
+    confidence_score: float = 0.05
+    interaction_count: int = 0
 
 
 class UserBase(BaseModel):

@@ -9,8 +9,11 @@ class OutfitRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, outfit_id: UUID) -> Optional[Outfit]:
-        return self.db.query(Outfit).filter(Outfit.id == outfit_id).first()
+    def get_by_id(self, outfit_id: UUID, user_id: Optional[UUID] = None) -> Optional[Outfit]:
+        q = self.db.query(Outfit).filter(Outfit.id == outfit_id)
+        if user_id is not None:
+            q = q.filter(Outfit.user_id == user_id)
+        return q.first()
 
     def list_for_user(self, user_id: UUID, limit: int = 50, offset: int = 0) -> List[Outfit]:
         return (

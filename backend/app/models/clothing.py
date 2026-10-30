@@ -104,6 +104,17 @@ class Clothing(Base):
         return {}
 
     @property
+    def last_worn_at(self) -> Optional[datetime]:
+        dates = []
+        if self.outfits:
+            for o in self.outfits:
+                if hasattr(o, "wear_history") and o.wear_history:
+                    for w in o.wear_history:
+                        if w.worn_at:
+                            dates.append(w.worn_at)
+        return max(dates) if dates else None
+
+    @property
     def preferred_image_url(self) -> Optional[str]:
         if self.is_processed_available and self.processing_status != "rejected_original_kept":
             return f"/api/v1/clothing/{self.id}/image/processed"

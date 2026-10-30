@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.schemas.outfit import OutfitCreate, OutfitUpdate, OutfitResponse
+from app.schemas.recommendation import OutfitWearResponse
 from app.services.outfit_service import OutfitService
+from app.services.recommendation_service import RecommendationService
 from app.models.user import User
 
 router = APIRouter(prefix="/outfits", tags=["outfits"])
@@ -72,4 +74,19 @@ def delete_outfit(
     service = OutfitService(db)
     service.delete_outfit(outfit_id=outfit_id, user_id=current_user.id)
     return None
+
+
+@router.post("/{outfit_id}/wear", response_model=OutfitWearResponse)
+def mark_outfit_as_worn(
+    outfit_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Phase 4: Mark an outfit as worn.
+    Idempotently records wear in wear_history, increments clothing wear counts,
+    and updates continuous learning preferences.
+    """
+    service = RecommendationService(db)
+    return service.mark_outfit_as_worn(user_id=current_user.id, outfit_id=outfit_id)
 

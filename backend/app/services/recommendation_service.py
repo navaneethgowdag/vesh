@@ -15,6 +15,7 @@ from app.repositories.outfit_repository import OutfitRepository
 from app.repositories.recommendation_repository import RecommendationRepository
 from app.repositories.calendar_repository import CalendarRepository
 from app.services.weather_service import weather_service
+from app.services.personalization_service import PersonalizationService
 
 
 # -------------------------------------------------------------------------
@@ -188,6 +189,7 @@ class RecommendationService:
         self.outfit_repo = OutfitRepository(db)
         self.rec_repo = RecommendationRepository(db)
         self.calendar_repo = CalendarRepository(db)
+        self.personalization_service = PersonalizationService(db)
 
     # ---------------------------------------------------------------------
     # Phase 3 Recommendation Generator (With Calendar Prerequisite)
@@ -447,8 +449,37 @@ class RecommendationService:
         if not filtered_candidates:
             # If hard filters removed everything, relax formality delta slightly or fallback to top candidates
             filtered_candidates = candidates[:3]
+            # If hard filters removed all candidates, check if any candidate can pass with a slight relaxation (delta <= 0.45)
+            # while still strictly respecting avoided colors and Indian Saree rules.
+            relaxed = []
+            for items in candidates:
+                # Never relax avoided colors
+                if avoided_colors_set and any(
+                    (it.color or "").lower().strip() in avoided_colors_set or
+                    (it.secondary_color or "").lower().strip() in avoided_colors_set
+                    for it in items
+                ):
+                    continue
 
-        # 6. DETERMINISTIC SCORING & NATURAL EXPLANATIONS
+                # Never relax Saree rule
+                if any(classify_garment(i) == "indian_saree" for i in items) and any(classify_garment(i) in ("western_bottom", "western_top") for i in items):
+                    continue
+
+                formalities = [get_garment_formality(i) for i in items]
+                delta_formality = max(formalities) - min(formalities)
+                if delta_formality <= 0.45:
+                    relaxed.append(items)
+
+            if relaxed:
+                filtered_candidates = relaxed[:3]
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="Wardrobe items violate style, color, or formality constraints. Please add compatible items to receive recommendations.",
+                )
+
+        # 6. DETERMINISTIC SCORING & PERSONALIZED RANKING
+        personalization_enabled = getattr(user_pref, "personalization_enabled", True) if user_pref else True
         scored_candidates: List[Tuple[List[Clothing], Dict[str, Any]]] = []
 
         for items in filtered_candidates:
@@ -464,9 +495,43 @@ class RecommendationService:
                 preferred_colors=preferred_colors or [],
                 recent_outfit_ids=recent_outfit_ids,
             )
+            compat_score = score_data["total_score"]
+
+            if personalization_enabled:
+                s_pref, s_div, p_breakdown, p_rationales = self.personalization_service.score_candidate_personalization(
+                    items=items,
+                    target_occasion=target_occasion,
+                    user_id=user_id,
+                    user_pref=user_pref,
+                    recent_outfit_ids=recent_outfit_ids,
+                )
+                conf = float(getattr(learned_pref, "confidence_score", 0.05) or 0.05)
+                # Dynamic weighting for cold-start adaptation:
+                # As confidence increases, personalization weight scales up to 25%
+                w_pref = 0.25 * conf
+                w_div = 0.10
+                w_compat = 1.0 - w_pref - w_div
+                final_score = round(w_compat * compat_score + w_pref * s_pref + w_div * s_div, 3)
+
+                score_data["total_score"] = final_score
+                score_data["reasoning"]["compatibility"] = compat_score
+                score_data["reasoning"]["personalization"] = s_pref
+                score_data["reasoning"]["diversity"] = s_div
+                score_data["reasoning"]["confidence"] = conf
+                score_data["reasoning"]["is_personalized"] = True
+                score_data.setdefault("score_breakdown", {})["personalization"] = p_breakdown
+
+                # If personalized rationales exist, prioritize them
+                if p_rationales:
+                    combined_reasons = p_rationales + [r for r in score_data["reasons"] if r not in p_rationales]
+                    score_data["reasons"] = combined_reasons[:4]
+            else:
+                score_data["reasoning"]["compatibility"] = compat_score
+                score_data["reasoning"]["is_personalized"] = False
+
             scored_candidates.append((items, score_data))
 
-        # Sort descending by total compatibility score
+        # Sort descending by final score
         scored_candidates.sort(key=lambda x: x[1]["total_score"], reverse=True)
 
         # 7. DEDUPLICATION & PERSISTENCE
@@ -509,7 +574,7 @@ class RecommendationService:
                 rain_probability=float(rain_prob),
                 occasion=target_occasion,
                 season=target_season,
-                model_version="deterministic-v2-phase3",
+                model_version="personalized-v1-phase4" if personalization_enabled else "deterministic-v2-phase3",
             )
 
             # Attach transient deterministic explanations for API serialization
@@ -535,30 +600,38 @@ class RecommendationService:
     ) -> List[List[Clothing]]:
         candidates = []
 
-        # 1. Western Two-Piece Archetype: Top + Bottom + Footwear (+ Outerwear / Accessory)
+        # 1. Western Two-Piece Archetype: Top + Bottom + Footwear (+ Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
             for top in buckets["western_top"][:4]:
                 for btm in buckets["western_bottom"][:4]:
                     for shoe in buckets["footwear"][:3]:
-                        combo = [top, btm, shoe]
-                        if (temp < 18.0 or rain_prob > 35) and buckets["outerwear"]:
-                            combo.append(buckets["outerwear"][0])
-                        elif buckets["outerwear"] and random.random() > 0.6:
-                            combo.append(buckets["outerwear"][0])
+                        base_combo = [top, btm, shoe]
                         if buckets["accessory"]:
-                            combo.append(buckets["accessory"][0])
-                        candidates.append(combo)
+                            base_combo.append(buckets["accessory"][0])
+                        candidates.append(base_combo)
 
-        # 2. Western Dress Archetype: Dress + Footwear (+ Outerwear / Accessory)
+                        if buckets["outerwear"]:
+                            for out in buckets["outerwear"][:2]:
+                                layered_combo = [top, btm, shoe, out]
+                                if buckets["accessory"]:
+                                    layered_combo.append(buckets["accessory"][0])
+                                candidates.append(layered_combo)
+
+        # 2. Western Dress Archetype: Dress + Footwear (+ Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
             for dress in buckets["western_dress"][:3]:
                 for shoe in buckets["footwear"][:3]:
-                    combo = [dress, shoe]
-                    if (temp < 18.0 or rain_prob > 35) and buckets["outerwear"]:
-                        combo.append(buckets["outerwear"][0])
+                    base_combo = [dress, shoe]
                     if buckets["accessory"]:
-                        combo.append(buckets["accessory"][0])
-                    candidates.append(combo)
+                        base_combo.append(buckets["accessory"][0])
+                    candidates.append(base_combo)
+
+                    if buckets["outerwear"]:
+                        for out in buckets["outerwear"][:2]:
+                            layered_combo = [dress, shoe, out]
+                            if buckets["accessory"]:
+                                layered_combo.append(buckets["accessory"][0])
+                            candidates.append(layered_combo)
 
         # 3. Western Formal Suit Archetype: Blazer + Top + Trousers + Footwear
         if outfit_preference in ("any", "western"):
@@ -568,13 +641,14 @@ class RecommendationService:
             ]
             trousers = [
                 i for i in buckets["western_bottom"]
-                if "pants" in (i.name or "").lower() or "trousers" in (i.name or "").lower() or "slacks" in (i.name or "").lower()
+                if any(k in (i.name or "").lower() or k in (i.subcategory or "").lower() or k in (i.category or "").lower() for k in ["pants", "trouser", "slacks", "chino", "suit"])
             ]
-            for blz in blazers[:2]:
-                for top in buckets["western_top"][:3]:
-                    for tr in (trousers or buckets["western_bottom"])[:2]:
-                        for shoe in buckets["footwear"][:2]:
-                            candidates.append([blz, top, tr, shoe])
+            if blazers and trousers:
+                for blz in blazers[:2]:
+                    for top in buckets["western_top"][:3]:
+                        for tr in trousers[:2]:
+                            for shoe in buckets["footwear"][:2]:
+                                candidates.append([blz, top, tr, shoe])
 
         # 4. Indian Saree Archetype: Saree + Blouse + Footwear (+ Accessory)
         # STRICT RULE: Saree must pair ONLY with Blouse and elegant Footwear (Sandals/Heels/Flats).
@@ -783,6 +857,7 @@ class RecommendationService:
         return {
             "total_score": total_clamped,
             "reasoning": reasoning,
+            "score_breakdown": dict(reasoning),
             "context": context,
             "reasons": explanations["reasons"],
             "explanations": explanations,
@@ -1188,3 +1263,73 @@ class RecommendationService:
         )
 
         return selected
+
+    # ---------------------------------------------------------------------
+    # Phase 4 Wear & Feedback Integration
+    # ---------------------------------------------------------------------
+    def mark_outfit_as_worn(
+        self,
+        user_id: UUID,
+        outfit_id: UUID,
+        recommendation_id: Optional[UUID] = None,
+        temperature: Optional[float] = None,
+        feels_like: Optional[float] = None,
+        humidity: Optional[float] = None,
+        weather_condition: Optional[str] = None,
+        rain_probability: Optional[float] = None,
+        occasion: Optional[str] = None,
+        season: Optional[str] = None,
+        user_rating: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Phase 4: Marks an outfit as worn.
+        - Persists wear entry in wear_history in Neon PostgreSQL.
+        - Idempotently prevents duplicate wear submissions on the same calendar day.
+        - Increments wear count for all constituent clothing items.
+        - Feeds the wear event into PersonalizationService for continuous learning.
+        """
+        outfit = self.outfit_repo.get_by_id(outfit_id, user_id=user_id)
+        if not outfit:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Outfit not found or access denied",
+            )
+
+        # 1. Record wear entry in repository (idempotent per calendar date)
+        wear_entry = self.rec_repo.record_wear(
+            user_id=user_id,
+            outfit_id=outfit_id,
+            temperature=temperature,
+            feels_like_temperature=feels_like,
+            humidity=humidity,
+            weather_condition=weather_condition,
+            rain_probability=rain_probability,
+            occasion=occasion or outfit.occasion,
+            season=season or outfit.season,
+            user_rating=user_rating,
+        )
+
+        is_new = getattr(wear_entry, "_is_new", True)
+
+        # 2. Feed positive signal into personalization service ONLY if newly worn
+        if is_new:
+            self.personalization_service.record_feedback(
+                user_id=user_id,
+                outfit=outfit,
+                action="wear",
+                reason=None,
+            )
+
+        item_ids = [item.id for item in (outfit.clothing_items or [])]
+        return {
+            "success": True,
+            "outfit_id": outfit.id,
+            "user_id": user_id,
+            "worn_at": wear_entry.worn_at if wear_entry else datetime.now(timezone.utc),
+            "wear_count_updated": is_new,
+            "clothing_items_updated": item_ids if is_new else [],
+            "message": "Outfit marked as worn. Wear history and personalization updated." if is_new else "Outfit was already marked as worn today.",
+        }
+
+    def get_feedback_history(self, user_id: UUID, limit: int = 50) -> List[Any]:
+        return self.rec_repo.get_feedback_for_user(user_id=user_id, limit=limit)

@@ -139,8 +139,28 @@ class UserRepository:
 
         for key, value in kwargs.items():
             db_col = field_mapping.get(key)
-            if db_col and value is not None and hasattr(pref, db_col):
+            if db_col and value is not None and hasattr(pref, db_col) and db_col != "preferred_fits":
                 setattr(pref, db_col, value)
+
+        # Store personalization controls cleanly into preferred_fits JSONB metadata
+        fits_data = dict(pref.preferred_fits) if isinstance(pref.preferred_fits, dict) else {"fits": pref.preferred_fits if isinstance(pref.preferred_fits, list) else []}
+
+        if "avoided_colors" in kwargs or "disliked_colors" in kwargs:
+            fits_data["avoided_colors"] = kwargs.get("avoided_colors") or kwargs.get("disliked_colors") or []
+        if "disliked_styles" in kwargs:
+            fits_data["disliked_styles"] = kwargs.get("disliked_styles") or []
+        if "personalization_enabled" in kwargs and kwargs["personalization_enabled"] is not None:
+            fits_data["personalization_enabled"] = bool(kwargs["personalization_enabled"])
+        if "diversity_preference" in kwargs and kwargs["diversity_preference"] is not None:
+            fits_data["diversity_preference"] = str(kwargs["diversity_preference"])
+        if "avoid_recently_worn_days" in kwargs and kwargs["avoid_recently_worn_days"] is not None:
+            fits_data["avoid_recently_worn_days"] = int(kwargs["avoid_recently_worn_days"])
+        if "comfort_priority" in kwargs and kwargs["comfort_priority"] is not None:
+            fits_data["comfort_priority"] = float(kwargs["comfort_priority"])
+        if "preferred_fits" in kwargs and isinstance(kwargs["preferred_fits"], list):
+            fits_data["fits"] = kwargs["preferred_fits"]
+
+        pref.preferred_fits = fits_data
 
         self.db.commit()
         self.db.refresh(pref)
@@ -160,7 +180,7 @@ class UserRepository:
                 occasion_scores={},
                 season_scores={},
                 weather_scores={},
-                confidence_score=0.1,
+                confidence_score=0.05,
                 interaction_count=0,
             )
             self.db.add(learned)
@@ -169,6 +189,23 @@ class UserRepository:
         return learned
 
     def update_learned_preferences(self, learned: LearnedPreference) -> LearnedPreference:
+        self.db.commit()
+        self.db.refresh(learned)
+        return learned
+
+    def reset_learned_preferences(self, user_id: UUID) -> LearnedPreference:
+        learned = self.get_or_create_learned_preferences(user_id)
+        learned.style_scores = {}
+        learned.color_scores = {}
+        learned.category_scores = {}
+        learned.fit_scores = {}
+        learned.pattern_scores = {}
+        learned.material_scores = {}
+        learned.occasion_scores = {}
+        learned.season_scores = {}
+        learned.weather_scores = {}
+        learned.confidence_score = 0.05
+        learned.interaction_count = 0
         self.db.commit()
         self.db.refresh(learned)
         return learned

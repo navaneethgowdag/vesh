@@ -119,6 +119,11 @@ const DEFAULT_SETTINGS: UserSettings = {
   preferences: {
     styles: ['Minimal'],
     preferredColors: ['Black'],
+    avoidedColors: [],
+    dislikedStyles: [],
+    personalizationEnabled: true,
+    diversityPreference: 'balanced',
+    avoidRecentlyWornDays: 7,
     clothingSizes: { tops: '', bottoms: '', shoes: '' },
     favoriteCategories: [],
   },
@@ -469,6 +474,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev.preferences,
         styles: user.preferences.styles,
         preferredColors: user.preferences.favoriteColors as UserSettings['preferences']['preferredColors'],
+        avoidedColors: (user.preferences as any).avoided_colors || (user.preferences as any).disliked_colors || [],
+        dislikedStyles: (user.preferences as any).disliked_styles || [],
+        personalizationEnabled: (user.preferences as any).personalization_enabled !== false,
+        diversityPreference: (user.preferences as any).diversity_preference || 'balanced',
+        avoidRecentlyWornDays: (user.preferences as any).avoid_recently_worn_days || 7,
       },
     }));
     // If user has a saved location in profile and GPS is not active, use it
@@ -950,6 +960,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await api.users.updatePreferences({
         styles: newSettings.preferences.styles,
         favorite_colors: newSettings.preferences.preferredColors,
+        avoided_colors: newSettings.preferences.avoidedColors || [],
+        disliked_styles: newSettings.preferences.dislikedStyles || [],
+        personalization_enabled: newSettings.preferences.personalizationEnabled !== false,
+        diversity_preference: newSettings.preferences.diversityPreference || 'balanced',
+        avoid_recently_worn_days: newSettings.preferences.avoidRecentlyWornDays || 7,
         preferred_categories: newSettings.preferences.favoriteCategories,
       });
       setUserSettings(newSettings);

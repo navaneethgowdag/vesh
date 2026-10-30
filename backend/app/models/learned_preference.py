@@ -47,6 +47,22 @@ class LearnedPreference(Base):
     confidence_score = Column(Float, default=0.1, nullable=False)  # 0.0 to 1.0
     interaction_count = Column(Integer, default=0, nullable=False)
 
+    @property
+    def confidence(self):
+        return self.confidence_score
+
+    @confidence.setter
+    def confidence(self, val):
+        self.confidence_score = val
+
+    @property
+    def total_interactions(self):
+        return self.interaction_count
+
+    @total_interactions.setter
+    def total_interactions(self, val):
+        self.interaction_count = val
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 

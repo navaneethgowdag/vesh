@@ -20,6 +20,7 @@ import {
   UserSearchResult,
   SocialUserSummary,
   GarmentProcessingStatus,
+  LearnedPreferences,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
@@ -957,6 +958,11 @@ export const api = {
     async updatePreferences(data: {
       styles?: string[];
       favorite_colors?: string[];
+      avoided_colors?: string[];
+      disliked_styles?: string[];
+      personalization_enabled?: boolean;
+      diversity_preference?: string;
+      avoid_recently_worn_days?: number;
       preferred_categories?: string[];
       preferred_fits?: string[];
       favorite_occasions?: string[];
@@ -1344,13 +1350,51 @@ export const api = {
       };
     },
 
-    async sendFeedback(recommendationId: string, action: 'view' | 'like' | 'save' | 'wear' | 'reject' | 'skip'): Promise<void> {
+    async sendFeedback(
+      recommendationId: string,
+      action: 'view' | 'like' | 'save' | 'wear' | 'reject' | 'skip',
+      reason?: string,
+    ): Promise<void> {
       await request<void>('/recommendations/feedback', {
         method: 'POST',
         body: JSON.stringify({
           recommendation_id: recommendationId,
           action,
+          reason,
         }),
+      });
+    },
+
+    async markWorn(recommendationId: string): Promise<any> {
+      return request<any>(`/recommendations/${recommendationId}/wear`, {
+        method: 'POST',
+      });
+    },
+  },
+
+  // --- PERSONALIZATION & LEARNING ENGINE ---
+  personalization: {
+    async getLearned(): Promise<LearnedPreferences> {
+      const res = await request<any>('/users/me/learned-preferences');
+      return {
+        id: String(res.id),
+        userId: String(res.user_id),
+        styleScores: res.style_scores || {},
+        colorScores: res.color_scores || {},
+        categoryScores: res.category_scores || {},
+        occasionScores: res.occasion_scores || {},
+        seasonScores: res.season_scores || {},
+        confidenceScore: res.confidence_score || 0.1,
+        interactionCount: res.interaction_count || 0,
+        topStyles: res.top_styles || [],
+        topColors: res.top_colors || [],
+        updatedAt: res.updated_at,
+      };
+    },
+
+    async reset(): Promise<any> {
+      return request<any>('/users/me/personalization/reset', {
+        method: 'POST',
       });
     },
   },

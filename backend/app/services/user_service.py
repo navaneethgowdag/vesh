@@ -47,13 +47,19 @@ class UserService:
         pref_data = None
         if pref:
             pref_data = {
-                "styles": pref.preferred_styles or [],
-                "favorite_colors": pref.preferred_colors or [],
-                "disliked_colors": [],
+                "styles": pref.styles,
+                "favorite_colors": pref.favorite_colors,
+                "disliked_colors": pref.disliked_colors,
+                "avoided_colors": pref.avoided_colors,
+                "disliked_styles": pref.disliked_styles,
+                "personalization_enabled": pref.personalization_enabled,
+                "diversity_preference": pref.diversity_preference,
+                "avoid_recently_worn_days": pref.avoid_recently_worn_days,
+                "comfort_priority": pref.comfort_priority,
                 "preferred_categories": pref.preferred_categories or [],
-                "preferred_fits": pref.preferred_fits or [],
+                "preferred_fits": pref.fits,
                 "preferred_brands": [],
-                "favorite_occasions": pref.preferred_occasions or [],
+                "favorite_occasions": pref.favorite_occasions,
                 "preferred_seasons": pref.preferred_seasons or [],
                 "fashion_goals": [],
                 "climate_preference": "Moderate",
@@ -100,6 +106,9 @@ class UserService:
 
     def get_learned_preferences(self, user_id: UUID) -> LearnedPreference:
         return self.user_repo.get_or_create_learned_preferences(user_id)
+
+    def reset_learned_preferences(self, user_id: UUID) -> LearnedPreference:
+        return self.user_repo.reset_learned_preferences(user_id)
 
     def search_users(
         self,
