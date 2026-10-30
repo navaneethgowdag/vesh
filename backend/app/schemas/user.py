@@ -69,8 +69,8 @@ class LearnedPreferenceResponse(BaseModel):
     weather_scores: Dict[str, float] = Field(default_factory=dict)
     confidence_score: float = 0.1
     interaction_count: int = 0
-    confidence: Optional[float] = None
-    total_interactions: Optional[int] = None
+    confidence: float = 0.1
+    total_interactions: int = 0
     evidence_summary: Optional[Dict[str, Any]] = None
     top_styles: Optional[List[Dict[str, Any]]] = None
     top_colors: Optional[List[Dict[str, Any]]] = None
@@ -78,9 +78,9 @@ class LearnedPreferenceResponse(BaseModel):
     updated_at: datetime
 
     def model_post_init(self, __context: Any) -> None:
-        if self.confidence is None:
+        if self.confidence is None or (self.confidence == 0.1 and self.confidence_score != 0.1):
             self.confidence = self.confidence_score
-        if self.total_interactions is None:
+        if self.total_interactions is None or (self.total_interactions == 0 and self.interaction_count != 0):
             self.total_interactions = self.interaction_count
 
     model_config = {"from_attributes": True}

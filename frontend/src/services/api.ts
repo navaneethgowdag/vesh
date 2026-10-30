@@ -1376,18 +1376,37 @@ export const api = {
   personalization: {
     async getLearned(): Promise<LearnedPreferences> {
       const res = await request<any>('/users/me/learned-preferences');
+      const conf = typeof res.confidence === 'number' && Number.isFinite(res.confidence)
+        ? res.confidence
+        : (typeof res.confidence_score === 'number' && Number.isFinite(res.confidence_score) ? res.confidence_score : 0.05);
+      const total = typeof res.total_interactions === 'number' && Number.isFinite(res.total_interactions)
+        ? res.total_interactions
+        : (typeof res.interaction_count === 'number' && Number.isFinite(res.interaction_count) ? res.interaction_count : 0);
+      const topStyles = res.top_styles || res.topStyles || [];
+      const topColors = res.top_colors || res.topColors || [];
+
       return {
         id: String(res.id),
         userId: String(res.user_id),
+        user_id: String(res.user_id),
         styleScores: res.style_scores || {},
         colorScores: res.color_scores || {},
+        style_scores: res.style_scores || {},
+        color_scores: res.color_scores || {},
         categoryScores: res.category_scores || {},
         occasionScores: res.occasion_scores || {},
         seasonScores: res.season_scores || {},
-        confidenceScore: res.confidence_score || 0.1,
-        interactionCount: res.interaction_count || 0,
-        topStyles: res.top_styles || [],
-        topColors: res.top_colors || [],
+        confidenceScore: conf,
+        confidence: conf,
+        interactionCount: total,
+        total_interactions: total,
+        topStyles,
+        top_styles: topStyles,
+        topColors,
+        top_colors: topColors,
+        evidence_summary: typeof res.evidence_summary === 'string'
+          ? res.evidence_summary
+          : (res.evidence_summary && typeof res.evidence_summary.text === 'string' ? res.evidence_summary.text : ''),
         updatedAt: res.updated_at,
       };
     },
