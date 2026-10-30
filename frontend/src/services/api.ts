@@ -244,7 +244,11 @@ export const api = {
         style: item.occasion || 'Casual',
         season: item.season || 'All-Season',
         brand: item.brand,
-        image: resolveImageUrl(item.image_url),
+        image: resolveImageUrl(
+          (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
+            ? `/api/v1/clothing/${item.id}/image/processed`
+            : (item.image_url || `/api/v1/clothing/${item.id}/image/original`)
+        ),
         material: item.material,
         createdAt: item.created_at || new Date().toISOString(),
         timesWorn: item.wear_count || 0,
@@ -258,6 +262,12 @@ export const api = {
         isFinalized: item.is_finalized,
         formality: item.formality,
         verifiedAttributes: item.verified_attributes,
+        preferredImageUrl: (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
+          ? `/api/v1/clothing/${item.id}/image/processed`
+          : (item.image_url || `/api/v1/clothing/${item.id}/image/original`),
+        sleeveType: item.sleeve_type,
+        neckline: item.neckline,
+        categoryGroup: item.category_group,
         originalImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/original` : undefined,
         processedImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/processed` : undefined,
       }));
@@ -1083,6 +1093,200 @@ export const api = {
 
   // --- RECOMMENDATIONS / DAILY FIT ---
   recommendations: {
+    async generate(params: {
+      calendarEventId: string;
+      occasion?: string;
+      outfitPreference?: string;
+      formality?: number;
+      preferredColors?: string[];
+      avoidedColors?: string[];
+      specificClothingId?: string;
+      city?: string;
+      latitude?: number;
+      longitude?: number;
+      limit?: number;
+    }): Promise<Recommendation[]> {
+      const q = new URLSearchParams();
+      if (params.city) q.set('city', params.city);
+      if (params.latitude !== undefined && params.latitude !== null) q.set('latitude', String(params.latitude));
+      if (params.longitude !== undefined && params.longitude !== null) q.set('longitude', String(params.longitude));
+      if (params.limit !== undefined && params.limit !== null) q.set('limit', String(params.limit));
+
+      const queryStr = q.toString() ? `?${q.toString()}` : '';
+      const rawList = await request<any[]>(`/recommendations/generate${queryStr}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          calendar_event_id: params.calendarEventId,
+          occasion: params.occasion,
+          outfit_preference: params.outfitPreference || 'any',
+          formality: params.formality,
+          preferred_colors: params.preferredColors || [],
+          avoided_colors: params.avoidedColors || [],
+          specific_clothing_id: params.specificClothingId,
+        }),
+      });
+      return (rawList || []).map((rec) => {
+        const outfit = rec.outfit || {};
+        const pieces = (outfit.clothing_items || []).map((ci: any) => ({
+          id: String(ci.id),
+          name: ci.name,
+          category: ci.category,
+          color: ci.color,
+          style: ci.occasion || 'Casual',
+          season: ci.season || 'All-Season',
+          brand: ci.brand,
+          image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
+          preferredImageUrl: ci.preferred_image_url,
+          createdAt: ci.created_at || new Date().toISOString(),
+        }));
+        const outfitImg = outfit.image_url || (pieces.length > 0 ? pieces[0].image : '');
+        const score = Math.round((rec.score || 0.9) * 100);
+        return {
+          id: String(rec.id),
+          outfit: {
+            id: String(outfit.id),
+            title: outfit.name,
+            description: outfit.description,
+            pieces,
+            occasion: (outfit.occasion as Occasion) || 'Casual Daily',
+            style: outfit.style || 'Minimal',
+            season: outfit.season || 'All-Season',
+            score,
+            image: outfitImg,
+            tags: outfit.tags || [],
+            createdAt: outfit.created_at || new Date().toISOString(),
+          },
+          score,
+          weatherCompatibility: Math.round((rec.reasoning?.weather_match || 0.92) * 100),
+          styleCompatibility: Math.round((rec.reasoning?.style_compatibility || rec.reasoning?.style_match || 0.94) * 100),
+          occasionCompatibility: Math.round((rec.reasoning?.occasion_match || 0.90) * 100),
+          explanation: {
+            weatherMatch: typeof rec.reasoning?.weather_match === 'string' ? rec.reasoning.weather_match : 'Optimized for current weather and seasonal comfort.',
+            styleMatch: typeof rec.reasoning?.style_match === 'string' ? rec.reasoning.style_match : 'Harmonized with your personal aesthetic.',
+            wardrobeMatch: typeof rec.reasoning?.wardrobe_match === 'string' ? rec.reasoning.wardrobe_match : 'Rotates your signature wardrobe pieces.',
+            occasionMatch: typeof rec.reasoning?.occasion_match === 'string' ? rec.reasoning.occasion_match : 'Calibrated for your planned occasion.',
+          },
+          reasons: rec.context?.reasons || rec.reasons || ['Weather compatible', 'High color harmony', 'Matches preferred aesthetic'],
+          wornStatus: rec.worn_status || 'suggested',
+          recommendedAt: rec.created_at || new Date().toISOString(),
+        };
+      });
+    },
+
+    async list(limit: number = 20, offset: number = 0): Promise<Recommendation[]> {
+      const rawList = await request<any[]>(`/recommendations?limit=${limit}&offset=${offset}`);
+      return (rawList || []).map((rec) => {
+        const outfit = rec.outfit || {};
+        const pieces = (outfit.clothing_items || []).map((ci: any) => ({
+          id: String(ci.id),
+          name: ci.name,
+          category: ci.category,
+          color: ci.color,
+          style: ci.occasion || 'Casual',
+          season: ci.season || 'All-Season',
+          brand: ci.brand,
+          image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
+          preferredImageUrl: ci.preferred_image_url,
+          createdAt: ci.created_at || new Date().toISOString(),
+        }));
+        const score = Math.round((rec.score || 0.9) * 100);
+        return {
+          id: String(rec.id),
+          outfit: {
+            id: String(outfit.id),
+            title: outfit.name,
+            description: outfit.description,
+            pieces,
+            occasion: (outfit.occasion as Occasion) || 'Casual Daily',
+            style: outfit.style || 'Minimal',
+            season: outfit.season || 'All-Season',
+            score,
+            image: outfit.image_url || (pieces[0]?.image || ''),
+            tags: outfit.tags || [],
+            createdAt: outfit.created_at || new Date().toISOString(),
+          },
+          score,
+          weatherCompatibility: 94,
+          styleCompatibility: 96,
+          occasionCompatibility: 92,
+          explanation: {
+            weatherMatch: 'Optimized for current weather conditions.',
+            styleMatch: 'Aligned with your aesthetic preferences.',
+            wardrobeMatch: 'Utilizes your staple wardrobe pieces.',
+            occasionMatch: 'Matches the requested occasion.',
+          },
+          reasons: rec.context?.reasons || rec.reasons || [],
+          wornStatus: rec.worn_status || 'suggested',
+          recommendedAt: rec.created_at || new Date().toISOString(),
+        };
+      });
+    },
+
+    async accept(
+      recommendationId: string,
+      calendarEventId?: string
+    ): Promise<{ recommendation: Recommendation; calendarEvent: any; status: string; message: string }> {
+      const res = await request<any>(`/recommendations/${recommendationId}/accept`, {
+        method: 'POST',
+        body: JSON.stringify({ calendar_event_id: calendarEventId }),
+      });
+      const rec = res.recommendation || {};
+      const outfit = rec.outfit || {};
+      const pieces = (outfit.clothing_items || []).map((ci: any) => ({
+        id: String(ci.id),
+        name: ci.name,
+        category: ci.category,
+        color: ci.color,
+        style: ci.occasion || 'Casual',
+        season: ci.season || 'All-Season',
+        brand: ci.brand,
+        image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
+        preferredImageUrl: ci.preferred_image_url,
+        createdAt: ci.created_at || new Date().toISOString(),
+      }));
+      const formattedRec: Recommendation = {
+        id: String(rec.id),
+        outfit: {
+          id: String(outfit.id),
+          title: outfit.name,
+          description: outfit.description,
+          pieces,
+          occasion: (outfit.occasion as Occasion) || 'Casual Daily',
+          style: outfit.style || 'Minimal',
+          season: outfit.season || 'All-Season',
+          score: Math.round((rec.score || 0.9) * 100),
+          image: outfit.image_url || (pieces[0]?.image || ''),
+          tags: outfit.tags || [],
+          createdAt: outfit.created_at || new Date().toISOString(),
+        },
+        score: Math.round((rec.score || 0.9) * 100),
+        weatherCompatibility: 94,
+        styleCompatibility: 96,
+        occasionCompatibility: 92,
+        explanation: {
+          weatherMatch: 'Optimized for current weather conditions.',
+          styleMatch: 'Aligned with your aesthetic preferences.',
+          wardrobeMatch: 'Utilizes your staple wardrobe pieces.',
+          occasionMatch: 'Matches the requested occasion.',
+        },
+        reasons: rec.context?.reasons || rec.reasons || [],
+        wornStatus: rec.worn_status || 'suggested',
+        recommendedAt: rec.created_at || new Date().toISOString(),
+      };
+      return {
+        recommendation: formattedRec,
+        calendarEvent: res.calendar_event,
+        status: res.status,
+        message: res.message,
+      };
+    },
+
+    async dismiss(recommendationId: string): Promise<{ status: string; message: string }> {
+      return request<{ status: string; message: string }>(`/recommendations/${recommendationId}/dismiss`, {
+        method: 'POST',
+      });
+    },
+
     async getDailyFit(
       city: string = 'New York',
       occasion: string = 'Casual Daily',

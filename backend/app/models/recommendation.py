@@ -32,6 +32,8 @@ class Recommendation(Base):
 
     @property
     def reasoning(self):
+        if hasattr(self, "_custom_reasoning") and self._custom_reasoning:
+            return self._custom_reasoning
         return {
             "style_match": 0.95,
             "color_match": 0.92,
@@ -43,19 +45,19 @@ class Recommendation(Base):
 
     @property
     def context(self):
+        if hasattr(self, "_custom_context") and self._custom_context:
+            return self._custom_context
         return {
             "weather": self.weather_condition or "Sunny",
             "temperature": self.temperature or 22,
             "occasion": self.occasion or "Casual Daily",
-            "reasons": [
-                f"Calibrated for {self.weather_condition or 'current'} weather and {self.temperature or 22}°C",
-                "Harmonizes with your preferred neutral & architectural aesthetic",
-                "Tailored specifically for your lifestyle and wardrobe",
-            ],
+            "reasons": self.reasons,
         }
 
     @property
     def reasons(self):
+        if hasattr(self, "_custom_reasons") and self._custom_reasons:
+            return self._custom_reasons
         return [
             f"Calibrated for {self.weather_condition or 'current'} weather and {self.temperature or 22}°C",
             "Harmonizes with your preferred neutral aesthetic",

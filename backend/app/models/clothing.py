@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -85,6 +86,12 @@ class Clothing(Base):
         return False
 
     @property
+    def style(self) -> str:
+        if self.analysis and self.analysis.style_tags:
+            return self.analysis.style_tags[0] if isinstance(self.analysis.style_tags, list) and self.analysis.style_tags else str(self.analysis.style_tags)
+        return self.occasion or "Casual"
+
+    @property
     def formality(self) -> float:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             return float(self.analysis.feature_vector.get("formality", 0.5))
@@ -95,6 +102,41 @@ class Clothing(Base):
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             return self.analysis.feature_vector.get("verified_attributes") or {}
         return {}
+
+    @property
+    def preferred_image_url(self) -> Optional[str]:
+        if self.is_processed_available and self.processing_status != "rejected_original_kept":
+            return f"/api/v1/clothing/{self.id}/image/processed"
+        return self.image_url or (f"/api/v1/clothing/{self.id}/image/original" if self.id else None)
+
+    @property
+    def sleeve_type(self) -> Optional[str]:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            va = self.analysis.feature_vector.get("verified_attributes") or {}
+            cs = va.get("category_specific") or {}
+            return cs.get("sleeve_length") or cs.get("sleeve_type") or va.get("sleeve_length")
+        return None
+
+    @property
+    def neckline(self) -> Optional[str]:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            va = self.analysis.feature_vector.get("verified_attributes") or {}
+            cs = va.get("category_specific") or {}
+            return cs.get("neckline") or cs.get("collar_style") or va.get("neckline")
+        return None
+
+    @property
+    def category_group(self) -> Optional[str]:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            va = self.analysis.feature_vector.get("verified_attributes") or {}
+            if "category_group" in va:
+                return va["category_group"]
+            ai_pred = self.analysis.feature_vector.get("ai_predictions") or {}
+            if "category_group" in ai_pred:
+                return ai_pred["category_group"]
+        from app.ai.fashion_taxonomy import CATEGORY_TO_GROUP
+        cat = (self.category or "").lower()
+        return CATEGORY_TO_GROUP.get(cat, "western")
 
     # Relationships
     user = relationship("User", back_populates="clothing_items")

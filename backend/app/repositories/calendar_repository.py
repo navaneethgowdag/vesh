@@ -11,10 +11,19 @@ from app.models.wear_history import WearHistory
 def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
     event_type = "planned_outfit"
     notes = ""
+    rec_id = None
     if wh.season and ":" in wh.season:
-        parts = wh.season.split(":", 1)
+        parts = wh.season.split(":", 2)
         event_type = parts[0]
-        notes = parts[1]
+        if len(parts) == 3:
+            if parts[1]:
+                try:
+                    rec_id = UUID(parts[1])
+                except Exception:
+                    rec_id = None
+            notes = parts[2]
+        else:
+            notes = parts[1]
     elif wh.season:
         event_type = wh.season
 
@@ -34,7 +43,7 @@ def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
         status=wh.weather_condition or "scheduled",
         event_type=event_type,
         outfit_id=wh.outfit_id,
-        recommendation_id=None,
+        recommendation_id=rec_id,
         occasion=wh.occasion,
         notes=notes,
         created_at=wh.created_at,
@@ -81,6 +90,23 @@ class CalendarRepository:
         self, recommendation_id: UUID, event_date: date, user_id: UUID
     ) -> Optional[CalendarEvent]:
         if not self._has_table:
+            start_dt = datetime(event_date.year, event_date.month, event_date.day, 0, 0, 0, tzinfo=timezone.utc)
+            end_dt = datetime(event_date.year, event_date.month, event_date.day, 23, 59, 59, tzinfo=timezone.utc)
+            whs = (
+                self.db.query(WearHistory)
+                .options(joinedload(WearHistory.outfit).joinedload(Outfit.clothing_items))
+                .filter(
+                    WearHistory.user_id == user_id,
+                    WearHistory.worn_at >= start_dt,
+                    WearHistory.worn_at <= end_dt,
+                    WearHistory.weather_condition != "cancelled",
+                )
+                .all()
+            )
+            rec_str = str(recommendation_id)
+            for wh in whs:
+                if wh.season and rec_str in wh.season:
+                    return _wh_to_calendar_event(wh)
             return None
 
         return (
@@ -147,7 +173,8 @@ class CalendarRepository:
 
             event_type = kwargs.get("event_type", "planned_outfit")
             notes = kwargs.get("notes") or ""
-            season = f"{event_type}:{notes}"[:100]
+            rec_id_str = str(kwargs.get("recommendation_id") or "")
+            season = f"{event_type}:{rec_id_str}:{notes}"[:100]
 
             wh = WearHistory(
                 user_id=user_id,
@@ -179,10 +206,12 @@ class CalendarRepository:
                 wh.occasion = kwargs["occasion"]
             if "outfit_id" in kwargs and kwargs["outfit_id"] is not None:
                 wh.outfit_id = kwargs["outfit_id"]
-            if "notes" in kwargs or "event_type" in kwargs:
+            if "notes" in kwargs or "event_type" in kwargs or "recommendation_id" in kwargs:
                 notes = kwargs.get("notes", event.notes or "")
                 event_type = kwargs.get("event_type", event.event_type or "planned_outfit")
-                wh.season = f"{event_type}:{notes}"[:100]
+                rec_id = kwargs.get("recommendation_id", event.recommendation_id)
+                rec_id_str = str(rec_id or "")
+                wh.season = f"{event_type}:{rec_id_str}:{notes}"[:100]
             if "event_date" in kwargs and kwargs["event_date"] is not None:
                 ed = kwargs["event_date"]
                 wh.worn_at = datetime(ed.year, ed.month, ed.day, 12, 0, 0, tzinfo=timezone.utc)

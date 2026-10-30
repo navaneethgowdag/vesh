@@ -100,6 +100,13 @@ export interface ClothingItem {
   isProcessedAvailable?: boolean;
   originalImageUrl?: string;
   processedImageUrl?: string;
+  preferredImageUrl?: string;
+  isFinalized?: boolean;
+  formality?: number;
+  verifiedAttributes?: Record<string, any>;
+  sleeveType?: string;
+  neckline?: string;
+  categoryGroup?: string;
 }
 
 export type ProcessingStage =

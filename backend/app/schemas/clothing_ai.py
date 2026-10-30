@@ -23,8 +23,8 @@ class ClothingAnalysisResponse(BaseModel):
     style_tags: List[str] = Field(default_factory=list)
     season_tags: List[str] = Field(default_factory=list)
     occasion_tags: List[str] = Field(default_factory=list)
-    confidence: float = 0.85
-    feature_vector: Optional[List[float]] = None
+    confidence: Optional[float] = 0.85
+    feature_vector: Optional[Any] = None
 
     model_config = {"from_attributes": True}
 

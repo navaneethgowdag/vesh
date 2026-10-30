@@ -62,34 +62,44 @@ class RecommendationRepository:
         action: str,
         feedback_value: Optional[float] = None,
         **extra,
-    ) -> RecommendationFeedback:
-        feedback = RecommendationFeedback(
-            user_id=user_id,
-            recommendation_id=recommendation_id,
-            action=action.lower(),
-            feedback_value=feedback_value,
-        )
-        self.db.add(feedback)
+    ) -> Optional[RecommendationFeedback]:
+        try:
+            mapped_action = action.lower()
+            if mapped_action in ("accept", "scheduled"):
+                mapped_action = "save"
+            elif mapped_action in ("dismiss", "rejected"):
+                mapped_action = "reject"
 
-        # If action is wear, record in wear_history
-        rec = self.get_by_id(recommendation_id)
-        if rec and action.lower() == "wear":
-            wear_entry = WearHistory(
+            feedback = RecommendationFeedback(
                 user_id=user_id,
-                outfit_id=rec.outfit_id,
-                temperature=rec.temperature,
-                feels_like_temperature=rec.feels_like_temperature,
-                humidity=rec.humidity,
-                weather_condition=rec.weather_condition,
-                rain_probability=rec.rain_probability,
-                occasion=rec.occasion,
-                season=rec.season,
+                recommendation_id=recommendation_id,
+                action=mapped_action,
+                feedback_value=feedback_value,
             )
-            self.db.add(wear_entry)
+            self.db.add(feedback)
 
-        self.db.commit()
-        self.db.refresh(feedback)
-        return feedback
+            # If action is wear, record in wear_history
+            rec = self.get_by_id(recommendation_id)
+            if rec and mapped_action == "wear":
+                wear_entry = WearHistory(
+                    user_id=user_id,
+                    outfit_id=rec.outfit_id,
+                    temperature=rec.temperature,
+                    feels_like_temperature=rec.feels_like_temperature,
+                    humidity=rec.humidity,
+                    weather_condition=rec.weather_condition,
+                    rain_probability=rec.rain_probability,
+                    occasion=rec.occasion,
+                    season=rec.season,
+                )
+                self.db.add(wear_entry)
+
+            self.db.commit()
+            self.db.refresh(feedback)
+            return feedback
+        except Exception:
+            self.db.rollback()
+            return None
 
     def get_feedback_for_user(self, user_id: UUID, limit: int = 100) -> List[RecommendationFeedback]:
         return (

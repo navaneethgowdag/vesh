@@ -34,7 +34,7 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
       {/* Garment Image */}
       <div className="relative aspect-[3/4] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
         <img
-          src={resolveImageUrl(item.image) || FALLBACK_POST_IMAGE}
+          src={resolveImageUrl(item.preferredImageUrl || item.image) || FALLBACK_POST_IMAGE}
           alt={item.name}
           onError={(e) => {
             if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
@@ -45,8 +45,24 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
           loading="lazy"
         />
 
-        {/* Favorite Badge */}
-        {item.isFavorite && (
+        {/* Processing / Status Badges */}
+        {(item.processingStatus === 'queued' || item.processingStatus === 'processing') && (
+          <span className="absolute top-2.5 left-2.5 bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+            AI Processing
+          </span>
+        )}
+        {item.processingStatus === 'ready_for_review' && (
+          <span className="absolute top-2.5 left-2.5 bg-amber-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+            Review Needed
+          </span>
+        )}
+        {item.processingStatus === 'failed' && (
+          <span className="absolute top-2.5 left-2.5 bg-rose-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+            Processing Failed
+          </span>
+        )}
+        {item.isFavorite && !['queued', 'processing', 'ready_for_review', 'failed'].includes(item.processingStatus || '') && (
           <span className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white p-1.5 rounded text-xs" title="Wardrobe Staple">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
           </span>
@@ -58,7 +74,7 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
         </span>
 
         {/* AI Catalog Cut Badge */}
-        {(item.isProcessedAvailable || item.image?.includes('/image/processed')) && (
+        {(item.isProcessedAvailable || item.image?.includes('/image/processed') || item.preferredImageUrl?.includes('/image/processed')) && (
           <span className="absolute bottom-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
             <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
             AI Catalog

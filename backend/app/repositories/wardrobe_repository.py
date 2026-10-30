@@ -31,7 +31,7 @@ class WardrobeRepository:
         query = self.db.query(Clothing).filter(Clothing.user_id == user_id)
 
         if category:
-            query = query.filter(Clothing.category.ilike(category))
+            query = query.filter(or_(Clothing.category.ilike(category), Clothing.subcategory.ilike(category)))
         if style:
             query = query.filter(Clothing.occasion.ilike(f"%{style}%"))
         if color:
