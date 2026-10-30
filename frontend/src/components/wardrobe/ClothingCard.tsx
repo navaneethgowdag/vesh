@@ -57,6 +57,14 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
           {item.timesWorn || 0} wears
         </span>
 
+        {/* AI Catalog Cut Badge */}
+        {(item.isProcessedAvailable || item.image?.includes('/image/processed')) && (
+          <span className="absolute bottom-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+            <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
+            AI Catalog
+          </span>
+        )}
+
         {/* Quick action overlay */}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
           <div className="flex gap-1.5 ml-auto">

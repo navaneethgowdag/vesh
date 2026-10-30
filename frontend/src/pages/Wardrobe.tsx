@@ -12,50 +12,124 @@ import { AddClothingModal } from '../components/wardrobe/AddClothingModal';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
-import { ClothingCategory } from '../types';
 
-const CATEGORIES: (ClothingCategory | 'All')[] = [
+const CATEGORIES = [
   'All',
-  'Tops',
-  'Bottoms',
-  'Dresses',
-  'Outerwear',
-  'Shoes',
+  'Tops & Shirts',
+  'Bottoms & Jeans',
+  'Indian Ethnic',
+  'Dresses & Skirts',
+  'Outerwear & Blazers',
+  'Footwear',
   'Accessories',
-  'Bags',
-];
+] as const;
+
+type CategoryFilter = typeof CATEGORIES[number];
 
 export const Wardrobe: React.FC = () => {
   const { wardrobe, refreshData } = useApp();
   const navigate = useNavigate();
 
-  const [activeCategory, setActiveCategory] = useState<ClothingCategory | 'All'>('All');
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'wears' | 'name'>('recent');
 
   const totalItems = wardrobe.length;
-  const topsCount = wardrobe.filter((i) => i.category === 'Tops').length;
-  const bottomsCount = wardrobe.filter((i) => i.category === 'Bottoms').length;
-  const shoesCount = wardrobe.filter((i) => i.category === 'Shoes').length;
-  const othersCount = totalItems - (topsCount + bottomsCount + shoesCount);
+  const topsCount = wardrobe.filter((i) =>
+    ['tops', 'shirt', 't_shirt', 't-shirt'].includes((i.category || '').toLowerCase())
+  ).length;
+  const bottomsCount = wardrobe.filter((i) =>
+    ['bottoms', 'jeans', 'pants', 'salwar', 'churidar'].includes((i.category || '').toLowerCase())
+  ).length;
+  const ethnicCount = wardrobe.filter((i) =>
+    ['saree', 'blouse', 'kurta', 'kurti', 'lehenga', 'sherwani', 'dupatta'].includes(
+      (i.category || '').toLowerCase()
+    )
+  ).length;
+  const othersCount = totalItems - (topsCount + bottomsCount + ethnicCount);
 
   const filteredItems = useMemo(() => {
     return wardrobe
       .filter((item) => {
-        if (activeCategory !== 'All' && item.category !== activeCategory) {
-          return false;
-        }
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          const matchesName = item.name.toLowerCase().includes(q);
-          const matchesBrand = item.brand?.toLowerCase().includes(q);
-          const matchesColor = item.color.toLowerCase().includes(q);
-          const matchesStyle = item.style.toLowerCase().includes(q);
-          if (!matchesName && !matchesBrand && !matchesColor && !matchesStyle) {
+        const cat = (item.category || '').toLowerCase();
+
+        // Category filter matching
+        if (activeCategory !== 'All') {
+          if (
+            activeCategory === 'Tops & Shirts' &&
+            !['tops', 'shirt', 't_shirt', 't-shirt'].includes(cat)
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Bottoms & Jeans' &&
+            !['bottoms', 'jeans', 'pants', 'salwar', 'churidar'].includes(cat)
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Indian Ethnic' &&
+            !['saree', 'blouse', 'kurta', 'kurti', 'salwar', 'churidar', 'lehenga', 'sherwani', 'dupatta'].includes(
+              cat
+            )
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Dresses & Skirts' &&
+            !['dresses', 'western_dress', 'skirt', 'dress'].includes(cat)
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Outerwear & Blazers' &&
+            !['outerwear', 'jacket', 'blazer', 'coat'].includes(cat)
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Footwear' &&
+            !['shoes', 'sneakers', 'sandals', 'heels', 'flats', 'formal_shoes', 'boots'].includes(cat)
+          ) {
+            return false;
+          }
+          if (
+            activeCategory === 'Accessories' &&
+            !['accessories', 'bags', 'handbag', 'backpack', 'belt', 'watch', 'scarf', 'other_accessory'].includes(
+              cat
+            )
+          ) {
             return false;
           }
         }
+
+        // Search Query matching
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchesName = (item.name || '').toLowerCase().includes(q);
+          const matchesCategory = cat.includes(q);
+          const matchesBrand = (item.brand || '').toLowerCase().includes(q);
+          const matchesColor = (item.color || '').toLowerCase().includes(q);
+          const matchesSecColor = (item.secondaryColor || '').toLowerCase().includes(q);
+          const matchesPattern = (item.pattern || '').toLowerCase().includes(q);
+          const matchesMaterial = (item.material || '').toLowerCase().includes(q);
+          const matchesStyle = (item.style || '').toLowerCase().includes(q);
+
+          if (
+            !matchesName &&
+            !matchesCategory &&
+            !matchesBrand &&
+            !matchesColor &&
+            !matchesSecColor &&
+            !matchesPattern &&
+            !matchesMaterial &&
+            !matchesStyle
+          ) {
+            return false;
+          }
+        }
+
         return true;
       })
       .sort((a, b) => {
@@ -78,7 +152,7 @@ export const Wardrobe: React.FC = () => {
               Capsule Wardrobe
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              {totalItems} garments digitized & categorized in your wardrobe.
+              {totalItems} garments digitized, analyzed & categorized in your wardrobe.
             </p>
           </div>
 
@@ -97,9 +171,9 @@ export const Wardrobe: React.FC = () => {
         {/* Quick Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Tops', count: topsCount },
-            { label: 'Bottoms', count: bottomsCount },
-            { label: 'Shoes', count: shoesCount },
+            { label: 'Tops & Shirts', count: topsCount },
+            { label: 'Bottoms & Jeans', count: bottomsCount },
+            { label: 'Indian Ethnic', count: ethnicCount },
             { label: 'Other Pieces', count: othersCount },
           ].map((stat) => (
             <div
@@ -124,7 +198,7 @@ export const Wardrobe: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search pieces by name, fabric, brand, color..."
+                placeholder="Search by name, fabric, pattern, color, brand, or style..."
                 className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
               />
               <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
@@ -170,7 +244,7 @@ export const Wardrobe: React.FC = () => {
               {searchQuery ? `No garments matching "${searchQuery}"` : 'Your Capsule Closet is Empty'}
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-              Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits.
+              Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits and outfit intelligence.
             </p>
             <Button
               variant="primary"

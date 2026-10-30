@@ -4,6 +4,9 @@ from app.models.user_preference import UserPreference
 from app.models.learned_preference import LearnedPreference
 from app.models.clothing import Clothing
 from app.models.clothing_analysis import ClothingAnalysis
+from app.models.clothing_image import ClothingImage
+from app.models.clothing_prediction import ClothingPrediction
+from app.models.clothing_correction import ClothingCorrection
 from app.models.outfit import Outfit, outfit_clothing
 from app.models.post import Post
 from app.models.comment import Comment
@@ -25,6 +28,9 @@ __all__ = [
     "LearnedPreference",
     "Clothing",
     "ClothingAnalysis",
+    "ClothingImage",
+    "ClothingPrediction",
+    "ClothingCorrection",
     "Outfit",
     "outfit_clothing",
     "Post",

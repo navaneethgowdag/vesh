@@ -21,6 +21,9 @@ class WardrobeRepository:
         style: Optional[str] = None,
         color: Optional[str] = None,
         season: Optional[str] = None,
+        pattern: Optional[str] = None,
+        fabric: Optional[str] = None,
+        occasion: Optional[str] = None,
         is_favorite: Optional[bool] = None,
         limit: int = 100,
         offset: int = 0,
@@ -32,9 +35,15 @@ class WardrobeRepository:
         if style:
             query = query.filter(Clothing.occasion.ilike(f"%{style}%"))
         if color:
-            query = query.filter(Clothing.color.ilike(color))
+            query = query.filter(or_(Clothing.color.ilike(color), Clothing.secondary_color.ilike(color)))
         if season:
             query = query.filter(Clothing.season.ilike(season))
+        if pattern:
+            query = query.filter(Clothing.pattern.ilike(pattern))
+        if fabric:
+            query = query.filter(Clothing.material.ilike(fabric))
+        if occasion:
+            query = query.filter(Clothing.occasion.ilike(occasion))
         if is_favorite is not None:
             query = query.filter(Clothing.is_favorite == is_favorite)
 
@@ -106,6 +115,10 @@ class WardrobeRepository:
                     Clothing.name.ilike(pattern),
                     Clothing.category.ilike(pattern),
                     Clothing.color.ilike(pattern),
+                    Clothing.secondary_color.ilike(pattern),
+                    Clothing.pattern.ilike(pattern),
+                    Clothing.material.ilike(pattern),
+                    Clothing.occasion.ilike(pattern),
                     Clothing.brand.ilike(pattern),
                 ),
             )

@@ -94,6 +94,101 @@ export interface ClothingItem {
   lastWorn?: string;
   tags?: string[];
   isFavorite?: boolean;
+  processingStatus?: string;
+  processingStage?: string;
+  reviewRequired?: boolean;
+  isProcessedAvailable?: boolean;
+  originalImageUrl?: string;
+  processedImageUrl?: string;
+}
+
+export type ProcessingStage =
+  | 'uploaded'
+  | 'queued'
+  | 'claimed_by_worker'
+  | 'analyzing_clothing'
+  | 'removing_background'
+  | 'preparing_catalog_image'
+  | 'understanding_garment'
+  | 'ready_for_review'
+  | 'completed'
+  | 'failed';
+
+export interface GarmentProcessingStatus {
+  itemId: string;
+  status: string;
+  stage: ProcessingStage | string;
+  reviewRequired: boolean;
+  isProcessedAvailable: boolean;
+  durationSeconds: number;
+  errorMessage?: string;
+  originalImageUrl: string;
+  processedImageUrl?: string;
+}
+
+export interface ColorPaletteItem {
+  name: string;
+  hex: string;
+  percentage: number;
+  rgb?: number[];
+  delta_e?: number;
+}
+
+export interface CategoryAlternative {
+  category: string;
+  score: number;
+  display_name: string;
+}
+
+export interface ClothingPrediction {
+  id?: string;
+  clothing_id: string;
+  user_id?: string;
+  model_name: string;
+  model_version: string;
+  input_image_source: string;
+  predicted_category: string;
+  category_group?: string;
+  category_score: number;
+  category_alternatives: CategoryAlternative[];
+  predicted_attributes: Record<string, any>;
+  prediction_scores: Record<string, any>;
+  color_palette: ColorPaletteItem[];
+  created_at?: string;
+}
+
+export interface ClothingCorrection {
+  id: string;
+  clothing_id: string;
+  attribute_name: string;
+  predicted_value?: string;
+  corrected_value: string;
+  created_at?: string;
+}
+
+export interface ClothingAttributesData {
+  clothing_id: string;
+  is_finalized: boolean;
+  current_attributes: {
+    category: string;
+    category_group?: string;
+    category_display?: string;
+    primary_color: string;
+    primary_hex?: string;
+    secondary_color?: string;
+    secondary_hex?: string;
+    pattern?: string;
+    style?: string;
+    season?: string;
+    occasion?: string;
+    formality?: number;
+    fabric?: string;
+    brand?: string;
+    category_specific?: Record<string, any>;
+  };
+  original_prediction?: ClothingPrediction;
+  corrections_count: number;
+  corrections: ClothingCorrection[];
 }
 
 export interface OutfitPieceReference {

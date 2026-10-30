@@ -14,8 +14,10 @@ logger = logging.getLogger(__name__)
 # Singleton client handles
 _sync_client: Optional[redis.Redis] = None
 _async_client: Optional[aioredis.Redis] = None
+_rq_client: Optional[redis.Redis] = None
 _sync_pool: Optional[redis.ConnectionPool] = None
 _async_pool: Optional[aioredis.ConnectionPool] = None
+_rq_pool: Optional[redis.ConnectionPool] = None
 
 
 def get_redis_connection_kwargs() -> Dict[str, Any]:
@@ -97,9 +99,39 @@ def get_async_redis_client() -> Optional[aioredis.Redis]:
     return _async_client
 
 
+def get_rq_redis_client() -> Optional[redis.Redis]:
+    """
+    Return a Redis client configured for RQ (Redis Queue).
+    CRITICAL: decode_responses MUST be False for RQ because RQ uses binary pickle
+    serialization for job payloads. Setting decode_responses=True causes UnicodeDecodeError.
+    """
+    global _rq_client, _rq_pool
+    if not settings.REDIS_ENABLED or not settings.redis_connection_url:
+        return None
+
+    if _rq_client is not None:
+        return _rq_client
+
+    try:
+        url = settings.redis_connection_url
+        kwargs = get_redis_connection_kwargs()
+        kwargs["decode_responses"] = False  # Enforce raw binary for RQ
+
+        _rq_pool = redis.ConnectionPool.from_url(url, **kwargs)
+        _rq_client = redis.Redis(connection_pool=_rq_pool)
+        _rq_client.ping()
+        logger.info("Successfully initialized dedicated binary Redis connection for RQ.")
+        return _rq_client
+    except Exception as e:
+        logger.warning(f"Could not connect RQ Redis client: {e}")
+        _rq_client = None
+        _rq_pool = None
+        return None
+
+
 def close_redis() -> None:
     """Explicit lifecycle cleanup for Redis pools."""
-    global _sync_client, _async_client, _sync_pool, _async_pool
+    global _sync_client, _async_client, _rq_client, _sync_pool, _async_pool, _rq_pool
     try:
         if _sync_client is not None:
             _sync_client.close()
@@ -109,6 +141,16 @@ def close_redis() -> None:
             _sync_pool = None
     except Exception as e:
         logger.warning(f"Error closing sync Redis pool: {e}")
+
+    try:
+        if _rq_client is not None:
+            _rq_client.close()
+            _rq_client = None
+        if _rq_pool is not None:
+            _rq_pool.disconnect()
+            _rq_pool = None
+    except Exception as e:
+        logger.warning(f"Error closing RQ Redis pool: {e}")
 
     try:
         if _async_client is not None:

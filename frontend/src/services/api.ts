@@ -19,6 +19,7 @@ import {
   OutfitMoment,
   UserSearchResult,
   SocialUserSummary,
+  GarmentProcessingStatus,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
@@ -208,8 +209,31 @@ export const api = {
 
   // --- WARDROBE ---
   wardrobe: {
-    async list(): Promise<ClothingItem[]> {
-      const items = await request<any[]>('/wardrobe');
+    async list(filters?: {
+      category?: string;
+      style?: string;
+      color?: string;
+      season?: string;
+      pattern?: string;
+      fabric?: string;
+      occasion?: string;
+      isFavorite?: boolean;
+    }): Promise<ClothingItem[]> {
+      let endpoint = '/wardrobe';
+      if (filters) {
+        const p = new URLSearchParams();
+        if (filters.category) p.append('category', filters.category);
+        if (filters.style) p.append('style', filters.style);
+        if (filters.color) p.append('color', filters.color);
+        if (filters.season) p.append('season', filters.season);
+        if (filters.pattern) p.append('pattern', filters.pattern);
+        if (filters.fabric) p.append('fabric', filters.fabric);
+        if (filters.occasion) p.append('occasion', filters.occasion);
+        if (filters.isFavorite !== undefined) p.append('is_favorite', String(filters.isFavorite));
+        const qs = p.toString();
+        if (qs) endpoint += '?' + qs;
+      }
+      const items = await request<any[]>(endpoint);
       return items.map((item) => ({
         id: String(item.id),
         name: item.name,
@@ -227,6 +251,15 @@ export const api = {
         lastWorn: item.last_worn,
         tags: item.style_tags || [],
         isFavorite: item.is_favorite || false,
+        processingStatus: item.processing_status,
+        processingStage: item.processing_stage,
+        reviewRequired: item.review_required,
+        isProcessedAvailable: item.is_processed_available,
+        isFinalized: item.is_finalized,
+        formality: item.formality,
+        verifiedAttributes: item.verified_attributes,
+        originalImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/original` : undefined,
+        processedImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/processed` : undefined,
       }));
     },
 
@@ -364,6 +397,158 @@ export const api = {
         result: raw.result,
         errorMessage: raw.error_message,
       };
+    },
+  },
+
+  // --- CLOTHING AI & IMAGE PROCESSING ---
+  clothing: {
+    async upload(
+      file: File,
+      metadata?: {
+        name?: string;
+        category?: string;
+        color?: string;
+        secondaryColor?: string;
+        pattern?: string;
+        material?: string;
+        fit?: string;
+        brand?: string;
+        size?: string;
+        season?: string;
+        occasion?: string;
+        description?: string;
+      }
+    ): Promise<{
+      itemId: string;
+      status: string;
+      stage: string;
+      originalImageUrl: string;
+      statusUrl: string;
+    }> {
+      const apiBase = getApiBaseUrl();
+      const formData = new FormData();
+      formData.append('file', file);
+      if (metadata?.name) formData.append('name', metadata.name);
+      if (metadata?.category) formData.append('category', metadata.category);
+      if (metadata?.color) formData.append('color', metadata.color);
+      if (metadata?.secondaryColor) formData.append('secondary_color', metadata.secondaryColor);
+      if (metadata?.pattern) formData.append('pattern', metadata.pattern);
+      if (metadata?.material) formData.append('material', metadata.material);
+      if (metadata?.fit) formData.append('fit', metadata.fit);
+      if (metadata?.brand) formData.append('brand', metadata.brand);
+      if (metadata?.size) formData.append('size', metadata.size);
+      if (metadata?.season) formData.append('season', metadata.season);
+      if (metadata?.occasion) formData.append('occasion', metadata.occasion);
+      if (metadata?.description) formData.append('description', metadata.description);
+
+      const headers: Record<string, string> = {};
+      const token = tokenStorage.get();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${apiBase}/clothing/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        let msg = `${res.status} ${res.statusText}`;
+        try {
+          const err = await res.json();
+          msg = err.detail || err.message || msg;
+        } catch {}
+        throw new ApiError(res.status, msg);
+      }
+
+      const data = await res.json();
+      return {
+        itemId: String(data.item_id),
+        status: data.status,
+        stage: data.stage,
+        originalImageUrl: data.original_image_url,
+        statusUrl: data.status_url,
+      };
+    },
+
+    async getProcessingStatus(itemId: string): Promise<GarmentProcessingStatus> {
+      const raw = await request<any>(`/clothing/${itemId}/processing-status`);
+      return {
+        itemId: String(raw.item_id),
+        status: raw.status,
+        stage: raw.stage,
+        reviewRequired: Boolean(raw.review_required),
+        isProcessedAvailable: Boolean(raw.is_processed_available),
+        durationSeconds: Number(raw.duration_seconds || 0),
+        errorMessage: raw.error_message,
+        originalImageUrl: raw.original_image_url,
+        processedImageUrl: raw.processed_image_url,
+      };
+    },
+
+    async acceptImage(itemId: string): Promise<{ status: string; itemId: string; imageUrl: string }> {
+      const raw = await request<any>(`/clothing/${itemId}/image/accept`, { method: 'POST' });
+      return {
+        status: raw.status,
+        itemId: String(raw.item_id),
+        imageUrl: raw.image_url,
+      };
+    },
+
+    async rejectImage(itemId: string): Promise<{ status: string; itemId: string; imageUrl: string }> {
+      const raw = await request<any>(`/clothing/${itemId}/image/reject`, { method: 'POST' });
+      return {
+        status: raw.status,
+        itemId: String(raw.item_id),
+        imageUrl: raw.image_url,
+      };
+    },
+
+    async retryProcessing(itemId: string): Promise<{ status: string; itemId: string; stage: string }> {
+      const raw = await request<any>(`/clothing/${itemId}/image/retry`, { method: 'POST' });
+      return {
+        status: raw.status,
+        itemId: String(raw.item_id),
+        stage: raw.stage,
+      };
+    },
+
+    getOriginalImageUrl(itemId: string): string {
+      return `${getApiBaseUrl()}/clothing/${itemId}/image/original`;
+    },
+
+    getProcessedImageUrl(itemId: string): string {
+      return `${getApiBaseUrl()}/clothing/${itemId}/image/processed`;
+    },
+
+    async getPredictions(itemId: string): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/predictions');
+    },
+
+    async getAttributes(itemId: string): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/attributes');
+    },
+
+    async updateAttributes(itemId: string, updates: Record<string, any>): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/attributes', {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+    },
+
+    async finalize(itemId: string, verifiedAttributes?: Record<string, any>): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/finalize', {
+        method: 'POST',
+        body: JSON.stringify({ verified_attributes: verifiedAttributes }),
+      });
+    },
+
+    async reanalyze(itemId: string): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/reanalyze', {
+        method: 'POST',
+      });
     },
   },
 

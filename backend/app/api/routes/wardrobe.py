@@ -16,6 +16,9 @@ def get_wardrobe(
     style: Optional[str] = Query(None),
     color: Optional[str] = Query(None),
     season: Optional[str] = Query(None),
+    pattern: Optional[str] = Query(None),
+    fabric: Optional[str] = Query(None),
+    occasion: Optional[str] = Query(None),
     is_favorite: Optional[bool] = Query(None),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -29,6 +32,9 @@ def get_wardrobe(
         style=style,
         color=color,
         season=season,
+        pattern=pattern,
+        fabric=fabric,
+        occasion=occasion,
         is_favorite=is_favorite,
         limit=limit,
         offset=offset,
@@ -87,4 +93,25 @@ def delete_clothing_item(
     service = WardrobeService(db)
     service.delete_item(item_id=item_id, user_id=current_user.id)
     return None
+
+
+# Mount wardrobe aliases for garment image endpoints
+from app.api.routes.clothing import (
+    upload_clothing_image,
+    get_processing_status,
+    get_original_image,
+    get_processed_image,
+    accept_processed_image,
+    reject_processed_image,
+    retry_processed_image,
+)
+
+router.add_api_route("/upload", upload_clothing_image, methods=["POST"], status_code=status.HTTP_202_ACCEPTED)
+router.add_api_route("/{item_id}/processing-status", get_processing_status, methods=["GET"])
+router.add_api_route("/{item_id}/image/original", get_original_image, methods=["GET"])
+router.add_api_route("/{item_id}/image/processed", get_processed_image, methods=["GET"])
+router.add_api_route("/{item_id}/image/accept", accept_processed_image, methods=["POST"])
+router.add_api_route("/{item_id}/image/reject", reject_processed_image, methods=["POST"])
+router.add_api_route("/{item_id}/image/retry", retry_processed_image, methods=["POST"])
+
 

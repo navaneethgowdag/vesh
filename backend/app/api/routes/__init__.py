@@ -3,6 +3,7 @@ from app.api.routes import (
     auth,
     users,
     wardrobe,
+    clothing,
     clothing_ai,
     outfits,
     recommendations,
@@ -22,6 +23,7 @@ api_router = APIRouter()
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(wardrobe.router)
+api_router.include_router(clothing.router)
 api_router.include_router(clothing_ai.router)
 api_router.include_router(outfits.router)
 api_router.include_router(recommendations.router)
