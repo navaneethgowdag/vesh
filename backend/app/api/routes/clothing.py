@@ -1,7 +1,8 @@
 import io
+import uuid
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from PIL import Image
 
@@ -30,9 +31,12 @@ from app.schemas.wardrobe import (
     ClothingAttributesResponse,
     ClothingFinalizeRequest,
     ClothingReanalyzeResponse,
+    BatchUploadResponse,
+    BatchStatusResponse,
 )
 from app.services.clothing_image_service import ClothingImageService
 from app.services.job_service import JobService
+from app.services.batch_upload_service import BatchUploadService
 from app.services.garment_classifier_service import garment_classifier
 from app.services.clothing_prediction_service import prediction_service
 
@@ -178,6 +182,219 @@ async def upload_clothing_image(
         original_image_url=f"/api/v1/clothing/{clothing.id}/image/original",
         status_url=f"/api/v1/clothing/{clothing.id}/processing-status",
     )
+
+
+@router.post(
+    "/batch-upload",
+    response_model=BatchUploadResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def batch_upload_clothing_images(
+    files: List[UploadFile] = File(...),
+    category: Optional[str] = Form("Tops"),
+    color: Optional[str] = Form("White"),
+    season: Optional[str] = Form("All-Season"),
+    occasion: Optional[str] = Form("Casual Daily"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Accepts multiple garment photographs in a single request.
+    Stores original images in Neon PostgreSQL BYTEA, initializes sequential queue state,
+    and enqueues the first item to begin FIFO processing per user.
+    """
+    if not files or len(files) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No files provided for batch upload.",
+        )
+
+    if len(files) > 20:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Batch size exceeds maximum limit of 20 images (received {len(files)}).",
+        )
+
+    batch_id = uuid.uuid4()
+    batch_svc = BatchUploadService(db)
+    batch_svc.create_batch(current_user.id, len(files), batch_id=batch_id)
+    image_service = ClothingImageService(db)
+
+    first_valid_clothing_id = None
+
+    for idx, file in enumerate(files):
+        # 1. Format and readability check
+        is_valid_format = bool(
+            file.content_type
+            and (
+                file.content_type.startswith("image/")
+                or (file.filename and file.filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".heic", ".avif")))
+            )
+        )
+
+        image_bytes = await file.read()
+        is_valid_size = 0 < len(image_bytes) <= MAX_IMAGE_BYTES
+
+        is_readable = False
+        if is_valid_format and is_valid_size:
+            try:
+                with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                    pil_img.verify()
+                is_readable = True
+            except Exception:
+                is_readable = False
+
+        # Name resolution
+        raw_fn = file.filename or f"Item {idx + 1}"
+        resolved_name = raw_fn.rsplit(".", 1)[0].replace("-", " ").replace("_", " ").title()
+
+        clothing = Clothing(
+            user_id=current_user.id,
+            name=resolved_name,
+            category=category or "Tops",
+            color=color or "White",
+            season=season or "All-Season",
+            occasion=occasion or "Casual Daily",
+        )
+        db.add(clothing)
+        db.flush()
+
+        mime_type = file.content_type or "image/jpeg"
+
+        if is_readable:
+            # Store original binary into Neon BYTEA
+            image_service.store_image(
+                clothing_id=clothing.id,
+                user_id=current_user.id,
+                image_bytes=image_bytes,
+                image_type="original",
+                mime_type=mime_type,
+            )
+            clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
+
+            analysis = db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing.id).first()
+            if not analysis:
+                analysis = ClothingAnalysis(
+                    clothing_id=clothing.id,
+                    detected_category=clothing.category,
+                    feature_vector={},
+                )
+                db.add(analysis)
+
+            fv = dict(analysis.feature_vector) if isinstance(analysis.feature_vector, dict) else {}
+            fv.update({
+                "batch_id": str(batch_id),
+                "sequence_order": idx,
+                "filename": raw_fn,
+                "processing_status": "queued",
+                "processing_stage": "queued",
+                "review_required": False,
+                "has_processed": False,
+            })
+            analysis.feature_vector = fv
+
+            if first_valid_clothing_id is None:
+                first_valid_clothing_id = clothing.id
+        else:
+            error_reason = "Corrupt or unreadable image file" if not is_readable else "Image exceeds 10MB limit"
+            analysis = db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing.id).first()
+            if not analysis:
+                analysis = ClothingAnalysis(
+                    clothing_id=clothing.id,
+                    detected_category=clothing.category,
+                    feature_vector={},
+                )
+                db.add(analysis)
+
+            fv = dict(analysis.feature_vector) if isinstance(analysis.feature_vector, dict) else {}
+            fv.update({
+                "batch_id": str(batch_id),
+                "sequence_order": idx,
+                "filename": raw_fn,
+                "processing_status": "failed",
+                "processing_stage": "failed",
+                "error_message": error_reason,
+                "review_required": False,
+                "has_processed": False,
+            })
+            analysis.feature_vector = fv
+
+    db.commit()
+
+    # Enqueue only the first valid item to initiate sequential processing
+    if first_valid_clothing_id is not None:
+        job_service = JobService(db)
+        job_service.enqueue_garment_processing(
+            user_id=current_user.id,
+            clothing_id=first_valid_clothing_id,
+            batch_id=batch_id,
+            sequence_order=0,
+        )
+        logger.info(f"[BatchUpload] Batch {batch_id} created with {len(files)} items. Initiated with item {first_valid_clothing_id}.")
+
+    return BatchUploadResponse(
+        batch_id=batch_id,
+        status="queued",
+        total_items=len(files),
+        status_url=f"/api/v1/clothing/batches/{batch_id}",
+    )
+
+
+@router.get(
+    "/batches/{batch_id}",
+    response_model=BatchStatusResponse,
+)
+def get_batch_processing_status(
+    batch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Poll overall batch progress and individual item stages.
+    Returns calculated progress, current item being processed, and individual item thumbnails.
+    """
+    batch_svc = BatchUploadService(db)
+    try:
+        status_dict = batch_svc.get_batch_status(batch_id=batch_id, user_id=current_user.id)
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this batch.")
+
+    if status_dict.get("status") == "not_found":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found.")
+
+    return BatchStatusResponse(**status_dict)
+
+
+@router.post(
+    "/batches/{batch_id}/retry-failed",
+    response_model=BatchStatusResponse,
+)
+def retry_failed_batch_items(
+    batch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Retry failed images in a batch without re-uploading.
+    Idempotent: resets failed items to queued and re-enqueues the first retried item.
+    """
+    batch_svc = BatchUploadService(db)
+    try:
+        retry_res = batch_svc.retry_failed_items(batch_id=batch_id, user_id=current_user.id)
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this batch.")
+
+    first_clothing_id = retry_res.get("first_clothing_id")
+    if first_clothing_id:
+        job_service = JobService(db)
+        job_service.enqueue_garment_processing(
+            user_id=current_user.id,
+            clothing_id=first_clothing_id,
+            batch_id=batch_id,
+        )
+        logger.info(f"[BatchUpload] Retrying batch {batch_id}: enqueued item {first_clothing_id}.")
+
+    return BatchStatusResponse(**retry_res["batch_status"])
 
 
 @router.get(

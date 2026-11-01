@@ -327,6 +327,7 @@ class RecommendationService:
             feels_like = float(weather.get("feels_like", temp))
             humidity = int(weather.get("humidity", 50))
             rain_prob = int(weather.get("rain_probability", 0))
+            wind_speed = float(weather.get("wind_speed", 0.0))
             condition = weather.get("condition", "Pleasant")
         except Exception:
             # Engine remains weather-neutral gracefully without error
@@ -334,8 +335,17 @@ class RecommendationService:
             feels_like = 22.0
             humidity = 50
             rain_prob = 10
+            wind_speed = 5.0
             condition = "Pleasant"
-            weather = {"city": city, "temp": temp, "condition": condition}
+            weather = {
+                "city": city,
+                "temp": temp,
+                "feels_like": feels_like,
+                "humidity": humidity,
+                "rain_probability": rain_prob,
+                "wind_speed": wind_speed,
+                "condition": condition,
+            }
 
         if temp >= 25.0:
             target_season = "Summer"
@@ -490,6 +500,9 @@ class RecommendationService:
                 temp=temp,
                 rain_prob=rain_prob,
                 condition=condition,
+                feels_like=feels_like,
+                humidity=humidity,
+                wind_speed=wind_speed,
                 user_pref=user_pref,
                 learned_pref=learned_pref,
                 preferred_colors=preferred_colors or [],
@@ -781,6 +794,9 @@ class RecommendationService:
         learned_pref: Any,
         preferred_colors: List[str],
         recent_outfit_ids: Set[UUID],
+        feels_like: float = 22.0,
+        humidity: int = 50,
+        wind_speed: float = 5.0,
     ) -> Dict[str, Any]:
         # 1. Occasion Match (Weight: 25% / 0.25)
         score_occasion = self._compute_occasion_score(items, target_occasion)
@@ -799,8 +815,17 @@ class RecommendationService:
         delta_formality = max(formalities) - min(formalities) if formalities else 0.0
         score_formality = max(0.5, 1.0 - delta_formality)
 
-        # 6. Season Suitability (Weight: 5% / 0.05)
-        score_season = self._compute_season_score(items, target_season)
+        # 6. Season & Climate Calibration (Weight: 5% / 0.05)
+        score_season = self._compute_season_score(
+            items=items,
+            target_season=target_season,
+            temp=temp,
+            feels_like=feels_like,
+            humidity=humidity,
+            wind_speed=wind_speed,
+            rain_prob=rain_prob,
+            condition=condition,
+        )
 
         # 7. Personal Preference & Underused Rotation Bonus (Weight: 5% / 0.05)
         score_pref = self._compute_preference_rotation_bonus(items, preferred_colors, user_pref)
@@ -959,14 +984,64 @@ class RecommendationService:
             return 0.92
         return 0.82
 
-    def _compute_season_score(self, items: List[Clothing], target_season: str) -> float:
+    def _compute_season_score(
+        self,
+        items: List[Clothing],
+        target_season: str,
+        temp: float = 22.0,
+        feels_like: float = 22.0,
+        humidity: int = 50,
+        wind_speed: float = 5.0,
+        rain_prob: int = 10,
+        condition: str = "Pleasant",
+    ) -> float:
         tgt = target_season.lower()
         matches = 0
         for i in items:
             season = (i.season or "All-Season").lower()
             if "all" in season or tgt in season:
                 matches += 1
-        return matches / len(items) if items else 0.90
+        base_score = matches / len(items) if items else 0.85
+
+        # Micro-climate adjustment based on physical factors
+        adj = 0.0
+        # Hot conditions (>25°C or feels_like >26°C): prioritize breathable fabrics, penalize heavy fabrics
+        if temp >= 25.0 or feels_like >= 26.0:
+            for it in items:
+                mat = (getattr(it, "material", None) or getattr(it, "fabric", "") or "").lower()
+                if any(b in mat for b in ("linen", "cotton", "silk", "rayon", "viscose", "chambray")):
+                    adj += 0.03
+                elif any(h in mat for h in ("wool", "cashmere", "leather", "fleece", "velvet", "corduroy", "down")):
+                    adj -= 0.05
+        # Cold conditions (<15°C or feels_like <14°C): prioritize layering and warm fabrics
+        elif temp <= 15.0 or feels_like <= 14.0:
+            has_layer = any(classify_garment(it) in ("outerwear", "layer") or (getattr(it, "category", "") or "").lower() in ("jackets", "coats", "sweaters", "cardigans") for it in items)
+            if has_layer:
+                adj += 0.05
+            for it in items:
+                mat = (getattr(it, "material", None) or getattr(it, "fabric", "") or "").lower()
+                if any(w in mat for w in ("wool", "cashmere", "fleece", "denim", "leather", "corduroy")):
+                    adj += 0.03
+        # Rain conditions (rain_prob >= 40% or rain condition): prioritize water-resistant, penalize suede/raw silk
+        if rain_prob >= 40 or "rain" in condition.lower() or "drizzle" in condition.lower():
+            for it in items:
+                mat = (getattr(it, "material", None) or getattr(it, "fabric", "") or "").lower()
+                if any(r in mat for r in ("nylon", "polyester", "waterproof", "leather")):
+                    adj += 0.03
+                elif any(v in mat for v in ("suede", "raw silk", "velvet")):
+                    adj -= 0.06
+        # High humidity (>65%): reward breathable relaxed silhouettes
+        if humidity >= 65:
+            for it in items:
+                fit = (getattr(it, "fit", "") or "").lower()
+                if "loose" in fit or "oversized" in fit or "relaxed" in fit:
+                    adj += 0.02
+        # High wind (>20 km/h): reward outerwear
+        if wind_speed >= 20.0:
+            if any(classify_garment(it) == "outerwear" for it in items):
+                adj += 0.04
+
+        return max(0.50, min(1.0, round(base_score + adj, 3)))
 
     def _compute_preference_rotation_bonus(
         self,

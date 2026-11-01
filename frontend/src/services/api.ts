@@ -484,6 +484,114 @@ export const api = {
       };
     },
 
+    async batchUpload(
+      files: File[],
+      metadata?: {
+        category?: string;
+        color?: string;
+        season?: string;
+        occasion?: string;
+      }
+    ): Promise<{
+      batchId: string;
+      status: string;
+      totalItems: number;
+      statusUrl: string;
+    }> {
+      const apiBase = getApiBaseUrl();
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append('files', file);
+      }
+      if (metadata?.category) formData.append('category', metadata.category);
+      if (metadata?.color) formData.append('color', metadata.color);
+      if (metadata?.season) formData.append('season', metadata.season);
+      if (metadata?.occasion) formData.append('occasion', metadata.occasion);
+
+      const headers: Record<string, string> = {};
+      const token = tokenStorage.get();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${apiBase}/clothing/batch-upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        let msg = `${res.status} ${res.statusText}`;
+        try {
+          const err = await res.json();
+          msg = err.detail || err.message || msg;
+        } catch {}
+        throw new ApiError(res.status, msg);
+      }
+
+      const data = await res.json();
+      return {
+        batchId: String(data.batch_id),
+        status: data.status,
+        totalItems: data.total_items,
+        statusUrl: data.status_url,
+      };
+    },
+
+    async getBatchStatus(batchId: string): Promise<{
+      batchId: string;
+      status: string;
+      totalItems: number;
+      completedItems: number;
+      failedItems: number;
+      queuedItems: number;
+      processingItems: number;
+      remainingItems: number;
+      progressPercentage: number;
+      currentProcessingItem?: {
+        clothing_id: string;
+        name: string;
+        sequence_order: number;
+        stage: string;
+      } | null;
+      items: Array<{
+        clothing_id: string;
+        name: string;
+        sequence_order: number;
+        status: string;
+        stage: string;
+        has_processed: boolean;
+        review_required: boolean;
+        original_image_url: string;
+        processed_image_url?: string | null;
+        error?: string | null;
+        duration_seconds: number;
+        quality?: any;
+      }>;
+    }> {
+      const raw = await request<any>(`/clothing/batches/${batchId}`);
+      return {
+        batchId: String(raw.batch_id),
+        status: raw.status,
+        totalItems: raw.total_items,
+        completedItems: raw.completed_items,
+        failedItems: raw.failed_items,
+        queuedItems: raw.queued_items,
+        processingItems: raw.processing_items,
+        remainingItems: raw.remaining_items,
+        progressPercentage: raw.progress_percentage,
+        currentProcessingItem: raw.current_processing_item,
+        items: raw.items || [],
+      };
+    },
+
+    async retryBatchFailed(batchId: string): Promise<any> {
+      return request<any>(`/clothing/batches/${batchId}/retry-failed`, {
+        method: 'POST',
+      });
+    },
+
     async getProcessingStatus(itemId: string): Promise<GarmentProcessingStatus> {
       const raw = await request<any>(`/clothing/${itemId}/processing-status`);
       return {

@@ -16,6 +16,7 @@ import {
   Sliders,
   HelpCircle,
   ShieldAlert,
+  Layers,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -31,6 +32,7 @@ import {
 interface AddClothingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToBatch?: () => void;
 }
 
 // Taxonomy Definitions for Progressive Disclosure
@@ -146,7 +148,11 @@ const STAGES_SEQUENCE: { stage: ProcessingStage; label: string; desc: string }[]
   { stage: 'ready_for_review', label: 'Ready for Review', desc: 'AI classification complete' },
 ];
 
-export const AddClothingModal: React.FC<AddClothingModalProps> = ({ isOpen, onClose }) => {
+export const AddClothingModal: React.FC<AddClothingModalProps> = ({
+  isOpen,
+  onClose,
+  onSwitchToBatch,
+}) => {
   const { refreshData, showToast } = useApp();
 
   // Basic info states
@@ -553,6 +559,19 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({ isOpen, onCl
                 Take Camera Photo
               </Button>
             </div>
+
+            {onSwitchToBatch && (
+              <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={onSwitchToBatch}
+                  className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center justify-center gap-1.5 mx-auto hover:underline"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Have multiple garments? Upload as Batch</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

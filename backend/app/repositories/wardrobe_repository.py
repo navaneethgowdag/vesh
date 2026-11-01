@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from app.models.clothing import Clothing
 from app.models.clothing_analysis import ClothingAnalysis
@@ -12,7 +12,12 @@ class WardrobeRepository:
         self.db = db
 
     def get_by_id(self, item_id: UUID) -> Optional[Clothing]:
-        return self.db.query(Clothing).filter(Clothing.id == item_id).first()
+        return (
+            self.db.query(Clothing)
+            .options(joinedload(Clothing.analysis))
+            .filter(Clothing.id == item_id)
+            .first()
+        )
 
     def list_for_user(
         self,
@@ -28,7 +33,11 @@ class WardrobeRepository:
         limit: int = 100,
         offset: int = 0,
     ) -> List[Clothing]:
-        query = self.db.query(Clothing).filter(Clothing.user_id == user_id)
+        query = (
+            self.db.query(Clothing)
+            .options(joinedload(Clothing.analysis))
+            .filter(Clothing.user_id == user_id)
+        )
 
         if category:
             query = query.filter(or_(Clothing.category.ilike(category), Clothing.subcategory.ilike(category)))

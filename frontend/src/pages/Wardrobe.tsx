@@ -5,10 +5,12 @@ import {
   Shirt,
   Search,
   ArrowUpDown,
+  Layers,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
 import { AddClothingModal } from '../components/wardrobe/AddClothingModal';
+import { BatchUploadModal } from '../components/wardrobe/BatchUploadModal';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
@@ -33,6 +35,7 @@ export const Wardrobe: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'wears' | 'name'>('recent');
 
   const totalItems = wardrobe.length;
@@ -158,6 +161,14 @@ export const Wardrobe: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBatchModalOpen(true)}
+              icon={<Layers className="w-4 h-4" />}
+            >
+              Batch Upload
+            </Button>
+            <Button
               variant="primary"
               size="sm"
               onClick={() => setAddModalOpen(true)}
@@ -246,15 +257,24 @@ export const Wardrobe: React.FC = () => {
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
               Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits and outfit intelligence.
             </p>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setAddModalOpen(true)}
-              className="mt-4"
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Add Garment
-            </Button>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBatchModalOpen(true)}
+                icon={<Layers className="w-4 h-4" />}
+              >
+                Batch Upload
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setAddModalOpen(true)}
+                icon={<Plus className="w-4 h-4" />}
+              >
+                Add Garment
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -268,6 +288,16 @@ export const Wardrobe: React.FC = () => {
       <AddClothingModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
+        onSwitchToBatch={() => {
+          setAddModalOpen(false);
+          setBatchModalOpen(true);
+        }}
+      />
+
+      <BatchUploadModal
+        isOpen={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        onCompleted={refreshData}
       />
     </AppShell>
   );
