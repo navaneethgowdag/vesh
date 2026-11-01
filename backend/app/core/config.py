@@ -54,8 +54,8 @@ def _resolve_once(host: str) -> Optional[str]:
         try:
             resolver = dns.resolver.Resolver(configure=False)
             resolver.nameservers = [server]
-            resolver.timeout = 3.0
-            resolver.lifetime = 5.0
+            resolver.timeout = 2.0
+            resolver.lifetime = 3.0
             answers = resolver.resolve(host, "A")
             for answer in answers:
                 return answer.to_text()

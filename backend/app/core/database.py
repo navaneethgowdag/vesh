@@ -59,7 +59,8 @@ def _activate_fallback() -> None:
     if _using_fallback:
         return
     print("Database: pinned host address failed, falling back to hostname resolution.")
-    _fallback_engine = _build_engine(_HOSTNAME_URL)
+    if _fallback_engine is None:
+        _fallback_engine = _build_engine(_HOSTNAME_URL)
     _using_fallback = True
     _rebuild_session_factory()
 

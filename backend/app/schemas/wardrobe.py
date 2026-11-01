@@ -151,3 +151,40 @@ class ClothingReanalyzeResponse(BaseModel):
     message: str
     prediction: dict = Field(default_factory=dict)
 
+
+class BatchItemStatus(BaseModel):
+    clothing_id: str
+    name: str
+    sequence_order: int = 0
+    status: str
+    stage: str
+    has_processed: bool = False
+    review_required: bool = False
+    original_image_url: str
+    processed_image_url: Optional[str] = None
+    error: Optional[str] = None
+    duration_seconds: float = 0.0
+    quality: Optional[dict] = None
+
+
+class BatchUploadResponse(BaseModel):
+    batch_id: UUID
+    status: str
+    total_items: int
+    status_url: str
+
+
+class BatchStatusResponse(BaseModel):
+    batch_id: str
+    status: str
+    total_items: int
+    completed_items: int
+    failed_items: int
+    queued_items: int
+    processing_items: int
+    remaining_items: int
+    progress_percentage: float
+    current_processing_item: Optional[dict] = None
+    items: List[BatchItemStatus] = Field(default_factory=list)
+
+

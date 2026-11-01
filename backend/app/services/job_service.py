@@ -132,6 +132,8 @@ class JobService:
         self,
         user_id: UUID,
         clothing_id: UUID,
+        batch_id: Optional[UUID] = None,
+        sequence_order: int = 0,
     ) -> BackgroundJob:
         """
         Durable job creation for garment segmentation and catalog generation:
@@ -142,6 +144,9 @@ class JobService:
         """
         job_id = uuid.uuid4()
         payload_ref = {"clothing_id": str(clothing_id)}
+        if batch_id:
+            payload_ref["batch_id"] = str(batch_id)
+            payload_ref["sequence_order"] = sequence_order
         job = BackgroundJob(
             id=job_id,
             user_id=user_id,
