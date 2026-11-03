@@ -195,3 +195,59 @@ class ClothingImageService:
                 ClothingImage.user_id == user_id,
             ).delete()
             self.db.commit()
+
+    def get_or_create_thumbnail(
+        self,
+        clothing_id: UUID,
+        user_id: Optional[UUID] = None,
+        max_size: Tuple[int, int] = (360, 480),
+    ) -> Optional[Tuple[bytes, str]]:
+        """
+        Retrieve or generate on demand a fast WebP thumbnail from the processed (preferred)
+        or original image stored in Neon PostgreSQL BYTEA.
+        Stores generated thumbnail derivative in BYTEA with image_type="thumbnail".
+        """
+        # 1. Try to fetch existing pre-generated thumbnail
+        thumb = self.get_image(clothing_id=clothing_id, user_id=user_id, image_type="thumbnail")
+        if thumb:
+            return thumb
+
+        # 2. Get base image: prioritize processed (transparent catalog) then original
+        base = self.get_image(clothing_id=clothing_id, user_id=user_id, image_type="processed")
+        if not base:
+            base = self.get_image(clothing_id=clothing_id, user_id=user_id, image_type="original")
+
+        if not base:
+            return None
+
+        base_bytes, _ = base
+        try:
+            with Image.open(io.BytesIO(base_bytes)) as pil_img:
+                if pil_img.mode in ("RGBA", "LA") or (pil_img.mode == "P" and "transparency" in pil_img.info):
+                    img_rgba = pil_img.convert("RGBA")
+                else:
+                    img_rgba = pil_img.convert("RGB")
+
+                img_rgba.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
+                out_io = io.BytesIO()
+                img_rgba.save(out_io, format="WEBP", quality=80, method=6)
+                thumb_bytes = out_io.getvalue()
+                mime_type = "image/webp"
+
+                clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
+                if clothing:
+                    self.store_image(
+                        clothing_id=clothing_id,
+                        user_id=clothing.user_id,
+                        image_bytes=thumb_bytes,
+                        image_type="thumbnail",
+                        mime_type=mime_type,
+                        width=img_rgba.width,
+                        height=img_rgba.height,
+                    )
+
+                return thumb_bytes, mime_type
+        except Exception as e:
+            logger.warning(f"[ClothingImageService] Thumbnail generation failed for {clothing_id}: {e}")
+            return base

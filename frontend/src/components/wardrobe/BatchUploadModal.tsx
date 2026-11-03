@@ -15,6 +15,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
+import { optimizeImage, formatBytes } from '../../utils/imageOptimizer';
 
 interface BatchUploadModalProps {
   isOpen: boolean;
@@ -27,6 +28,9 @@ interface LocalFilePreview {
   previewUrl: string;
   name: string;
   sizeFormatted: string;
+  isOptimizing?: boolean;
+  optimizedSizeFormatted?: string;
+  savedPercent?: number;
 }
 
 interface BatchItemProgress {
@@ -133,6 +137,24 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     });
 
     setSelectedFiles((prev) => [...prev, ...newPreviews]);
+
+    // Asynchronously compute client-side WebP optimization metrics for previews
+    toAdd.forEach(async (file) => {
+      try {
+        const opt = await optimizeImage(file, { preset: 'thumbnail' });
+        setSelectedFiles((curr) =>
+          curr.map((item) =>
+            item.file === file
+              ? {
+                  ...item,
+                  optimizedSizeFormatted: formatBytes(opt.optimizedSize),
+                  savedPercent: Math.round(opt.compressionRatio * 100),
+                }
+              : item
+          )
+        );
+      } catch {}
+    });
   };
 
   const removeFile = (index: number) => {
@@ -378,7 +400,14 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                         <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                           {item.name}
                         </p>
-                        <p className="text-[10px] text-zinc-400">{item.sizeFormatted}</p>
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                          <span>{item.sizeFormatted}</span>
+                          {item.savedPercent !== undefined && item.savedPercent > 0 && (
+                            <span className="text-emerald-500 font-semibold">
+                              -{item.savedPercent}%
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"

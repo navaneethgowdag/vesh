@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime, timezone
-from PIL import Image
+from PIL import Image, ImageOps
 from sqlalchemy.orm import Session
 
 from app.models.clothing import Clothing
@@ -13,7 +13,6 @@ from app.services.clothing_image_service import ClothingImageService
 from app.services.garment_segmentation_service import garment_segmentation_service
 from app.services.image_cleanup_service import image_cleanup_service
 from app.services.image_quality_service import quality_service
-from app.ai.clothing_classifier import clothing_classifier
 from app.services.garment_classifier_service import garment_classifier
 from app.services.clothing_prediction_service import prediction_service
 
@@ -26,12 +25,12 @@ class ClothingProcessingService:
     Executes:
     1. Worker Claim & State Initialization
     2. Original Image Retrieval from Neon BYTEA
-    3. Working Dimension Pre-Scaling (max 1600px for CPU/RAM optimization)
-    4. Garment Segmentation & Color-Guarded Skin Suppression
-    5. Neutral Background Catalog Image Composition (12% margin)
-    6. Fast WebP Compression (method=3) & Neon PostgreSQL BYTEA Storage
-    7. Lightweight Storage Verification (metadata/count check without binary round-trip)
-    8. AI Garment Understanding & Attribute Extraction
+    3. EXIF Orientation Correction & Input Validation
+    4. Working Dimension Pre-Scaling (max 1600px for CPU/RAM optimization)
+    5. Garment Segmentation & Color-Guarded Skin Suppression
+    6. Neutral Background Catalog Image Composition (12% margin, aspect ratio preserved)
+    7. Fast WebP Compression (method=3) & Neon PostgreSQL BYTEA Storage
+    8. Specialized Computer Vision Garment Understanding & Attribute Extraction
     9. Ready-for-Review Transition & Persisted Metrics
     """
 
@@ -127,39 +126,27 @@ class ClothingProcessingService:
         logger.info(f"[Pipeline:ImageRetrieved] clothing_id={clothing_id}, size={len(image_bytes)} bytes in {round(time.time() - t_fetch, 3)}s")
 
         try:
-            # 2. Stage: Analyzing clothing & working dimension pre-scaling
+            # 2. Stage: Image orientation correction & input validation
             t_stage = time.time()
             self._update_metadata(clothing, status="processing", stage="analyzing_clothing", commit=True)
-            pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            
+            raw_img = Image.open(io.BytesIO(image_bytes))
+            # Handle mobile EXIF orientation tag
+            pil_img = ImageOps.exif_transpose(raw_img).convert("RGB")
 
-            # Optimization: Pre-downscale high-res images (e.g. 12MP/48MP mobile photos) to 1600px max dimension.
-            # Preserves pristine detail for 1024px catalog while speeding up CV2/morphological CPU ops by 4x-8x.
             orig_w, orig_h = pil_img.size
+            if orig_w < 32 or orig_h < 32:
+                raise ValueError(f"Image dimensions too small: {orig_w}x{orig_h}. Minimum required is 32x32.")
+
+            # Working resolution optimization: max 1600px
             if max(orig_w, orig_h) > 1600:
                 scale = 1600.0 / max(orig_w, orig_h)
                 pil_img = pil_img.resize((int(orig_w * scale), int(orig_h * scale)), Image.Resampling.LANCZOS)
                 logger.info(f"[Pipeline:PreScale] clothing_id={clothing_id} scaled from {orig_w}x{orig_h} to {pil_img.size[0]}x{pil_img.size[1]}")
 
-            # Quick preliminary fashion metadata
-            try:
-                classif_res = clothing_classifier.predict(pil_img)
-                analysis = self.db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing_id).first()
-                if analysis:
-                    analysis.detected_colors = classif_res.get("dominant_colors", [])
-                    analysis.detected_pattern = classif_res.get("pattern", "Solid")
-                    analysis.detected_material = classif_res.get("material", "Cotton")
-                    analysis.detected_fit = classif_res.get("fit", "Regular")
-                    analysis.style_tags = classif_res.get("style_tags", [])
-                    analysis.season_tags = classif_res.get("season_tags", [])
-                    analysis.occasion_tags = classif_res.get("occasion_tags", [])
-                    analysis.confidence = classif_res.get("confidence", 0.9)
-                    self.db.commit()
-            except Exception as ce:
-                logger.warning(f"Classification metadata extraction warning: {ce}")
-
             t_analysis = round(time.time() - t_stage, 3)
 
-            # 3. Stage: Removing background
+            # 3. Stage: Removing background using garment segmentation
             t_stage = time.time()
             self._update_metadata(clothing, status="processing", stage="removing_background", commit=True)
             raw_mask, seg_meta = garment_segmentation_service.segment(pil_img)
@@ -197,19 +184,18 @@ class ClothingProcessingService:
                 height=catalog_img.height,
             )
 
-            # Optimization: Lightweight verification via metadata/existence check instead of re-downloading entire 1MB binary
             has_proc = self.image_service.has_image(clothing_id, user_id, "processed")
             if not has_proc and not stored_record:
                 raise RuntimeError("Processed image verification failed: binary record not persisted in Neon.")
             t_storage = round(time.time() - t_stage, 3)
 
-            # 8. Stage: AI Garment Understanding and Structured Classification on isolated catalog garment
+            # 8. Stage: Specialized Fashion Computer Vision Attribute Extraction
+            # Pass transparent_img so color, pattern, and geometry analyze the isolated centered garment with exact alpha mask
             t_stage = time.time()
             self._update_metadata(clothing, status="processing", stage="understanding_garment", commit=True)
             try:
                 prediction_res = garment_classifier.analyze_garment(
-                    image_input=catalog_img,
-                    mask_input=refined_mask,
+                    image_input=transparent_img,
                     image_source="processed",
                 )
                 prediction_service.save_prediction(
@@ -219,7 +205,7 @@ class ClothingProcessingService:
                     user_id=user_id,
                 )
             except Exception as pe:
-                logger.warning(f"[Pipeline] AI classification warning for clothing {clothing_id}: {pe}")
+                logger.warning(f"[Pipeline] Specialized CV classification warning for clothing {clothing_id}: {pe}")
             t_und = round(time.time() - t_stage, 3)
 
             total_duration = round(time.time() - t0, 2)
@@ -239,8 +225,8 @@ class ClothingProcessingService:
 
             logger.info(
                 f"[Pipeline:Timings] clothing_id={clothing_id} => "
-                f"analysis={t_analysis}s, seg={t_seg}s, comp={t_comp}s, "
-                f"storage={t_storage}s, understand={t_und}s | TOTAL={total_duration}s. Stage: ready_for_review."
+                f"prep={t_analysis}s, seg={t_seg}s, comp={t_comp}s, "
+                f"storage={t_storage}s, cv_understand={t_und}s | TOTAL={total_duration}s. Stage: ready_for_review."
             )
             return {
                 "status": final_status,

@@ -21,6 +21,8 @@ import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
 import { Occasion, CreatePollPayload } from '../types';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
+import { optimizeImage, formatBytes } from '../utils/imageOptimizer';
+import { perfMonitor } from '../utils/performanceMonitor';
 
 const OCCASIONS: Occasion[] = [
   'Casual Daily',
@@ -54,6 +56,13 @@ export const CreatePost: React.FC = () => {
   const [showWardrobePicker, setShowWardrobePicker] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<{
+    originalSize: string;
+    optimizedSize: string;
+    savedPercent: number;
+    durationMs: number;
+  } | null>(null);
 
   // Poll state
   const [includePoll, setIncludePoll] = useState(false);
@@ -94,27 +103,74 @@ export const CreatePost: React.FC = () => {
       return;
     }
 
-    const MAX_SIZE_MB = 10;
+    const MAX_SIZE_MB = 12;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       showToast(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max size is ${MAX_SIZE_MB}MB.`, 'info');
       return;
     }
 
-    setIsUploadingImage(true);
+    // Immediate local preview so the interface reacts instantly
+    const instantLocalUrl = URL.createObjectURL(file);
+    setImage(instantLocalUrl);
+
+    // Client-side adaptive optimization
+    setIsCompressingImage(true);
+    let fileToUpload: File = file;
+    let originalBytes = file.size;
+    let optimizedBytes = file.size;
+    let savedPercent = 0;
+    let compressionTime = 0;
+
     try {
-      const uploaded = await api.media.upload(file);
+      const preset = publishType === 'moment' ? 'moment' : 'feed';
+      const result = await optimizeImage(file, { preset });
+      fileToUpload = result.optimizedFile;
+      originalBytes = result.originalSize;
+      optimizedBytes = result.optimizedSize;
+      savedPercent = Math.round(result.compressionRatio * 100);
+      compressionTime = result.processingTimeMs;
+
+      setCompressionStats({
+        originalSize: formatBytes(result.originalSize),
+        optimizedSize: formatBytes(result.optimizedSize),
+        savedPercent,
+        durationMs: compressionTime,
+      });
+
+      perfMonitor.recordImageOptimization({
+        fileName: file.name,
+        originalBytes,
+        optimizedBytes,
+        savedPercent,
+        compressionDurationMs: compressionTime,
+      });
+    } catch (optErr) {
+      console.warn('[CreatePost] Client-side optimization fallback to original:', optErr);
+    } finally {
+      setIsCompressingImage(false);
+    }
+
+    // Upload optimized asset
+    setIsUploadingImage(true);
+    const uploadTimerKey = `upload_${Date.now()}`;
+    perfMonitor.startTimer(uploadTimerKey);
+
+    try {
+      const uploaded = await api.media.upload(fileToUpload);
       setImage(uploaded.image_url);
-      showToast('Image uploaded and optimized to WebP', 'success');
+      const uploadElapsed = perfMonitor.stopTimer(uploadTimerKey);
+
+      if (savedPercent > 0) {
+        showToast(
+          `Image optimized (${formatBytes(originalBytes)} → ${formatBytes(optimizedBytes)}, -${savedPercent}%)`,
+          'success'
+        );
+      } else {
+        showToast('Image uploaded successfully', 'success');
+      }
     } catch {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          setImage(result);
-          showToast('Image loaded locally', 'info');
-        }
-      };
-      reader.readAsDataURL(file);
+      // Keep local preview if offline/fallback
+      showToast('Image saved locally (offline preview)', 'info');
     } finally {
       setIsUploadingImage(false);
     }
@@ -338,9 +394,30 @@ export const CreatePost: React.FC = () => {
                     alt="Outfit capture"
                     className="w-full h-full object-cover"
                   />
+                  {/* Real-time Compression & Upload Badge */}
+                  <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 pointer-events-none">
+                    {isCompressingImage && (
+                      <span className="text-[11px] font-medium bg-black/80 text-amber-300 px-2.5 py-1 rounded backdrop-blur-sm border border-amber-500/30">
+                        ⚡ Optimizing WebP...
+                      </span>
+                    )}
+                    {isUploadingImage && !isCompressingImage && (
+                      <span className="text-[11px] font-medium bg-black/80 text-sky-300 px-2.5 py-1 rounded backdrop-blur-sm border border-sky-500/30">
+                        ☁️ Uploading to storage...
+                      </span>
+                    )}
+                    {compressionStats && !isCompressingImage && !isUploadingImage && (
+                      <span className="text-[11px] font-medium bg-black/80 text-emerald-300 px-2.5 py-1 rounded backdrop-blur-sm border border-emerald-500/30">
+                        ⚡ {compressionStats.originalSize} → {compressionStats.optimizedSize} (-{compressionStats.savedPercent}%)
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setImage('')}
+                    onClick={() => {
+                      setImage('');
+                      setCompressionStats(null);
+                    }}
                     className="absolute top-3 right-3 p-2 min-h-[44px] min-w-[44px] rounded-md bg-black/70 text-white hover:bg-rose-600 transition-colors flex items-center justify-center cursor-pointer"
                     title="Remove image"
                   >

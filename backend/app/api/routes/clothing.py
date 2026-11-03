@@ -1,6 +1,7 @@
 import io
 import uuid
 import logging
+import hashlib
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
@@ -31,6 +32,7 @@ from app.schemas.wardrobe import (
     ClothingAttributesResponse,
     ClothingFinalizeRequest,
     ClothingReanalyzeResponse,
+    ClothingAvatarAttributesResponse,
     BatchUploadResponse,
     BatchStatusResponse,
 )
@@ -546,6 +548,40 @@ def get_processed_image(
     )
 
 
+@router.get("/{item_id}/image/thumbnail")
+def get_thumbnail_image(
+    item_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """
+    Serve lightweight 360x480 WebP thumbnail binary stream from Neon PostgreSQL BYTEA.
+    Generates on-demand and caches to BYTEA if not yet present.
+    Includes immutable cache headers and ETag for instant subsequent loads.
+    """
+    image_service = ClothingImageService(db)
+    user_id = current_user.id if current_user else None
+    res = image_service.get_or_create_thumbnail(clothing_id=item_id, user_id=user_id)
+    if not res:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Thumbnail image not found",
+        )
+
+    image_bytes, mime_type = res
+    etag = f'"{hashlib.md5(image_bytes).hexdigest()}"'
+
+    return Response(
+        content=image_bytes,
+        media_type=mime_type,
+        headers={
+            "Cache-Control": "public, max-age=604800, immutable",
+            "ETag": etag,
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
+
 @router.post(
     "/{item_id}/image/accept",
     response_model=ClothingImageActionResponse,
@@ -820,3 +856,27 @@ def reanalyze_clothing_item(
         message="Garment reanalyzed successfully.",
         prediction=saved,
     )
+
+
+@router.get(
+    "/{item_id}/avatar-attributes",
+    response_model=ClothingAvatarAttributesResponse,
+)
+def get_clothing_avatar_attributes(
+    item_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Expose finalized attributes formatted specifically for 2D avatar sprite selection and configuration.
+    Includes category, subcategory, dominant color, secondary colors, pattern,
+    silhouette, garment-specific attributes, processed image reference, and sprite key.
+    """
+    clothing = db.query(Clothing).filter(Clothing.id == item_id).first()
+    if not clothing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clothing item not found")
+    if clothing.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this clothing item")
+
+    return prediction_service.get_avatar_attributes(db, clothing, current_user.id)
+

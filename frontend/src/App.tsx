@@ -1,193 +1,254 @@
-import React from 'react';
+import React, { Suspense, lazy, Component, ErrorInfo, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth/ProtectedRoute';
+import { LuxuryPageLoader } from './components/ui/LuxuryPageLoader';
 
-// Pages
+// Core pages (eager loaded for instant first paint and rock-solid navigation)
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
-import { Onboarding } from './pages/Onboarding';
 import { Home } from './pages/Home';
-import { DailyFit } from './pages/DailyFit';
-import { Explore } from './pages/Explore';
 import { Wardrobe } from './pages/Wardrobe';
-import { ClothingDetail } from './pages/ClothingDetail';
 import { CreatePost } from './pages/CreatePost';
-import { Saved } from './pages/Saved';
-import { Notifications } from './pages/Notifications';
-import { Profile } from './pages/Profile';
-import { UserProfile } from './pages/UserProfile';
-import { Settings } from './pages/Settings';
-import { Calendar } from './pages/Calendar';
-import { Inbox } from './pages/Inbox';
-import { CommunityDetail } from './pages/CommunityDetail';
-import { NotFound } from './pages/NotFound';
+import { Explore } from './pages/Explore';
+import { DailyFit } from './pages/DailyFit';
 import { OAuthCallback } from './pages/OAuthCallback';
+import { NotFound } from './pages/NotFound';
+
+// Code-split auxiliary feature routes (loaded on-demand as separate chunks)
+const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
+const ClothingDetail = lazy(() => import('./pages/ClothingDetail').then((m) => ({ default: m.ClothingDetail })));
+const Saved = lazy(() => import('./pages/Saved').then((m) => ({ default: m.Saved })));
+const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then((m) => ({ default: m.UserProfile })));
+const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
+const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
+const Inbox = lazy(() => import('./pages/Inbox').then((m) => ({ default: m.Inbox })));
+const CommunityDetail = lazy(() => import('./pages/CommunityDetail').then((m) => ({ default: m.CommunityDetail })));
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, errorMessage: error?.message || 'An unexpected error occurred.' };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[TailorBird:ErrorBoundary] Caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-sand-50 dark:bg-charcoal-950 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+            Something went wrong
+          </h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-sm mb-6">
+            {this.state.errorMessage}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, errorMessage: '' });
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold text-xs tracking-wider uppercase transition-opacity hover:opacity-90 active:scale-95"
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AppProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public landing */}
-            <Route path="/" element={<Landing />} />
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Suspense fallback={<LuxuryPageLoader />}>
+              <Routes>
+                {/* Public landing */}
+                <Route path="/" element={<Landing />} />
 
-            {/* Auth routes (redirects to /home if already logged in) */}
-            <Route path="/auth/callback" element={<OAuthCallback />} />
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute>
-                  <Login />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <PublicOnlyRoute>
-                  <Signup />
-                </PublicOnlyRoute>
-              }
-            />
+                {/* Auth routes (redirects to /home if already logged in) */}
+                <Route path="/auth/callback" element={<OAuthCallback />} />
+                <Route
+                  path="/login"
+                  element={
+                    <PublicOnlyRoute>
+                      <Login />
+                    </PublicOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/signup"
+                  element={
+                    <PublicOnlyRoute>
+                      <Signup />
+                    </PublicOnlyRoute>
+                  }
+                />
 
-            {/* Protected Application Routes */}
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <Onboarding />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/daily-fit"
-              element={
-                <ProtectedRoute>
-                  <DailyFit />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <ProtectedRoute>
-                  <Calendar />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/explore"
-              element={
-                <ProtectedRoute>
-                  <Explore />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/communities/:slug"
-              element={
-                <ProtectedRoute>
-                  <CommunityDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community/:slug"
-              element={
-                <ProtectedRoute>
-                  <CommunityDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inbox"
-              element={
-                <ProtectedRoute>
-                  <Inbox />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/wardrobe"
-              element={
-                <ProtectedRoute>
-                  <Wardrobe />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/wardrobe/:id"
-              element={
-                <ProtectedRoute>
-                  <ClothingDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/create"
-              element={
-                <ProtectedRoute>
-                  <CreatePost />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/saved"
-              element={
-                <ProtectedRoute>
-                  <Saved />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <Notifications />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile/:username"
-              element={
-                <ProtectedRoute>
-                  <UserProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
+                {/* Core Protected Application Routes */}
+                <Route
+                  path="/home"
+                  element={
+                    <ProtectedRoute>
+                      <Home />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wardrobe"
+                  element={
+                    <ProtectedRoute>
+                      <Wardrobe />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/create"
+                  element={
+                    <ProtectedRoute>
+                      <CreatePost />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/explore"
+                  element={
+                    <ProtectedRoute>
+                      <Explore />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/daily-fit"
+                  element={
+                    <ProtectedRoute>
+                      <DailyFit />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Catch-all 404 Page */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+                {/* Auxiliary Feature Routes (Code-Split) */}
+                <Route
+                  path="/onboarding"
+                  element={
+                    <ProtectedRoute>
+                      <Onboarding />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/calendar"
+                  element={
+                    <ProtectedRoute>
+                      <Calendar />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/communities/:slug"
+                  element={
+                    <ProtectedRoute>
+                      <CommunityDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/community/:slug"
+                  element={
+                    <ProtectedRoute>
+                      <CommunityDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/inbox"
+                  element={
+                    <ProtectedRoute>
+                      <Inbox />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wardrobe/:id"
+                  element={
+                    <ProtectedRoute>
+                      <ClothingDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/saved"
+                  element={
+                    <ProtectedRoute>
+                      <Saved />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile/:username"
+                  element={
+                    <ProtectedRoute>
+                      <UserProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all 404 Page */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </ErrorBoundary>
       </AppProvider>
     </ThemeProvider>
   );

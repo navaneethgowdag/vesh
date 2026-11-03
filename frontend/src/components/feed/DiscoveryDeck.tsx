@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { X, Heart, Sparkles, Compass, RotateCcw, Clock, PlusCircle } from 'lucide-react';
+import { X, Heart, Sparkles, Compass, RotateCcw, Clock, PlusCircle, Maximize2 } from 'lucide-react';
 import { OutfitMoment } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 import { PollWidget } from '../social/PollWidget';
+import { MomentViewerModal } from './MomentViewerModal';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface DiscoveryDeckProps {
   moments: OutfitMoment[];
@@ -28,6 +30,8 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   // Track session skipped or swiped IDs so they don't repeat in this session
   const [sessionSwipedIds, setSessionSwipedIds] = useState<Set<string>>(new Set());
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   // Filter moments to only unswiped items
   const eligibleMoments = moments.filter((m) => !sessionSwipedIds.has(m.id));
@@ -274,10 +278,26 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
             {/* Gradient Overlays for Readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
 
-            {/* Top Expiration Badge */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
-              <Clock className="w-3 h-3 text-zinc-300" />
-              <span>{formatTimeRemaining(currentMoment.timeRemainingSeconds ?? currentMoment.secondsRemaining ?? 0)}</span>
+            {/* Top Expiration Badge & Full Story Trigger */}
+            <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
+                <Clock className="w-3 h-3 text-zinc-300" />
+                <span>{formatTimeRemaining(currentMoment.timeRemainingSeconds ?? currentMoment.secondsRemaining ?? 0)}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewerIndex(0);
+                  setIsViewerOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/70 hover:bg-black/90 backdrop-blur-md border border-white/20 text-white text-xs font-semibold transition-colors pointer-events-auto"
+                title="Open 60 FPS Story Viewer"
+              >
+                <Maximize2 className="w-3 h-3 text-zinc-200" />
+                <span>Story</span>
+              </button>
             </div>
 
             {/* Swipe Indicators */}
@@ -370,6 +390,15 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
           <Heart className="w-6 h-6 fill-current" />
         </button>
       </div>
+
+      {/* 60 FPS Story Viewer Modal */}
+      <MomentViewerModal
+        isOpen={isViewerOpen}
+        moments={eligibleMoments}
+        initialIndex={viewerIndex}
+        onClose={() => setIsViewerOpen(false)}
+        onLike={onLike}
+      />
     </div>
   );
 };

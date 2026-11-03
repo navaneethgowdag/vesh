@@ -152,6 +152,24 @@ class ClothingReanalyzeResponse(BaseModel):
     prediction: dict = Field(default_factory=dict)
 
 
+class ClothingAvatarAttributesResponse(BaseModel):
+    wardrobe_item_id: str
+    category: str
+    subcategory: str
+    category_group: str = "western"
+    dominant_color: str
+    primary_hex: str
+    secondary_colors: List[str] = Field(default_factory=list)
+    pattern: str = "solid"
+    silhouette: str = "regular"
+    fit: str = "regular"
+    garment_specific: dict = Field(default_factory=dict)
+    processed_image_url: str
+    avatar_sprite_key: str
+    avatar_color_tint: str
+    is_finalized: bool = False
+
+
 class BatchItemStatus(BaseModel):
     clothing_id: str
     name: str

@@ -833,6 +833,10 @@ export const api = {
         method: 'POST',
       });
     },
+
+    async getAvatarAttributes(itemId: string): Promise<any> {
+      return request<any>('/clothing/' + itemId + '/avatar-attributes');
+    },
   },
 
   // --- POSTS / SOCIAL FEED ---

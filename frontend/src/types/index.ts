@@ -543,6 +543,7 @@ export interface OutfitMoment {
   imageUrl: string;
   caption?: string;
   occasion?: string;
+  location?: string;
   tags?: string[];
   createdAt: string;
   expiresAt: string;

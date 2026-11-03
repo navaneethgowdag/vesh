@@ -399,5 +399,52 @@ class ClothingPredictionService:
         db.commit()
         return self.get_attributes(db, clothing, user_id)
 
+    def get_avatar_attributes(
+        self,
+        db: Session,
+        clothing: Clothing,
+        user_id: uuid.UUID,
+    ) -> Dict[str, Any]:
+        """
+        Expose finalized attributes needed for future 2D avatar mapping:
+        category, subcategory, dominant color, secondary colors, pattern,
+        silhouette, garment-specific attributes, processed image reference, wardrobe item ID.
+        """
+        attrs_data = self.get_attributes(db, clothing, user_id)
+        current = attrs_data.get("current_attributes", {})
+        cat_specific = current.get("category_specific", {})
+
+        cat = (current.get("category") or clothing.category or "shirt").lower()
+        subcat = (current.get("subcategory") or clothing.subcategory or "casual_shirt").lower()
+        color = current.get("primary_color") or clothing.color or "Black"
+        color_hex = current.get("primary_hex") or "#121212"
+        secondary_color = current.get("secondary_color") or clothing.secondary_color
+        secondary_colors = [secondary_color] if secondary_color else []
+        pattern = current.get("pattern") or clothing.pattern or "solid"
+        silhouette = current.get("silhouette") or "regular"
+
+        # Determine 2D avatar sprite key
+        sleeve = cat_specific.get("sleeve_type") or "regular"
+        neckline = cat_specific.get("neckline") or "regular"
+        sprite_key = f"{cat}_{subcat}_{sleeve}_{silhouette}".replace(" ", "_").lower()
+
+        return {
+            "wardrobe_item_id": str(clothing.id),
+            "category": cat,
+            "subcategory": subcat,
+            "category_group": current.get("category_group", "western"),
+            "dominant_color": color,
+            "primary_hex": color_hex,
+            "secondary_colors": secondary_colors,
+            "pattern": pattern,
+            "silhouette": silhouette,
+            "fit": current.get("fit", "regular"),
+            "garment_specific": cat_specific,
+            "processed_image_url": f"/api/v1/clothing/{clothing.id}/image/processed",
+            "avatar_sprite_key": sprite_key,
+            "avatar_color_tint": color_hex,
+            "is_finalized": attrs_data.get("is_finalized", False),
+        }
+
 
 prediction_service = ClothingPredictionService()
