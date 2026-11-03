@@ -167,8 +167,28 @@ class Settings(BaseSettings):
     @property
     def google_redirect_uri(self) -> str:
         """Normalized OAuth callback redirect URI."""
+        is_render_or_prod = (
+            self.APP_ENV.lower() == "production"
+            or os.getenv("RENDER") == "true"
+            or bool(os.getenv("RENDER_EXTERNAL_URL"))
+            or bool(os.getenv("RENDER_SERVICE_ID"))
+        )
+
         if self.GOOGLE_REDIRECT_URI and self.GOOGLE_REDIRECT_URI.strip():
-            return self.GOOGLE_REDIRECT_URI.strip()
+            raw_uri = self.GOOGLE_REDIRECT_URI.strip()
+            # If in production or on Render, prevent accidental localhost redirects
+            if is_render_or_prod and ("localhost" in raw_uri or "127.0.0.1" in raw_uri):
+                backend = (os.getenv("RENDER_EXTERNAL_URL") or "https://vesh-backend-5sx2.onrender.com").rstrip("/")
+                return f"{backend}/api/v1/auth/google/callback"
+            return raw_uri
+
+        render_external = os.getenv("RENDER_EXTERNAL_URL")
+        if render_external and render_external.strip():
+            return f"{render_external.strip().rstrip('/')}/api/v1/auth/google/callback"
+
+        if is_render_or_prod:
+            return "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+
         backend = (self.BACKEND_URL or "http://localhost:8000").rstrip("/")
         return f"{backend}/api/v1/auth/google/callback"
 

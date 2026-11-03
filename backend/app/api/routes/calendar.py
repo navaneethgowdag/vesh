@@ -64,6 +64,7 @@ def get_google_calendar_connect_url(
         user_id=current_user.id,
         destination=destination,
         frontend_url=resolved_frontend,
+        request=request,
     )
     from urllib.parse import parse_qsl
     parsed = urlsplit(url)
@@ -73,6 +74,7 @@ def get_google_calendar_connect_url(
 
 @router.get("/google/callback")
 async def google_calendar_oauth_callback(
+    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
@@ -118,9 +120,14 @@ async def google_calendar_oauth_callback(
             status_code=status.HTTP_302_FOUND,
         )
 
+    cal_redirect_uri = state_data.get("redirect_uri") or service.resolve_redirect_uri(
+        frontend_url=candidate_origin,
+        request=request,
+    )
+
     try:
         user_uuid = UUID(user_id_str)
-        await service.complete_connection(user_uuid, code)
+        await service.complete_connection(user_uuid, code, redirect_uri=cal_redirect_uri)
 
         # Trigger non-blocking initial sync
         try:

@@ -342,8 +342,12 @@ export const api = {
     },
 
     async getGoogleAuthUrl(destination: string = '/home', action: string = 'login'): Promise<{ authorization_url: string; state: string }> {
-      const p = new URLSearchParams({ destination, action });
-      return request<{ authorization_url: string; state: string }>(`/auth/google/url?${p.toString()}`);
+      const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+      const params = new URLSearchParams({ destination, action });
+      if (origin) {
+        params.set('frontend_url', origin);
+      }
+      return request<{ authorization_url: string; state: string }>(`/auth/google/url?${params.toString()}`);
     },
 
     async exchangeGoogleTicket(ticket: string): Promise<{ access_token: string; user_id: string; username: string; destination?: string }> {
@@ -1906,7 +1910,11 @@ export const api = {
 
     // --- Google Calendar Endpoints ---
     async getGoogleCalendarConnectUrl(destination: string = '/calendar'): Promise<{ authorization_url: string; state: string }> {
+      const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
       const params = new URLSearchParams({ destination });
+      if (origin) {
+        params.set('frontend_url', origin);
+      }
       return request<{ authorization_url: string; state: string }>(`/calendar/google/connect?${params.toString()}`);
     },
 

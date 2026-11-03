@@ -651,3 +651,112 @@ def test_id_token_validation_invalid_issuer():
     finally:
         db.close()
 
+
+def test_dynamic_redirect_uri_production_frontend():
+    """Verify that production frontend origin (tailorbird.tech) uses production Render callback URI."""
+    resp = client.get("/api/v1/auth/google/url?destination=/home&action=login&frontend_url=https://www.tailorbird.tech")
+    assert resp.status_code == 200
+    data = resp.json()
+    auth_url = data["authorization_url"]
+    parsed = urlparse(auth_url)
+    q = parse_qs(parsed.query)
+
+    expected_prod_callback = "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+    assert q["redirect_uri"][0] == expected_prod_callback, f"Expected {expected_prod_callback}, got {q['redirect_uri'][0]}"
+
+    # Verify state JWT contains redirect_uri
+    state_token = q["state"][0]
+    decoded = jwt.decode(state_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    assert decoded["redirect_uri"] == expected_prod_callback
+    assert decoded["frontend_url"] == "https://www.tailorbird.tech"
+
+
+def test_dynamic_redirect_uri_referer_header():
+    """Verify that Referer header with tailorbird.tech routes callback to production Render backend."""
+    resp = client.get(
+        "/api/v1/auth/google/url?destination=/home&action=login",
+        headers={"referer": "https://tailorbird.tech/login"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    parsed = urlparse(data["authorization_url"])
+    q = parse_qs(parsed.query)
+
+    expected_prod_callback = "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+    assert q["redirect_uri"][0] == expected_prod_callback
+
+    decoded = jwt.decode(q["state"][0], settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    assert decoded["redirect_uri"] == expected_prod_callback
+
+
+def test_dynamic_redirect_uri_localhost_frontend():
+    """Verify that localhost frontend routes callback to localhost backend."""
+    resp = client.get("/api/v1/auth/google/url?destination=/wardrobe&frontend_url=http://localhost:5173")
+    assert resp.status_code == 200
+    data = resp.json()
+    parsed = urlparse(data["authorization_url"])
+    q = parse_qs(parsed.query)
+
+    expected_local = "http://localhost:8000/api/v1/auth/google/callback"
+    assert q["redirect_uri"][0] == expected_local
+
+    decoded = jwt.decode(q["state"][0], settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    assert decoded["redirect_uri"] == expected_local
+
+
+def test_render_environment_override():
+    """Verify that Render environment variables force production callback even if GOOGLE_REDIRECT_URI has localhost."""
+    import os
+    from app.services.google_oauth_service import resolve_oauth_redirect_uri
+
+    with patch.dict(os.environ, {"RENDER": "true", "RENDER_EXTERNAL_URL": "https://vesh-backend-custom.onrender.com"}):
+        resolved = resolve_oauth_redirect_uri(frontend_url=None)
+        assert resolved == "https://vesh-backend-custom.onrender.com/api/v1/auth/google/callback"
+
+    with patch.dict(os.environ, {"RENDER": "true"}, clear=False):
+        resolved = resolve_oauth_redirect_uri(frontend_url="https://tailorbird.tech")
+        assert resolved == "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+
+
+def test_oauth_callback_uses_state_redirect_uri():
+    """Verify that the OAuth callback extracts redirect_uri from the signed state and passes it to token exchange."""
+    db = SessionLocal()
+    try:
+        service = GoogleOAuthService(db)
+        custom_redirect = "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+        state = service.generate_state_token(
+            destination="/home",
+            action="login",
+            frontend_url="https://www.tailorbird.tech",
+            redirect_uri=custom_redirect,
+        )
+
+        mock_token_data = {
+            "id_token": "mock.id.token",
+            "access_token": "mock_access_token",
+            "expires_in": 3600,
+        }
+        mock_id_info = {
+            "sub": f"sub-state-test-{uuid.uuid4().hex[:8]}",
+            "email": f"state_test_{uuid.uuid4().hex[:8]}@example.com",
+            "name": "State Test User",
+            "email_verified": True,
+            "iss": "https://accounts.google.com",
+        }
+
+        with patch.object(GoogleOAuthService, "exchange_code_for_tokens", new_callable=AsyncMock) as mock_exchange:
+            mock_exchange.return_value = mock_token_data
+            with patch.object(GoogleOAuthService, "verify_id_token", return_value=mock_id_info):
+                resp = client.get(
+                    f"/api/v1/auth/google/callback?code=mock_code_abc&state={state}",
+                    follow_redirects=False,
+                )
+                assert resp.status_code in (302, 307)
+                location = resp.headers["location"]
+                assert "https://www.tailorbird.tech/auth/callback?ticket=" in location
+                # Verify that exchange_code_for_tokens was called with the exact redirect_uri from state
+                mock_exchange.assert_called_once_with("mock_code_abc", redirect_uri=custom_redirect)
+    finally:
+        db.close()
+
+

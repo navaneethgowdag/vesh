@@ -21,6 +21,8 @@ from app.models.learned_preference import LearnedPreference
 from app.repositories.calendar_repository import CalendarRepository
 from app.services.event_context_service import EventContextService
 
+from app.services.google_oauth_service import resolve_oauth_redirect_uri
+
 logger = logging.getLogger(__name__)
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -67,11 +69,19 @@ class GoogleCalendarService:
     # OAuth Connection Lifecycle
     # --------------------------------------------------------------------------
 
+    def resolve_redirect_uri(
+        self,
+        frontend_url: Optional[str] = None,
+        request: Optional[Any] = None,
+    ) -> str:
+        return resolve_oauth_redirect_uri(frontend_url=frontend_url, request=request)
+
     def generate_connect_url(
         self,
         user_id: UUID,
         destination: str = "/calendar",
         frontend_url: Optional[str] = None,
+        request: Optional[Any] = None,
     ) -> str:
         """
         Generates Google OAuth 2.0 authorization URL for incremental Calendar access.
@@ -85,6 +95,7 @@ class GoogleCalendarService:
 
         safe_dest = destination if destination.startswith("/") and not destination.startswith("//") else "/calendar"
         safe_frontend = frontend_url.rstrip("/") if _is_allowed_frontend_origin(frontend_url) else None
+        resolved_redirect = resolve_oauth_redirect_uri(frontend_url=frontend_url, request=request)
 
         state_payload = {
             "csrf": secrets.token_urlsafe(24),
@@ -92,13 +103,14 @@ class GoogleCalendarService:
             "action": "connect_calendar",
             "user_id": str(user_id),
             "frontend_url": safe_frontend,
+            "redirect_uri": resolved_redirect,
             "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
         }
         signed_state = jwt.encode(state_payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": settings.google_redirect_uri,
+            "redirect_uri": resolved_redirect,
             "response_type": "code",
             "scope": CALENDAR_OAUTH_SCOPES,
             "state": signed_state,
@@ -119,7 +131,7 @@ class GoogleCalendarService:
                 detail="Invalid or expired calendar OAuth state parameter.",
             )
 
-    async def exchange_code(self, code: str) -> Dict[str, Any]:
+    async def exchange_code(self, code: str, redirect_uri: Optional[str] = None) -> Dict[str, Any]:
         """Exchanges authorization code for Google access and refresh tokens."""
         if not settings.GOOGLE_CLIENT_SECRET or not settings.GOOGLE_CLIENT_ID:
             raise HTTPException(
@@ -127,11 +139,13 @@ class GoogleCalendarService:
                 detail="Google OAuth credentials are not configured.",
             )
 
+        effective_redirect = redirect_uri or resolve_oauth_redirect_uri()
+
         data = {
             "code": code,
             "client_id": settings.GOOGLE_CLIENT_ID,
             "client_secret": settings.GOOGLE_CLIENT_SECRET,
-            "redirect_uri": settings.google_redirect_uri,
+            "redirect_uri": effective_redirect,
             "grant_type": "authorization_code",
         }
 
@@ -253,12 +267,17 @@ class GoogleCalendarService:
         flag_modified(lp, "weather_scores")
         self.db.commit()
 
-    async def complete_connection(self, user_id: UUID, code: str) -> GoogleCalendarConnection:
+    async def complete_connection(
+        self,
+        user_id: UUID,
+        code: str,
+        redirect_uri: Optional[str] = None,
+    ) -> GoogleCalendarConnection:
         """
         Completes OAuth flow: exchanges code, encrypts refresh token,
         fetches primary calendar details, and stores connection state.
         """
-        token_data = await self.exchange_code(code)
+        token_data = await self.exchange_code(code, redirect_uri=redirect_uri)
         access_token = token_data.get("access_token")
         new_refresh_token = token_data.get("refresh_token")
 

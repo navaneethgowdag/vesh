@@ -1,4 +1,5 @@
 import logging
+import os
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
@@ -69,6 +70,10 @@ class AccountCollisionException(Exception):
         super().__init__(f"An account with email '{email}' already exists. Please log in with password to link Google.")
 
 
+PRODUCTION_BACKEND_CALLBACK = "https://vesh-backend-5sx2.onrender.com/api/v1/auth/google/callback"
+LOCAL_BACKEND_CALLBACK = "http://localhost:8000/api/v1/auth/google/callback"
+
+
 def is_allowed_frontend_origin(origin: Optional[str]) -> bool:
     """Validate if an origin URL is a permitted frontend application host."""
     if not origin or not isinstance(origin, str):
@@ -90,11 +95,72 @@ def is_allowed_frontend_origin(origin: Optional[str]) -> bool:
     return False
 
 
+def resolve_oauth_redirect_uri(
+    frontend_url: Optional[str] = None,
+    request: Optional[Any] = None,
+) -> str:
+    """
+    Intelligently resolves the Google OAuth callback redirect URI based on:
+    1. Render runtime environment (RENDER_EXTERNAL_URL or RENDER=true)
+    2. Origin / Referer / explicit frontend_url (production domains -> production backend callback)
+    3. Host / X-Forwarded-Host request headers
+    4. Production application environment settings
+    5. Fallback to settings.google_redirect_uri
+    """
+    # 1. Render runtime environment
+    render_external = os.getenv("RENDER_EXTERNAL_URL")
+    if render_external and render_external.strip():
+        return f"{render_external.strip().rstrip('/')}/api/v1/auth/google/callback"
+    if os.getenv("RENDER") == "true" or os.getenv("RENDER_SERVICE_ID"):
+        return PRODUCTION_BACKEND_CALLBACK
+
+    # 2. Origin/frontend domain detection
+    if frontend_url:
+        f_lower = frontend_url.lower()
+        if any(prod in f_lower for prod in ("tailorbird.tech", "vesh.onrender.com")):
+            return PRODUCTION_BACKEND_CALLBACK
+        if "localhost" in f_lower or "127.0.0.1" in f_lower:
+            return LOCAL_BACKEND_CALLBACK
+
+    # 3. Request headers detection (Host, X-Forwarded-Host, Origin, Referer)
+    if request:
+        try:
+            host = (
+                request.headers.get("x-forwarded-host")
+                or request.headers.get("host")
+                or ""
+            ).lower()
+            if "onrender.com" in host or "tailorbird.tech" in host:
+                return PRODUCTION_BACKEND_CALLBACK
+
+            origin = (request.headers.get("origin") or request.headers.get("referer") or "").lower()
+            if "tailorbird.tech" in origin or "vesh.onrender.com" in origin:
+                return PRODUCTION_BACKEND_CALLBACK
+            if "localhost" in origin or "127.0.0.1" in origin:
+                return LOCAL_BACKEND_CALLBACK
+        except Exception:
+            pass
+
+    # 4. Production application environment
+    if settings.APP_ENV.lower() == "production":
+        return PRODUCTION_BACKEND_CALLBACK
+
+    # 5. Fallback to configured settings.google_redirect_uri
+    return settings.google_redirect_uri
+
+
 class GoogleOAuthService:
     def __init__(self, db: Session):
         self.db = db
         self.user_repo = UserRepository(db)
         self.identity_service = UserIdentityService(db)
+
+    def resolve_redirect_uri(
+        self,
+        frontend_url: Optional[str] = None,
+        request: Optional[Any] = None,
+    ) -> str:
+        return resolve_oauth_redirect_uri(frontend_url=frontend_url, request=request)
 
     def generate_state_token(
         self,
@@ -102,16 +168,19 @@ class GoogleOAuthService:
         action: str = "login",
         user_id: Optional[UUID] = None,
         frontend_url: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
     ) -> str:
         """Generate signed state token with 10-minute validity and CSRF protection."""
         safe_dest = destination if destination.startswith("/") and not destination.startswith("//") else "/home"
         safe_frontend = frontend_url.rstrip("/") if is_allowed_frontend_origin(frontend_url) else None
+        effective_redirect = redirect_uri or self.resolve_redirect_uri(frontend_url=frontend_url)
         state_payload = {
             "csrf": secrets.token_urlsafe(24),
             "dest": safe_dest,
             "action": action,
             "user_id": str(user_id) if user_id else None,
             "frontend_url": safe_frontend,
+            "redirect_uri": effective_redirect,
             "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
         }
         return jwt.encode(state_payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -122,6 +191,7 @@ class GoogleOAuthService:
         action: str = "login",
         user_id: Optional[UUID] = None,
         frontend_url: Optional[str] = None,
+        request: Optional[Any] = None,
     ) -> str:
         """
         Generate Google OAuth 2.0 authorization URL with secure signed state.
@@ -133,16 +203,19 @@ class GoogleOAuthService:
                 detail="Google OAuth is not configured. Please set GOOGLE_CLIENT_ID in the environment.",
             )
 
+        resolved_redirect = self.resolve_redirect_uri(frontend_url=frontend_url, request=request)
+
         signed_state = self.generate_state_token(
             destination=destination,
             action=action,
             user_id=user_id,
             frontend_url=frontend_url,
+            redirect_uri=resolved_redirect,
         )
 
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": settings.google_redirect_uri,
+            "redirect_uri": resolved_redirect,
             "response_type": "code",
             "scope": GOOGLE_SCOPES,
             "state": signed_state,
@@ -162,7 +235,11 @@ class GoogleOAuthService:
                 detail="Invalid or expired OAuth state parameter.",
             )
 
-    async def exchange_code_for_tokens(self, code: str) -> Dict[str, Any]:
+    async def exchange_code_for_tokens(
+        self,
+        code: str,
+        redirect_uri: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Exchange authorization code with Google's token endpoint.
         Uses POST with client_secret kept strictly on the backend.
@@ -173,11 +250,13 @@ class GoogleOAuthService:
                 detail="Google OAuth client credentials are not configured.",
             )
 
+        effective_redirect = redirect_uri or self.resolve_redirect_uri()
+
         data = {
             "code": code,
             "client_id": settings.GOOGLE_CLIENT_ID,
             "client_secret": settings.GOOGLE_CLIENT_SECRET,
-            "redirect_uri": settings.google_redirect_uri,
+            "redirect_uri": effective_redirect,
             "grant_type": "authorization_code",
         }
 

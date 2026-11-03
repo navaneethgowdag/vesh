@@ -167,6 +167,7 @@ def get_google_auth_url(
         action=action,
         user_id=user_id,
         frontend_url=resolved_frontend,
+        request=request,
     )
     parsed = urlsplit(url)
     state = dict(parse_qsl(parsed.query)).get("state", "")
@@ -201,12 +202,14 @@ def google_login_redirect(
         action=action,
         user_id=user_id,
         frontend_url=resolved_frontend,
+        request=request,
     )
     return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/google/callback")
 async def google_oauth_callback(
+    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
@@ -269,13 +272,19 @@ async def google_oauth_callback(
     action = state_data.get("action") or "login"
     linking_user_id = state_data.get("user_id")
 
+    # Resolve matching redirect_uri used during authorization
+    redirect_uri = state_data.get("redirect_uri") or service.resolve_redirect_uri(
+        frontend_url=state_frontend,
+        request=request,
+    )
+
     # Handle Google Calendar connection callback
     if action == "connect_calendar" and linking_user_id:
         try:
             from app.services.google_calendar_service import GoogleCalendarService
             cal_service = GoogleCalendarService(db)
             cal_user_uuid = UUID(linking_user_id)
-            await cal_service.complete_connection(cal_user_uuid, code)
+            await cal_service.complete_connection(cal_user_uuid, code, redirect_uri=redirect_uri)
             try:
                 await cal_service.sync_events(cal_user_uuid)
             except Exception as se:
@@ -294,7 +303,7 @@ async def google_oauth_callback(
 
     # 3. Exchange authorization code securely with Google
     try:
-        token_data = await service.exchange_code_for_tokens(code)
+        token_data = await service.exchange_code_for_tokens(code, redirect_uri=redirect_uri)
     except HTTPException as he:
         logger.error(f"[GoogleOAuth] Token exchange failed: {he.detail}")
         err_msg = quote(he.detail or "Failed to exchange authorization code with Google.")
