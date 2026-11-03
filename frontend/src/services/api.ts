@@ -1433,8 +1433,18 @@ export const api = {
   // --- RECOMMENDATIONS / DAILY FIT ---
   recommendations: {
     async generate(params: {
-      calendarEventId: string;
+      calendarEventId?: string;
+      recommendationMode?: 'calendar' | 'occasion' | 'general';
       occasion?: string;
+      customOccasion?: string;
+      targetDate?: string;
+      targetTime?: string;
+      locationContext?: string;
+      dressCode?: string;
+      weatherPreference?: 'automatic' | 'ignore';
+      additionalContext?: string;
+      excludedItemIds?: string[];
+      preferredItemIds?: string[];
       outfitPreference?: string;
       formality?: number;
       preferredColors?: string[];
@@ -1455,13 +1465,24 @@ export const api = {
       const rawList = await request<any[]>(`/recommendations/generate${queryStr}`, {
         method: 'POST',
         body: JSON.stringify({
-          calendar_event_id: params.calendarEventId,
+          recommendation_mode: params.recommendationMode || (params.calendarEventId ? 'calendar' : 'general'),
+          calendar_event_id: params.calendarEventId || null,
           occasion: params.occasion,
+          custom_occasion: params.customOccasion,
+          target_date: params.targetDate,
+          target_time: params.targetTime,
+          location_context: params.locationContext,
+          dress_code: params.dressCode,
+          weather_preference: params.weatherPreference || 'automatic',
+          additional_context: params.additionalContext,
+          excluded_item_ids: params.excludedItemIds || [],
+          preferred_item_ids: params.preferredItemIds || [],
           outfit_preference: params.outfitPreference || 'any',
           formality: params.formality,
           preferred_colors: params.preferredColors || [],
           avoided_colors: params.avoidedColors || [],
           specific_clothing_id: params.specificClothingId,
+          limit: params.limit || 5,
         }),
       });
       return (rawList || []).map((rec) => {

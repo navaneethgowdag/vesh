@@ -7,7 +7,7 @@ import {
   Share2,
   Info,
   CheckCircle,
-  Calendar,
+  Calendar as CalendarIcon,
   Thermometer,
   Compass,
   Plus,
@@ -20,6 +20,10 @@ import {
   Heart,
   ThumbsDown,
   X,
+  SlidersHorizontal,
+  CloudSun,
+  Layers,
+  Sparkle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AppShell } from '../components/layout/AppShell';
@@ -33,22 +37,29 @@ import { Occasion, Post, CalendarEvent, Recommendation } from '../types';
 import { api } from '../services/api';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
 
-const OCCASIONS: Occasion[] = [
-  'Casual Daily',
-  'Work & Office',
-  'Date Night',
-  'Weekend Outing',
-  'Party & Evening',
-  'Travel & Airport',
-];
+export const CONTROLLED_OCCASIONS = [
+  'Office / Work',
+  'Casual outing',
+  'Date',
+  'Party',
+  'Wedding / Function',
+  'Sports / Gym',
+  'Travel',
+  'College',
+  'Traditional / Festival',
+  'Dinner',
+  'Interview',
+  'Family gathering',
+  'Custom occasion',
+] as const;
+
+type ControlledOccasionType = (typeof CONTROLLED_OCCASIONS)[number];
 
 export const DailyFit: React.FC = () => {
   const {
     dailyFit,
     dailyFitHistory,
     weather,
-    selectedOccasion,
-    setSelectedOccasion,
     wearDailyFit,
     cycleDailyFit,
     showToast,
@@ -58,16 +69,27 @@ export const DailyFit: React.FC = () => {
 
   const navigate = useNavigate();
 
-  // Calendar prerequisite states
+  // Navigation / Recommendation Paths
+  // 'occasion' = Path B (Manual occasion)
+  // 'general' = Path C ('Suggest an outfit for me')
+  // 'calendar' = Path A (Calendar-assisted)
+  const [recommendationPath, setRecommendationPath] = useState<'occasion' | 'general' | 'calendar'>('occasion');
+
+  // Path B: Occasion & Context States
+  const [chosenOccasion, setChosenOccasion] = useState<ControlledOccasionType>('Office / Work');
+  const [customOccasionText, setCustomOccasionText] = useState<string>('');
+  const [targetDateChoice, setTargetDateChoice] = useState<'today' | 'tomorrow' | 'custom'>('today');
+  const [customDateValue, setCustomDateValue] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [dressCode, setDressCode] = useState<string>('');
+  const [outfitPreference, setOutfitPreference] = useState<string>('any');
+  const [weatherPreference, setWeatherPreference] = useState<'automatic' | 'ignore'>('automatic');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
+
+  // Path A: Calendar Events States
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
+  const [calendarOccasionOverride, setCalendarOccasionOverride] = useState<string>('');
   const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true);
-
-  // Quick event creation states
-  const [newEventDate, setNewEventDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [newEventOccasion, setNewEventOccasion] = useState<Occasion>('Work & Office');
-  const [newEventNotes, setNewEventNotes] = useState<string>('');
-  const [isCreatingEvent, setIsCreatingEvent] = useState<boolean>(false);
 
   // Multi-candidate recommendation states
   const [candidateRecommendations, setCandidateRecommendations] = useState<Recommendation[]>([]);
@@ -75,10 +97,11 @@ export const DailyFit: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Acceptance states
+  // Acceptance & Action states
   const [isAccepting, setIsAccepting] = useState<boolean>(false);
   const [acceptedSuccess, setAcceptedSuccess] = useState<boolean>(false);
   const [wornSuccess, setWornSuccess] = useState<boolean>(false);
+  const [isLikedSuccess, setIsLikedSuccess] = useState<boolean>(false);
 
   // Modals & Feedback
   const [whyModalOpen, setWhyModalOpen] = useState<boolean>(false);
@@ -86,14 +109,26 @@ export const DailyFit: React.FC = () => {
   const [scheduleModalOpen, setScheduleModalOpen] = useState<boolean>(false);
   const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [isLikedSuccess, setIsLikedSuccess] = useState<boolean>(false);
 
-  // Active outfit to display: preferred multi-candidate or legacy dailyFit
-  const currentRecommendation = candidateRecommendations.length > 0
-    ? candidateRecommendations[activeCandidateIndex]
-    : dailyFit;
+  // Active outfit to display
+  const currentRecommendation =
+    candidateRecommendations.length > 0
+      ? candidateRecommendations[activeCandidateIndex]
+      : dailyFit;
 
-  // Load upcoming/today's calendar events on mount
+  // Resolve target date string
+  const getResolvedTargetDate = (): string => {
+    if (targetDateChoice === 'today') {
+      return new Date().toISOString().split('T')[0];
+    } else if (targetDateChoice === 'tomorrow') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow.toISOString().split('T')[0];
+    }
+    return customDateValue || new Date().toISOString().split('T')[0];
+  };
+
+  // Load upcoming/today's calendar events on mount (non-blocking)
   const loadCalendarEvents = useCallback(async () => {
     setIsLoadingEvents(true);
     try {
@@ -108,14 +143,16 @@ export const DailyFit: React.FC = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const targetEventId = urlParams.get('calendar_event_id');
       const targetOccasion = urlParams.get('occasion');
-      if (targetOccasion && (OCCASIONS as string[]).includes(targetOccasion)) {
-        setSelectedOccasion(targetOccasion as Occasion);
+
+      if (targetOccasion && CONTROLLED_OCCASIONS.includes(targetOccasion as any)) {
+        setChosenOccasion(targetOccasion as ControlledOccasionType);
       }
 
       if (targetEventId) {
         const found = events.find((e) => e.id === targetEventId);
         if (found) {
           setSelectedCalendarEvent(found);
+          setRecommendationPath('calendar');
           return;
         }
       }
@@ -124,7 +161,7 @@ export const DailyFit: React.FC = () => {
         setSelectedCalendarEvent(events[0]);
       }
     } catch (err) {
-      console.error('Failed to load calendar events', err);
+      console.warn('Google / local calendar events unavailable (optional provider)', err);
     } finally {
       setIsLoadingEvents(false);
     }
@@ -134,16 +171,13 @@ export const DailyFit: React.FC = () => {
     loadCalendarEvents();
   }, [loadCalendarEvents]);
 
-  // Generate recommendations for the selected calendar event
-  const handleGenerateForEvent = async (eventToUse?: CalendarEvent) => {
-    const targetEvent = eventToUse || selectedCalendarEvent;
-    if (!targetEvent) {
-      showToast('Please select or plan a calendar event first.', 'info');
-      return;
-    }
+  // Master recommendation generator supporting all three paths
+  const handleGenerate = async (overrideMode?: 'occasion' | 'general' | 'calendar') => {
+    const activePath = overrideMode || recommendationPath;
 
     if (wardrobe.length === 0) {
       showToast('Your wardrobe is empty. Add clothing items to receive AI recommendations.', 'info');
+      navigate('/wardrobe');
       return;
     }
 
@@ -152,19 +186,59 @@ export const DailyFit: React.FC = () => {
     setAcceptedSuccess(false);
 
     try {
-      const recs = await api.recommendations.generate({
-        calendarEventId: targetEvent.id,
-        occasion: (targetEvent.occasion as Occasion) || selectedOccasion,
-        city: weather.city || undefined,
+      let payload: any = {
+        city: weather?.city || undefined,
         limit: 5,
-      });
+        weatherPreference,
+        outfitPreference: outfitPreference !== 'any' ? outfitPreference : undefined,
+        dressCode: dressCode || undefined,
+      };
+
+      if (activePath === 'calendar') {
+        if (!selectedCalendarEvent) {
+          showToast('Please select a calendar event to style for.', 'info');
+          setIsGenerating(false);
+          return;
+        }
+        payload = {
+          ...payload,
+          recommendationMode: 'calendar',
+          calendarEventId: selectedCalendarEvent.id,
+          // Crucial: allow user to override the inferred calendar occasion
+          occasion: calendarOccasionOverride || selectedCalendarEvent.occasion || undefined,
+          targetDate: selectedCalendarEvent.eventDate,
+        };
+      } else if (activePath === 'general') {
+        payload = {
+          ...payload,
+          recommendationMode: 'general',
+          targetDate: getResolvedTargetDate(),
+        };
+      } else {
+        // Path B: Occasion
+        payload = {
+          ...payload,
+          recommendationMode: 'occasion',
+          occasion: chosenOccasion,
+          customOccasion: chosenOccasion === 'Custom occasion' ? customOccasionText : undefined,
+          targetDate: getResolvedTargetDate(),
+        };
+      }
+
+      const recs = await api.recommendations.generate(payload);
 
       if (recs && recs.length > 0) {
         setCandidateRecommendations(recs);
         setActiveCandidateIndex(0);
-        showToast(`Synthesized ${recs.length} personalized looks for ${targetEvent.occasion || 'your event'}!`, 'success');
+        const occasionLabel =
+          activePath === 'calendar'
+            ? calendarOccasionOverride || selectedCalendarEvent?.occasion || 'Calendar Event'
+            : activePath === 'general'
+            ? 'Daily Look'
+            : chosenOccasion;
+        showToast(`Synthesized ${recs.length} personalized looks for ${occasionLabel}!`, 'success');
       } else {
-        setGenerationError('No outfit combinations could be formed. Add more matching tops, bottoms, or footwear.');
+        setGenerationError('No complete outfits could be synthesized. Add more tops, bottoms, or dresses to your wardrobe.');
       }
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : 'Failed to generate recommendations.';
@@ -175,44 +249,13 @@ export const DailyFit: React.FC = () => {
     }
   };
 
-  // Quick event creation & immediate generation
-  const handleCreateQuickEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEventDate) {
-      showToast('Please select an event date', 'info');
-      return;
-    }
-
-    setIsCreatingEvent(true);
-    try {
-      const createdEvent = await api.calendar.createEvent({
-        event_date: newEventDate,
-        occasion: newEventOccasion,
-        notes: newEventNotes.trim() || undefined,
-        event_type: 'planned_outfit',
-      });
-
-      setCalendarEvents((prev) => [createdEvent, ...prev]);
-      setSelectedCalendarEvent(createdEvent);
-      showToast(`Event planned for ${createdEvent.eventDate} (${newEventOccasion})! Curating outfits...`, 'success');
-
-      // Immediately generate recommendations for the new event
-      await handleGenerateForEvent(createdEvent);
-    } catch (err: any) {
-      const msg = err instanceof Error ? err.message : 'Failed to create calendar event';
-      showToast(msg, 'info');
-    } finally {
-      setIsCreatingEvent(false);
-    }
-  };
-
   // Accept current recommendation and link to calendar
   const handleAcceptOutfit = async () => {
     if (!currentRecommendation) return;
 
     setIsAccepting(true);
     try {
-      const res = await api.recommendations.accept(
+      await api.recommendations.accept(
         currentRecommendation.id,
         selectedCalendarEvent?.id
       );
@@ -226,11 +269,10 @@ export const DailyFit: React.FC = () => {
       });
 
       showToast(
-        `Outfit accepted and scheduled for ${selectedCalendarEvent?.eventDate || 'your event'}!`,
+        `Outfit accepted and scheduled for ${selectedCalendarEvent?.eventDate || getResolvedTargetDate()}!`,
         'success'
       );
 
-      // Refresh calendar events
       loadCalendarEvents();
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : 'Failed to accept recommendation';
@@ -246,7 +288,7 @@ export const DailyFit: React.FC = () => {
     try {
       await api.recommendations.sendFeedback(currentRecommendation.id, 'like');
       setIsLikedSuccess(true);
-      showToast('Loved this outfit! Added to style signatures.', 'heart');
+      showToast('Loved this outfit! Style preferences updated.', 'heart');
     } catch (err) {
       console.error('Failed to record like', err);
     }
@@ -263,14 +305,14 @@ export const DailyFit: React.FC = () => {
     }
   };
 
-  // Dismiss with explicit or neutral feedback reason
+  // Dismiss with explicit feedback
   const handleDismissWithReason = async (reason?: string) => {
     if (!currentRecommendation) return;
 
     try {
       if (reason) {
         await api.recommendations.sendFeedback(currentRecommendation.id, 'reject', reason);
-        showToast('Feedback noted. Adjusting recommendations.', 'info');
+        showToast('Feedback noted. Adjusting recommendation weights.', 'info');
       } else {
         await api.recommendations.dismiss(currentRecommendation.id);
         showToast('Outfit candidate dismissed', 'info');
@@ -290,11 +332,7 @@ export const DailyFit: React.FC = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      if (selectedCalendarEvent) {
-        await handleGenerateForEvent(selectedCalendarEvent);
-      } else {
-        await cycleDailyFit();
-      }
+      await handleGenerate();
     } finally {
       setIsRefreshing(false);
     }
@@ -313,13 +351,13 @@ export const DailyFit: React.FC = () => {
         colors: ['#18181B', '#71717A', '#E4E4E7'],
       });
       setTimeout(() => setWornSuccess(false), 2500);
+      showToast('Marked as worn! Wear history and garment rotation updated.', 'success');
     } catch (err) {
       console.error('Failed to record wear confirmation', err);
       wearDailyFit();
     }
   };
 
-  // Shareable post conversion
   const shareablePost: Post = currentRecommendation
     ? {
         id: currentRecommendation.outfit.id,
@@ -330,7 +368,7 @@ export const DailyFit: React.FC = () => {
           avatar: currentUser?.avatar || '',
         },
         image: currentRecommendation.outfit.image || '',
-        caption: `${currentRecommendation.outfit.title} · Curated by StyleSphere`,
+        caption: `${currentRecommendation.outfit.title} · TailorBird Curated`,
         tags: currentRecommendation.outfit.tags,
         occasion: currentRecommendation.outfit.occasion,
         likesCount: 0,
@@ -353,15 +391,14 @@ export const DailyFit: React.FC = () => {
                 <Sparkles className="w-4 h-4" />
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-                AI Outfit Recommendation Atelier
+                TailorBird Outfit Atelier
               </h1>
             </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              Purpose-calibrated outfit synthesis tailored for your calendar events and wardrobe pieces.
+              Curate outfits exclusively from your actual wardrobe pieces with deterministic styling rules.
             </p>
           </div>
 
-          {/* Confidence Badge & Quick Actions */}
           {currentRecommendation && (
             <div className="flex items-center gap-2">
               <button
@@ -378,7 +415,7 @@ export const DailyFit: React.FC = () => {
                 <Sparkles className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
                 <div>
                   <span className="block text-[10px] uppercase font-bold tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Confidence Score
+                    Compatibility
                   </span>
                   <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-none">
                     {currentRecommendation.score}% Match
@@ -390,143 +427,395 @@ export const DailyFit: React.FC = () => {
         </div>
 
         {/* ------------------------------------------------------------- */}
-        {/* MANDATORY CALENDAR PREREQUISITE SELECTOR / EVENT CREATOR */}
+        {/* RECOMMENDATION MODE TABS */}
         {/* ------------------------------------------------------------- */}
-        <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                1. Target Calendar Event Prerequisite
-              </h2>
-            </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              Recommendations are mathematically calibrated to event date, context & climate
-            </span>
-          </div>
+        <div className="mb-6 p-1.5 bg-zinc-100 dark:bg-zinc-800/80 rounded-lg flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setRecommendationPath('occasion')}
+            className={`flex-1 py-2.5 px-3 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              recommendationPath === 'occasion'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>Dress for an Occasion</span>
+          </button>
 
-          {isLoadingEvents ? (
-            <div className="flex items-center gap-2 text-xs text-zinc-500 py-3">
-              <div className="w-3.5 h-3.5 border-2 border-zinc-900 border-t-transparent animate-spin rounded-full" />
-              Loading your scheduled events...
-            </div>
-          ) : calendarEvents.length > 0 ? (
-            <div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2.5 font-medium">
-                Select an upcoming planned date to style for:
-              </p>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                {calendarEvents.map((ev) => {
-                  const isSelected = selectedCalendarEvent?.id === ev.id;
-                  return (
-                    <button
-                      key={ev.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCalendarEvent(ev);
-                        if (ev.occasion) setSelectedOccasion(ev.occasion as Occasion);
-                      }}
-                      className={`px-3.5 py-2 min-h-[44px] rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-all border flex items-center gap-2 ${
-                        isSelected
-                          ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-sm'
-                          : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{ev.eventDate}</span>
-                      <span className="opacity-75">· {ev.occasion || 'Event'}</span>
-                      {ev.outfitId && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" title="Has Planned Outfit" />
-                      )}
-                    </button>
-                  );
-                })}
+          <button
+            type="button"
+            onClick={() => setRecommendationPath('general')}
+            className={`flex-1 py-2.5 px-3 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              recommendationPath === 'general'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Suggest an Outfit for Me</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRecommendationPath('calendar')}
+            className={`flex-1 py-2.5 px-3 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              recommendationPath === 'calendar'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>Planned Events</span>
+            {calendarEvents.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            )}
+          </button>
+        </div>
+
+        {/* ------------------------------------------------------------- */}
+        {/* PATH B: OCCASION SELECTION INTERFACE */}
+        {/* ------------------------------------------------------------- */}
+        {recommendationPath === 'occasion' && (
+          <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Compass className="w-4 h-4" />
+                  What are you dressing for?
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Select an occasion to calibrate formality, silhouette balance, and styling rules.
+                </p>
               </div>
 
-              {selectedCalendarEvent && (
-                <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                    Targeting: <strong className="text-zinc-900 dark:text-zinc-100">{selectedCalendarEvent.occasion || 'General'}</strong> on{' '}
-                    <strong className="text-zinc-900 dark:text-zinc-100">{selectedCalendarEvent.eventDate}</strong>
-                    {selectedCalendarEvent.notes && ` (${selectedCalendarEvent.notes})`}
-                  </div>
+              {/* Date Pills */}
+              <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setTargetDateChoice('today')}
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
+                    targetDateChoice === 'today'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetDateChoice('tomorrow')}
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
+                    targetDateChoice === 'tomorrow'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
+                  }`}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetDateChoice('custom')}
+                  className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${
+                    targetDateChoice === 'custom'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
+                  }`}
+                >
+                  Pick Date
+                </button>
+              </div>
+            </div>
 
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleGenerateForEvent()}
-                    disabled={isGenerating}
-                    icon={<Sparkles className="w-3.5 h-3.5" />}
+            {targetDateChoice === 'custom' && (
+              <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-md flex items-center gap-3">
+                <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Target Date:
+                </label>
+                <input
+                  type="date"
+                  value={customDateValue}
+                  onChange={(e) => setCustomDateValue(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+            )}
+
+            {/* 13 Controlled Occasions Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-4">
+              {CONTROLLED_OCCASIONS.map((occ) => {
+                const isSelected = chosenOccasion === occ;
+                return (
+                  <button
+                    key={occ}
+                    type="button"
+                    onClick={() => setChosenOccasion(occ)}
+                    className={`p-2.5 min-h-[44px] rounded-md text-xs font-medium text-left transition-all border flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-sm'
+                        : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
                   >
-                    {isGenerating ? 'Synthesizing Outfits...' : 'Generate Outfits for Event'}
-                  </Button>
-                </div>
-              )}
+                    <span className="truncate">{occ}</span>
+                    {isSelected && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 ml-1" />}
+                  </button>
+                );
+              })}
             </div>
-          ) : (
-            // No Calendar Events: Inline Quick Event Creator
-            <div className="bg-zinc-50 dark:bg-zinc-800/40 rounded-md p-4 border border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-md">
-                  <Info className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                    No Calendar Events Found — Schedule Your First Event
-                  </h3>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                    StyleSphere AI requires an active calendar event to accurately calibrate thermal comfort, formality delta, and occasion rules.
-                  </p>
-                </div>
+
+            {/* Custom Occasion Text Input */}
+            {chosenOccasion === 'Custom occasion' && (
+              <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-800">
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Describe your custom occasion or event:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Gallery opening night, High-tea with mentors, Yacht cruise..."
+                  value={customOccasionText}
+                  onChange={(e) => setCustomOccasionText(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
               </div>
+            )}
 
-              <form onSubmit={handleCreateQuickEvent} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2">
+            {/* Advanced Filters Toggle & Drawer */}
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>{showAdvancedFilters ? 'Hide Preferences' : 'Preferences (Weather, Style, Dress Code)'}</span>
+              </button>
+
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => handleGenerate('occasion')}
+                disabled={isGenerating}
+                icon={<Sparkles className="w-4 h-4" />}
+              >
+                {isGenerating ? 'Synthesizing Outfits...' : `Curate for ${chosenOccasion}`}
+              </Button>
+            </div>
+
+            {/* Collapsible Advanced Preferences */}
+            {showAdvancedFilters && (
+              <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
-                    Event Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newEventDate}
-                    onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
-                    Occasion / Context
+                    Style Preference
                   </label>
                   <select
-                    value={newEventOccasion}
-                    onChange={(e) => setNewEventOccasion(e.target.value as Occasion)}
+                    value={outfitPreference}
+                    onChange={(e) => setOutfitPreference(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
                   >
-                    {OCCASIONS.map((occ) => (
-                      <option key={occ} value={occ}>
-                        {occ}
-                      </option>
-                    ))}
+                    <option value="any">Any (Western, Indian & Fusion)</option>
+                    <option value="western">Western Outfits Only</option>
+                    <option value="indian">Indian Ethnic Only</option>
+                    <option value="fusion">Fusion (Kurti + Denim, Blazer + Kurta)</option>
                   </select>
                 </div>
 
                 <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+                    Dress Code
+                  </label>
+                  <select
+                    value={dressCode}
+                    onChange={(e) => setDressCode(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  >
+                    <option value="">Standard for Occasion</option>
+                    <option value="Smart Casual">Smart Casual</option>
+                    <option value="Formal">Formal / Business</option>
+                    <option value="Casual">Casual / Relaxed</option>
+                    <option value="Black Tie">Black Tie / Gala</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+                    Weather Calibration
+                  </label>
+                  <select
+                    value={weatherPreference}
+                    onChange={(e) => setWeatherPreference(e.target.value as 'automatic' | 'ignore')}
+                    className="w-full px-3 py-2 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  >
+                    <option value="automatic">Automatic (Weather-Calibrated)</option>
+                    <option value="ignore">Ignore Weather (Climate Neutral)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* PATH C: GENERAL OUTFIT PROMPT */}
+        {/* ------------------------------------------------------------- */}
+        {recommendationPath === 'general' && (
+          <div className="mb-8 p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm text-center">
+            <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-zinc-100 mx-auto mb-3">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              Suggest an Outfit for Me
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md mx-auto mt-1 mb-5">
+              No occasion required. TailorBird styles an effortless look using your staple pieces, wear rotation balance, and current climate.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => handleGenerate('general')}
+                disabled={isGenerating}
+                icon={<Sparkles className="w-4 h-4" />}
+              >
+                {isGenerating ? 'Synthesizing Look...' : '✨ Curate My Outfit'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* PATH A: OPTIONAL CALENDAR EVENT SELECTOR */}
+        {/* ------------------------------------------------------------- */}
+        {recommendationPath === 'calendar' && (
+          <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  Planned Calendar Events
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Select an upcoming event from Google Calendar or TailorBird to style for.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/calendar')}
+                icon={<CalendarIcon className="w-3.5 h-3.5" />}
+              >
+                View Full Calendar
+              </Button>
+            </div>
+
+            {isLoadingEvents ? (
+              <div className="flex items-center gap-2 text-xs text-zinc-500 py-4">
+                <div className="w-3.5 h-3.5 border-2 border-zinc-900 border-t-transparent animate-spin rounded-full" />
+                Loading your scheduled events...
+              </div>
+            ) : calendarEvents.length > 0 ? (
+              <div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2 font-medium">
+                  Select an event to style for:
+                </p>
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                  {calendarEvents.map((ev) => {
+                    const isSelected = selectedCalendarEvent?.id === ev.id;
+                    return (
+                      <button
+                        key={ev.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCalendarEvent(ev);
+                          setCalendarOccasionOverride('');
+                        }}
+                        className={`px-3.5 py-2 min-h-[44px] rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-all border flex items-center gap-2 ${
+                          isSelected
+                            ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-sm'
+                            : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{ev.eventDate}</span>
+                        <span className="opacity-75">· {ev.occasion || 'Event'}</span>
+                        {ev.outfitId && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Has Planned Outfit" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedCalendarEvent && (
+                  <div className="mt-4 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-md border border-zinc-200 dark:border-zinc-800 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div>
+                        Target Date: <strong className="text-zinc-900 dark:text-zinc-100">{selectedCalendarEvent.eventDate}</strong>
+                        {selectedCalendarEvent.notes && ` (${selectedCalendarEvent.notes})`}
+                      </div>
+
+                      {/* Inferred occasion override selector */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">Override Occasion:</span>
+                        <select
+                          value={calendarOccasionOverride || selectedCalendarEvent.occasion || ''}
+                          onChange={(e) => setCalendarOccasionOverride(e.target.value)}
+                          className="px-2.5 py-1 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                        >
+                          <option value="">{selectedCalendarEvent.occasion || 'Auto (Inferred)'}</option>
+                          {CONTROLLED_OCCASIONS.map((occ) => (
+                            <option key={occ} value={occ}>
+                              {occ}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => handleGenerate('calendar')}
+                        disabled={isGenerating}
+                        icon={<Sparkles className="w-4 h-4" />}
+                      >
+                        {isGenerating ? 'Synthesizing Outfits...' : 'Generate Outfits for Event'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-md border border-zinc-200 dark:border-zinc-800 text-center">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  No upcoming calendar events scheduled
+                </p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm mx-auto mb-4">
+                  Google Calendar integration is optional. You can generate outfits right now by clicking &quot;Dress for an Occasion&quot; or &quot;Suggest an Outfit for Me&quot; above.
+                </p>
+                <div className="flex items-center justify-center gap-3">
                   <Button
-                    type="submit"
                     variant="primary"
                     size="sm"
-                    className="w-full"
-                    disabled={isCreatingEvent}
-                    icon={<Plus className="w-3.5 h-3.5" />}
+                    onClick={() => setRecommendationPath('occasion')}
                   >
-                    {isCreatingEvent ? 'Planning...' : 'Plan Event & Curate Outfits'}
+                    Dress for an Occasion
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/calendar')}
+                  >
+                    Open Calendar
                   </Button>
                 </div>
-              </form>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ------------------------------------------------------------- */}
         {/* EMPTY WARDROBE OR ERROR NOTICES */}
@@ -538,7 +827,7 @@ export const DailyFit: React.FC = () => {
               Your Wardrobe is Empty
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-              Add garments, ethnic pieces, and footwear to your digital wardrobe so the AI atelier can tailor personalized looks for you.
+              Add garments, ethnic pieces, or dresses to your digital wardrobe so the AI atelier can synthesize personalized looks.
             </p>
             <Button
               variant="primary"
@@ -553,11 +842,10 @@ export const DailyFit: React.FC = () => {
           <div className="text-center py-20 px-6 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 max-w-xl mx-auto my-8">
             <div className="w-12 h-12 rounded-full border-2 border-zinc-900/40 border-t-zinc-900 dark:border-zinc-100/40 dark:border-t-zinc-100 animate-spin mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Curating Your Silhouette
+              Curating Your Look
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-md mx-auto">
-              Running category-aware ensemble rules, CIELAB color harmony, and formality delta checks for{' '}
-              {selectedCalendarEvent?.occasion || selectedOccasion}...
+              Synthesizing category-aware combinations, CIELAB color harmony, and formality balance from your wardrobe...
             </p>
           </div>
         ) : generationError ? (
@@ -566,7 +854,7 @@ export const DailyFit: React.FC = () => {
               <Info className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              Recommendation Notice
+              Styling Notice
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-md mx-auto">
               {generationError}
@@ -575,7 +863,7 @@ export const DailyFit: React.FC = () => {
               <Button
                 variant="outline"
                 size="md"
-                onClick={() => handleGenerateForEvent()}
+                onClick={() => handleGenerate()}
                 icon={<RefreshCw className="w-4 h-4" />}
               >
                 Retry
@@ -599,7 +887,11 @@ export const DailyFit: React.FC = () => {
               <div className="flex items-center gap-4 text-zinc-900 dark:text-zinc-100">
                 <span className="flex items-center gap-1.5 font-semibold">
                   <Thermometer className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                  {weather.city ? `${weather.city}: ${weather.temp}°C ${weather.condition}` : 'Pleasant · 22°C'}
+                  {weatherPreference === 'ignore'
+                    ? 'Weather Neutral'
+                    : weather?.city
+                    ? `${weather.city}: ${weather.temp}°C ${weather.condition}`
+                    : 'Comfortable · 22°C'}
                 </span>
                 <span className="text-zinc-300 dark:text-zinc-700">·</span>
                 <span className="flex items-center gap-1.5">
@@ -625,8 +917,8 @@ export const DailyFit: React.FC = () => {
                         (prev) => (prev - 1 + candidateRecommendations.length) % candidateRecommendations.length
                       )
                     }
-                    className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    title="Previous Silhouette"
+                    className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    title="Previous Look"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
@@ -635,8 +927,8 @@ export const DailyFit: React.FC = () => {
                     onClick={() =>
                       setActiveCandidateIndex((prev) => (prev + 1) % candidateRecommendations.length)
                     }
-                    className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    title="Next Silhouette"
+                    className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    title="Next Look"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -724,11 +1016,11 @@ export const DailyFit: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Deterministic Natural Language Explanations */}
+                {/* Deterministic Explanations */}
                 <div className="p-4 rounded-md bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 space-y-2 mt-4">
                   <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                    AI Atelier Rationale
+                    Styling Rationale
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
                     <div className="flex items-start gap-1.5">
@@ -761,9 +1053,9 @@ export const DailyFit: React.FC = () => {
                     icon={acceptedSuccess ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                   >
                     {isAccepting
-                      ? 'Linking to Calendar...'
+                      ? 'Scheduling...'
                       : acceptedSuccess
-                      ? '✓ Outfit Accepted & Scheduled'
+                      ? '✓ Accepted & Scheduled'
                       : 'Accept & Schedule Outfit'}
                   </Button>
 
@@ -803,14 +1095,14 @@ export const DailyFit: React.FC = () => {
                     onClick={handleWear}
                     className={wornSuccess ? '!bg-emerald-700 !text-white' : ''}
                   >
-                    {wornSuccess ? '✓ Logged as Worn' : 'Wear Today'}
+                    {wornSuccess ? '✓ Marked as Worn' : 'Wear Today'}
                   </Button>
 
                   <Button
                     variant="outline"
                     size="md"
                     onClick={() => setScheduleModalOpen(true)}
-                    icon={<Calendar className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />}
+                    icon={<CalendarIcon className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />}
                   >
                     Custom Date
                   </Button>
@@ -840,19 +1132,18 @@ export const DailyFit: React.FC = () => {
           <div className="text-center py-16 px-6 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 max-w-2xl mx-auto my-8">
             <Sparkles className="w-8 h-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-3" />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Ready to Curate Your Look
+              Ready to Style Your Look
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-md mx-auto mb-6">
-              Select an existing calendar event above or plan a new event to generate AI outfit recommendations calibrated to your schedule.
+              Pick an occasion or tap below to synthesize outfits tailored from your wardrobe.
             </p>
             <Button
               variant="primary"
               size="lg"
-              onClick={() => handleGenerateForEvent()}
-              disabled={!selectedCalendarEvent}
+              onClick={() => handleGenerate()}
               icon={<Sparkles className="w-4 h-4" />}
             >
-              Generate AI Recommendations
+              Curate Recommendations
             </Button>
           </div>
         )}
@@ -863,9 +1154,9 @@ export const DailyFit: React.FC = () => {
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+              <CalendarIcon className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
               <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                Recommendation History & Worn Outfits
+                Logged Outfits & Wear History
               </h3>
             </div>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -898,14 +1189,14 @@ export const DailyFit: React.FC = () => {
                     className="w-16 h-16 rounded object-cover bg-zinc-200 dark:bg-zinc-800"
                   />
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                      Worn
+                    <span className="text-[10px] font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                      {hist.outfit.occasion}
                     </span>
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate mt-1">
+                    <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                       {hist.outfit.title}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {hist.outfit.occasion} · {hist.score}% Match
+                    </h4>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                      {hist.score}% match · {hist.outfit.pieces.length} pieces
                     </p>
                   </div>
                 </div>
@@ -913,95 +1204,87 @@ export const DailyFit: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Modals */}
-        {currentRecommendation && (
-          <>
-            <WhyThisOutfitModal
-              isOpen={whyModalOpen}
-              onClose={() => setWhyModalOpen(false)}
-              recommendation={currentRecommendation}
-            />
-
-            <ShareModal
-              isOpen={shareModalOpen}
-              onClose={() => setShareModalOpen(false)}
-              post={shareablePost}
-            />
-
-            <ScheduleOutfitModal
-              isOpen={scheduleModalOpen}
-              onClose={() => setScheduleModalOpen(false)}
-              recommendation={currentRecommendation}
-              onScheduled={(event) => {
-                showToast(`Outfit scheduled for ${event.eventDate}!`, 'success');
-                loadCalendarEvents();
-              }}
-            />
-
-            {/* Rejection / Feedback Modal */}
-            {rejectModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-lg p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                      <ThumbsDown className="w-4 h-4 text-zinc-500" />
-                      Styling Feedback
-                    </h3>
-                    <button
-                      onClick={() => setRejectModalOpen(false)}
-                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                    Help StyleSphere's Continuous Learning Engine refine your style signature. What didn't work with this look?
-                  </p>
-
-                  <div className="space-y-2">
-                    {[
-                      { id: 'not_my_style', label: 'Not my personal aesthetic or vibe' },
-                      { id: 'dont_like_colors', label: "Don't like these color combinations" },
-                      { id: 'too_formal', label: 'Too formal for what I have in mind' },
-                      { id: 'too_casual', label: 'Too casual / relaxed' },
-                      { id: 'not_suitable_for_occasion', label: 'Not suitable for this calendar event' },
-                      { id: 'prefer_different', label: 'Prefer something else right now' },
-                    ].map((reason) => (
-                      <button
-                        key={reason.id}
-                        type="button"
-                        onClick={() => handleDismissWithReason(reason.id)}
-                        className="w-full text-left p-3 rounded-md border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-all text-xs font-medium text-zinc-800 dark:text-zinc-200"
-                      >
-                        {reason.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="pt-2 flex justify-between items-center text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleDismissWithReason()}
-                      className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
-                    >
-                      Skip without reason
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRejectModalOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </PullToRefresh>
+
+      {/* Stylist Breakdown Modal */}
+      {currentRecommendation && (
+        <WhyThisOutfitModal
+          isOpen={whyModalOpen}
+          onClose={() => setWhyModalOpen(false)}
+          recommendation={currentRecommendation}
+        />
+      )}
+
+      {/* Share Modal */}
+      {currentRecommendation && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          post={shareablePost}
+        />
+      )}
+
+      {/* Schedule Custom Date Modal */}
+      {currentRecommendation && (
+        <ScheduleOutfitModal
+          isOpen={scheduleModalOpen}
+          onClose={() => setScheduleModalOpen(false)}
+          recommendation={currentRecommendation}
+          onScheduled={() => {
+            showToast('Outfit scheduled into your calendar!', 'success');
+            loadCalendarEvents();
+          }}
+        />
+      )}
+
+      {/* Feedback / Rejection Modal */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Help Us Refine Your Style
+              </h3>
+              <button
+                onClick={() => setRejectModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4">
+              Why wasn&apos;t this outfit right for you? This tunes your future recommendations.
+            </p>
+            <div className="space-y-2 mb-5">
+              {[
+                { label: 'Not my personal style', reason: 'not_my_style' },
+                { label: "Don't like these color combinations", reason: 'dont_like_colors' },
+                { label: 'Too formal for what I need', reason: 'too_formal' },
+                { label: 'Too casual for the occasion', reason: 'too_casual' },
+                { label: 'Not suitable for the weather', reason: 'not_weather_appropriate' },
+              ].map((opt) => (
+                <button
+                  key={opt.reason}
+                  type="button"
+                  onClick={() => handleDismissWithReason(opt.reason)}
+                  className="w-full text-left p-3 rounded-md text-xs font-medium bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 transition-all"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDismissWithReason()}
+              >
+                Dismiss Without Feedback
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 };

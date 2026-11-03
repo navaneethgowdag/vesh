@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field
@@ -57,13 +57,68 @@ class OutfitWearResponse(BaseModel):
 
 
 class RecommendationGenerateRequest(BaseModel):
-    calendar_event_id: UUID = Field(..., description="Mandatory Calendar Event ID to style for")
-    occasion: Optional[str] = None
-    outfit_preference: Optional[str] = Field(default="any", description="western, indian, fusion, or any")
-    formality: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    recommendation_mode: Optional[str] = Field(
+        default="general",
+        description="Mode: 'calendar', 'occasion', or 'general'"
+    )
+    calendar_event_id: Optional[UUID] = Field(
+        default=None,
+        description="Optional Calendar Event ID to style for (Path A)"
+    )
+    occasion: Optional[str] = Field(
+        default=None,
+        description="Target occasion (e.g. 'Office / Work', 'Casual outing', etc.)"
+    )
+    custom_occasion: Optional[str] = Field(
+        default=None,
+        description="Custom occasion text if occasion is 'Custom occasion'"
+    )
+    target_date: Optional[date] = Field(
+        default=None,
+        description="Target date for the outfit (default: today)"
+    )
+    target_time: Optional[str] = Field(
+        default=None,
+        description="Optional time of day (e.g. 'Morning', '19:00')"
+    )
+    location_context: Optional[str] = Field(
+        default=None,
+        description="Optional location (e.g. 'Office HQ', 'Beach resort')"
+    )
+    dress_code: Optional[str] = Field(
+        default=None,
+        description="Optional dress code (e.g. 'Smart Casual', 'Black Tie', 'Formal', 'Casual')"
+    )
+    weather_preference: Optional[str] = Field(
+        default="automatic",
+        description="'automatic' to use weather API, or 'ignore' to skip weather"
+    )
+    additional_context: Optional[str] = Field(
+        default=None,
+        description="Any user notes, styling cues, or context"
+    )
+    excluded_item_ids: Optional[List[UUID]] = Field(
+        default_factory=list,
+        description="Garment item IDs to exclude from this recommendation"
+    )
+    preferred_item_ids: Optional[List[UUID]] = Field(
+        default_factory=list,
+        description="Garment item IDs to prioritize or include"
+    )
+    outfit_preference: Optional[str] = Field(
+        default="any",
+        description="western, indian, fusion, or any"
+    )
+    formality: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Desired formality level 0.0 to 1.0"
+    )
     preferred_colors: Optional[List[str]] = Field(default_factory=list)
     avoided_colors: Optional[List[str]] = Field(default_factory=list)
     specific_clothing_id: Optional[UUID] = None
+    limit: Optional[int] = Field(default=5, ge=1, le=10)
 
 
 class RecommendationAcceptRequest(BaseModel):

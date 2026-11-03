@@ -61,12 +61,10 @@ def classify_garment(item: Clothing) -> str:
     name = (item.name or "").lower().strip()
 
     # 1. Indian Ethnic
+    if ("blouse" in cat or "blouse" in sub or "blouse" in name or "choli" in name) and (grp == "indian" or "choli" in name or "saree" in name or "lehenga" in name or "ethnic" in name):
+        return "indian_blouse"
     if "saree" in cat or "saree" in sub or "sari" in cat or "sari" in sub or "saree" in name:
         return "indian_saree"
-    if ("blouse" in cat or "blouse" in sub or "blouse" in name) and (grp == "indian" or "choli" in name or "saree" in name):
-        return "indian_blouse"
-    if cat == "blouse" or sub == "blouse":
-        return "indian_blouse"
     if "kurti" in cat or "kurti" in sub or "kurti" in name:
         return "indian_kurti"
     if "kurta" in cat or "kurta" in sub or "kurta" in name:
@@ -192,13 +190,23 @@ class RecommendationService:
         self.personalization_service = PersonalizationService(db)
 
     # ---------------------------------------------------------------------
-    # Phase 3 Recommendation Generator (With Calendar Prerequisite)
+    # Wardrobe-Based AI Outfit Recommendation Generator
     # ---------------------------------------------------------------------
     async def generate_recommendations(
         self,
         user_id: UUID,
-        calendar_event_id: UUID,
+        calendar_event_id: Optional[UUID] = None,
+        recommendation_mode: str = "general",
         occasion: Optional[str] = None,
+        custom_occasion: Optional[str] = None,
+        target_date: Optional[date] = None,
+        target_time: Optional[str] = None,
+        location_context: Optional[str] = None,
+        dress_code: Optional[str] = None,
+        weather_preference: str = "automatic",
+        additional_context: Optional[str] = None,
+        excluded_item_ids: Optional[List[UUID]] = None,
+        preferred_item_ids: Optional[List[UUID]] = None,
         outfit_preference: Optional[str] = "any",
         formality: Optional[float] = None,
         preferred_colors: Optional[List[str]] = None,
@@ -210,27 +218,56 @@ class RecommendationService:
         longitude: Optional[float] = None,
     ) -> List[Recommendation]:
         """
-        Phase 3 Deterministic AI Outfit Recommendation Engine.
-        Calendar event is a mandatory prerequisite.
-        Generates category-aware, formality-compatible, weather-calibrated outfit combinations.
+        Wardrobe-Based AI Outfit Recommendation Engine.
+        Supports three flexible paths:
+        - Path A: Calendar-assisted recommendations (optional calendar_event_id with user occasion override).
+        - Path B: Manual occasion-based recommendations (13 controlled occasions, date, context).
+        - Path C: General outfit recommendations (frictionless 'Suggest an outfit for me').
+        
+        Guaranteed properties:
+        - Recommends ONLY actual user clothing items (no mocks).
+        - Footwear is optional when absent from the wardrobe.
+        - Weather is optional and gracefully handles offline/ignored mode.
+        - Strict user isolation.
         """
-        # 1. MANDATORY CALENDAR PREREQUISITE VALIDATION
-        if not calendar_event_id:
+        # 1. MODE & CONTEXT RESOLUTION (Calendar is OPTIONAL)
+        event: Optional[CalendarEvent] = None
+        event_notes = ""
+
+        if calendar_event_id:
+            event = self.calendar_repo.get_by_id(calendar_event_id, user_id=user_id)
+            if not event or event.user_id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Specified calendar event was not found or does not belong to you.",
+                )
+            # Path A: Calendar-assisted recommendations
+            # Crucial: User's explicitly supplied occasion overrides the inferred occasion!
+            target_occasion = occasion or event.occasion or "Casual Daily"
+            target_date = target_date or event.event_date or date.today()
+            location_context = location_context or getattr(event, "location", None)
+            event_notes = event.notes or ""
+            if not dress_code and event_notes:
+                for dc in ["formal", "smart casual", "business casual", "black tie", "casual"]:
+                    if dc in event_notes.lower():
+                        dress_code = dc.title()
+                        break
+        elif recommendation_mode == "calendar":
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="Calendar event is a mandatory prerequisite to generate outfit recommendations.",
+                detail="Calendar event ID is required when recommendation_mode is 'calendar'.",
             )
-
-        event = self.calendar_repo.get_by_id(calendar_event_id, user_id=user_id)
-        if not event or event.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Specified calendar event was not found or does not belong to you.",
-            )
-
-        target_occasion = occasion or event.occasion or "Casual Daily"
-        target_date = event.event_date or date.today()
-        event_notes = event.notes or ""
+        elif occasion:
+            # Path B: Manual occasion-based recommendations
+            if occasion in ("Custom occasion", "Custom") or custom_occasion:
+                target_occasion = custom_occasion or "Custom occasion"
+            else:
+                target_occasion = occasion
+            target_date = target_date or date.today()
+        else:
+            # Path C: General outfit recommendations ("Suggest an outfit for me")
+            target_occasion = "Casual Daily"
+            target_date = target_date or date.today()
 
         # 2. WARDROBE RETRIEVAL & SUFFICIENCY AUDIT
         raw_wardrobe = self.wardrobe_repo.list_for_user(user_id, limit=300)
@@ -275,14 +312,14 @@ class RecommendationService:
             if c_type in buckets:
                 buckets[c_type].append(item)
 
-        # Audit if ANY valid outfit template can be constructed
-        can_western_two_piece = bool(buckets["western_top"] and buckets["western_bottom"] and buckets["footwear"])
-        can_western_dress = bool(buckets["western_dress"] and buckets["footwear"])
-        can_indian_saree = bool(buckets["indian_saree"] and buckets["indian_blouse"] and buckets["footwear"])
-        can_indian_kurta = bool(buckets["indian_kurta"] and (buckets["indian_bottom"] or buckets["western_bottom"]) and buckets["footwear"])
-        can_indian_kurti = bool(buckets["indian_kurti"] and (buckets["indian_bottom"] or buckets["western_bottom"]) and buckets["footwear"])
-        can_indian_lehenga = bool(buckets["indian_lehenga"] and buckets["indian_blouse"] and buckets["indian_dupatta"] and buckets["footwear"])
-        can_indian_sherwani = bool(buckets["indian_sherwani"] and (buckets["indian_bottom"] or buckets["western_bottom"]) and buckets["footwear"])
+        # Audit if ANY valid outfit template can be constructed (Footwear is OPTIONAL)
+        can_western_two_piece = bool(buckets["western_top"] and buckets["western_bottom"])
+        can_western_dress = bool(buckets["western_dress"])
+        can_indian_saree = bool(buckets["indian_saree"])
+        can_indian_kurta = bool(buckets["indian_kurta"] and (buckets["indian_bottom"] or buckets["western_bottom"]))
+        can_indian_kurti = bool(buckets["indian_kurti"] and (buckets["indian_bottom"] or buckets["western_bottom"]))
+        can_indian_lehenga = bool(buckets["indian_lehenga"])
+        can_indian_sherwani = bool(buckets["indian_sherwani"] and (buckets["indian_bottom"] or buckets["western_bottom"]))
 
         any_archetype_possible = any([
             can_western_two_piece,
@@ -295,16 +332,11 @@ class RecommendationService:
         ])
 
         if not any_archetype_possible:
-            # Construct a structured, helpful explanation of what is missing
             missing_parts = []
-            if not buckets["footwear"]:
-                missing_parts.append("footwear (shoes, sandals, heels, or flats)")
             if not buckets["western_top"] and not buckets["western_dress"] and not buckets["indian_saree"] and not buckets["indian_kurta"] and not buckets["indian_kurti"]:
                 missing_parts.append("tops, shirts, kurtas, or dresses")
             if not buckets["western_bottom"] and not buckets["indian_bottom"] and not buckets["western_dress"] and not buckets["indian_saree"]:
                 missing_parts.append("bottoms, jeans, or trousers")
-            if buckets["indian_saree"] and not buckets["indian_blouse"]:
-                missing_parts.append("a matching blouse for your saree")
 
             detail_msg = (
                 f"Insufficient wardrobe items to construct a complete outfit. "
@@ -316,27 +348,15 @@ class RecommendationService:
                 detail=detail_msg,
             )
 
-        # 3. WEATHER FETCHING (With Graceful Fallback)
-        try:
-            weather = await weather_service.get_current_weather(
-                city=city,
-                latitude=latitude,
-                longitude=longitude,
-            )
-            temp = float(weather.get("temp", 22.0))
-            feels_like = float(weather.get("feels_like", temp))
-            humidity = int(weather.get("humidity", 50))
-            rain_prob = int(weather.get("rain_probability", 0))
-            wind_speed = float(weather.get("wind_speed", 0.0))
-            condition = weather.get("condition", "Pleasant")
-        except Exception:
-            # Engine remains weather-neutral gracefully without error
+        # 3. WEATHER CALIBRATION (Optional, Graceful Fallback)
+        if weather_preference == "ignore":
             temp = 22.0
             feels_like = 22.0
             humidity = 50
-            rain_prob = 10
+            rain_prob = 0
             wind_speed = 5.0
-            condition = "Pleasant"
+            condition = "Pleasant (Ignored)"
+            target_season = "All-Season"
             weather = {
                 "city": city,
                 "temp": temp,
@@ -345,16 +365,47 @@ class RecommendationService:
                 "rain_probability": rain_prob,
                 "wind_speed": wind_speed,
                 "condition": condition,
+                "weather_ignored": True,
             }
-
-        if temp >= 25.0:
-            target_season = "Summer"
-        elif temp <= 12.0:
-            target_season = "Winter"
-        elif temp <= 18.0:
-            target_season = "Autumn"
         else:
-            target_season = "Spring"
+            try:
+                weather = await weather_service.get_current_weather(
+                    city=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                )
+                temp = float(weather.get("temp", 22.0))
+                feels_like = float(weather.get("feels_like", temp))
+                humidity = int(weather.get("humidity", 50))
+                rain_prob = int(weather.get("rain_probability", 0))
+                wind_speed = float(weather.get("wind_speed", 0.0))
+                condition = weather.get("condition", "Pleasant")
+            except Exception:
+                # Engine remains weather-neutral gracefully without error
+                temp = 22.0
+                feels_like = 22.0
+                humidity = 50
+                rain_prob = 10
+                wind_speed = 5.0
+                condition = "Pleasant"
+                weather = {
+                    "city": city,
+                    "temp": temp,
+                    "feels_like": feels_like,
+                    "humidity": humidity,
+                    "rain_probability": rain_prob,
+                    "wind_speed": wind_speed,
+                    "condition": condition,
+                }
+
+            if temp >= 25.0:
+                target_season = "Summer"
+            elif temp <= 12.0:
+                target_season = "Winter"
+            elif temp <= 18.0:
+                target_season = "Autumn"
+            else:
+                target_season = "Spring"
 
         # 4. CANDIDATE COMBINATION GENERATOR
         candidates = self._generate_archetype_candidates(
@@ -365,7 +416,7 @@ class RecommendationService:
         )
 
         if not candidates:
-            # Fallback: assemble any available top + bottom + footwear
+            # Fallback: assemble any available top + bottom (+ footwear if present)
             fallback = []
             for b_name in ["western_top", "indian_kurta", "indian_kurti", "western_dress", "indian_saree"]:
                 if buckets[b_name]:
@@ -393,13 +444,19 @@ class RecommendationService:
 
         filtered_candidates = []
         avoided_colors_set = set(c.lower().strip() for c in (avoided_colors or []))
+        excluded_set = set(excluded_item_ids or [])
+        preferred_set = set(preferred_item_ids or [])
 
         for items in candidates:
-            # A. Specific Clothing ID Lock-In
+            # A. Excluded Items Hard Filter
+            if excluded_set and any(i.id in excluded_set for i in items):
+                continue
+
+            # B. Specific Clothing ID Lock-In
             if specific_clothing_id and not any(i.id == specific_clothing_id for i in items):
                 continue
 
-            # B. Avoided Colors Exclusion
+            # C. Avoided Colors Exclusion
             if avoided_colors_set:
                 has_avoided = False
                 for it in items:
@@ -411,43 +468,55 @@ class RecommendationService:
                 if has_avoided:
                     continue
 
-            # C. Formality Delta Filter: max delta <= 0.40
+            # D. Formality Delta Filter: max delta <= 0.40
             formalities = [get_garment_formality(i) for i in items]
-            delta_formality = max(formalities) - min(formalities)
+            delta_formality = max(formalities) - min(formalities) if formalities else 0.0
             if delta_formality > 0.40:
                 continue
 
-            # D. Target Formality Filter (if user requested specific formality level)
+            # E. Dress Code / Target Formality Filter
+            avg_formality = sum(formalities) / len(formalities) if formalities else 0.5
             if formality is not None:
-                avg_formality = sum(formalities) / len(formalities)
                 if abs(avg_formality - formality) > 0.45:
                     continue
+            if dress_code:
+                dc_lower = dress_code.lower()
+                if any(k in dc_lower for k in ["formal", "black tie", "black-tie"]):
+                    if avg_formality < 0.60:
+                        continue
+                elif any(k in dc_lower for k in ["smart casual", "business casual"]):
+                    if avg_formality < 0.40 or avg_formality > 0.85:
+                        continue
+                elif any(k in dc_lower for k in ["casual", "relaxed"]):
+                    if avg_formality > 0.65:
+                        continue
 
-            # E. Occasion Clash Hard Filter
+            # F. Occasion Clash Hard Filter
             if not self._passes_occasion_hard_filter(items, target_occasion):
                 continue
 
-            # F. Weather Suitability Hard Filter
-            if temp < 14.0:
-                # Cold weather: reject sleeveless outfits without outerwear
-                has_outerwear = any(classify_garment(i) == "outerwear" for i in items)
-                has_sleeveless_without_layer = any(
-                    (getattr(i, "sleeve_type", None) or "").lower() == "sleeveless"
-                    for i in items
-                ) and not has_outerwear
-                if has_sleeveless_without_layer:
-                    continue
+            # G. Weather Suitability Hard Filter (if weather not ignored)
+            if weather_preference != "ignore":
+                if temp < 14.0:
+                    # Cold weather: reject sleeveless outfits without outerwear
+                    has_outerwear = any(classify_garment(i) == "outerwear" for i in items)
+                    has_sleeveless_without_layer = any(
+                        (getattr(i, "sleeve_type", None) or "").lower() == "sleeveless"
+                        for i in items
+                    ) and not has_outerwear
+                    if has_sleeveless_without_layer:
+                        continue
 
-            if rain_prob > 50:
-                # High rain probability: avoid suede/silk footwear
-                has_vulnerable_shoes = any(
-                    classify_garment(i) == "footwear" and (i.material or "").lower() in ("suede", "silk")
-                    for i in items
-                )
-                if has_vulnerable_shoes:
-                    continue
+                if rain_prob > 50:
+                    # High rain probability: avoid suede/silk footwear
+                    has_vulnerable_shoes = any(
+                        classify_garment(i) == "footwear" and (i.material or "").lower() in ("suede", "silk")
+                        for i in items
+                    )
+                    if has_vulnerable_shoes:
+                        continue
 
-            # G. Strict Indian Saree rule: NO western pants/jeans paired with a Saree!
+            # H. Strict Indian Saree rule: NO western pants/jeans paired with a Saree!
             is_saree = any(classify_garment(i) == "indian_saree" for i in items)
             if is_saree:
                 has_western_pants = any(classify_garment(i) in ("western_bottom", "western_top") for i in items)
@@ -457,26 +526,23 @@ class RecommendationService:
             filtered_candidates.append(items)
 
         if not filtered_candidates:
-            # If hard filters removed everything, relax formality delta slightly or fallback to top candidates
-            filtered_candidates = candidates[:3]
             # If hard filters removed all candidates, check if any candidate can pass with a slight relaxation (delta <= 0.45)
-            # while still strictly respecting avoided colors and Indian Saree rules.
+            # while still strictly respecting avoided colors, excluded items, and Indian Saree rules.
             relaxed = []
             for items in candidates:
-                # Never relax avoided colors
+                if excluded_set and any(i.id in excluded_set for i in items):
+                    continue
                 if avoided_colors_set and any(
                     (it.color or "").lower().strip() in avoided_colors_set or
                     (it.secondary_color or "").lower().strip() in avoided_colors_set
                     for it in items
                 ):
                     continue
-
-                # Never relax Saree rule
                 if any(classify_garment(i) == "indian_saree" for i in items) and any(classify_garment(i) in ("western_bottom", "western_top") for i in items):
                     continue
 
                 formalities = [get_garment_formality(i) for i in items]
-                delta_formality = max(formalities) - min(formalities)
+                delta_formality = max(formalities) - min(formalities) if formalities else 0.0
                 if delta_formality <= 0.45:
                     relaxed.append(items)
 
@@ -509,6 +575,13 @@ class RecommendationService:
                 recent_outfit_ids=recent_outfit_ids,
             )
             compat_score = score_data["total_score"]
+
+            # Boost preferred items
+            if preferred_set and any(i.id in preferred_set for i in items):
+                compat_score = min(0.99, round(compat_score + 0.10, 3))
+                score_data["total_score"] = compat_score
+                score_data["reasoning"]["preferred_items_boost"] = 0.10
+                score_data["reasons"].insert(0, "Features your requested wardrobe favorite piece.")
 
             if personalization_enabled:
                 s_pref, s_div, p_breakdown, p_rationales = self.personalization_service.score_candidate_personalization(
@@ -602,7 +675,7 @@ class RecommendationService:
         return created_recommendations
 
     # ---------------------------------------------------------------------
-    # Archetype Combination Generators
+    # Archetype Combination Generators (Footwear & Blouse Resilient)
     # ---------------------------------------------------------------------
     def _generate_archetype_candidates(
         self,
@@ -612,41 +685,52 @@ class RecommendationService:
         rain_prob: int,
     ) -> List[List[Clothing]]:
         candidates = []
+        shoes = buckets["footwear"][:3] if buckets["footwear"] else [None]
 
-        # 1. Western Two-Piece Archetype: Top + Bottom + Footwear (+ Optional Outerwear / Accessory)
+        # 1. Western Two-Piece Archetype: Top + Bottom (+ Footwear + Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
             for top in buckets["western_top"][:4]:
                 for btm in buckets["western_bottom"][:4]:
-                    for shoe in buckets["footwear"][:3]:
-                        base_combo = [top, btm, shoe]
+                    for shoe in shoes:
+                        base_combo = [top, btm]
+                        if shoe is not None:
+                            base_combo.append(shoe)
                         if buckets["accessory"]:
                             base_combo.append(buckets["accessory"][0])
                         candidates.append(base_combo)
 
                         if buckets["outerwear"]:
                             for out in buckets["outerwear"][:2]:
-                                layered_combo = [top, btm, shoe, out]
+                                layered_combo = [top, btm]
+                                if shoe is not None:
+                                    layered_combo.append(shoe)
+                                layered_combo.append(out)
                                 if buckets["accessory"]:
                                     layered_combo.append(buckets["accessory"][0])
                                 candidates.append(layered_combo)
 
-        # 2. Western Dress Archetype: Dress + Footwear (+ Optional Outerwear / Accessory)
+        # 2. Western Dress Archetype: Dress (+ Footwear + Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
             for dress in buckets["western_dress"][:3]:
-                for shoe in buckets["footwear"][:3]:
-                    base_combo = [dress, shoe]
+                for shoe in shoes:
+                    base_combo = [dress]
+                    if shoe is not None:
+                        base_combo.append(shoe)
                     if buckets["accessory"]:
                         base_combo.append(buckets["accessory"][0])
                     candidates.append(base_combo)
 
                     if buckets["outerwear"]:
                         for out in buckets["outerwear"][:2]:
-                            layered_combo = [dress, shoe, out]
+                            layered_combo = [dress]
+                            if shoe is not None:
+                                layered_combo.append(shoe)
+                            layered_combo.append(out)
                             if buckets["accessory"]:
                                 layered_combo.append(buckets["accessory"][0])
                             candidates.append(layered_combo)
 
-        # 3. Western Formal Suit Archetype: Blazer + Top + Trousers + Footwear
+        # 3. Western Formal Suit Archetype: Blazer + Top + Trousers (+ Footwear)
         if outfit_preference in ("any", "western"):
             blazers = [
                 i for i in buckets["outerwear"]
@@ -660,75 +744,100 @@ class RecommendationService:
                 for blz in blazers[:2]:
                     for top in buckets["western_top"][:3]:
                         for tr in trousers[:2]:
-                            for shoe in buckets["footwear"][:2]:
-                                candidates.append([blz, top, tr, shoe])
+                            for shoe in shoes[:2]:
+                                c = [blz, top, tr]
+                                if shoe is not None:
+                                    c.append(shoe)
+                                candidates.append(c)
 
-        # 4. Indian Saree Archetype: Saree + Blouse + Footwear (+ Accessory)
+        # 4. Indian Saree Archetype: Saree (+ Blouse + Footwear + Accessory)
         # STRICT RULE: Saree must pair ONLY with Blouse and elegant Footwear (Sandals/Heels/Flats).
         # STRICTLY NO western bottoms or jeans!
         if outfit_preference in ("any", "indian"):
+            blouses = buckets["indian_blouse"][:3] or [None]
+            saree_shoes = [
+                i for i in buckets["footwear"]
+                if classify_garment(i) == "footwear" and not ("sneakers" in (i.name or "").lower() or "boots" in (i.name or "").lower())
+            ]
+            s_shoes = saree_shoes[:2] if saree_shoes else shoes[:2]
+
             for saree in buckets["indian_saree"][:4]:
-                for blouse in buckets["indian_blouse"][:3]:
-                    saree_shoes = [
-                        i for i in buckets["footwear"]
-                        if classify_garment(i) == "footwear" and not ("sneakers" in (i.name or "").lower() or "boots" in (i.name or "").lower())
-                    ] or buckets["footwear"]
-                    for shoe in saree_shoes[:2]:
-                        combo = [saree, blouse, shoe]
+                for blouse in blouses:
+                    for shoe in s_shoes:
+                        combo = [saree]
+                        if blouse is not None:
+                            combo.append(blouse)
+                        if shoe is not None:
+                            combo.append(shoe)
                         if buckets["accessory"]:
                             combo.append(buckets["accessory"][0])
                         candidates.append(combo)
 
-        # 5. Indian Kurta Archetype: Kurta + Bottom (Indian or Western) + Footwear (+ Dupatta)
+        # 5. Indian Kurta Archetype: Kurta + Bottom (Indian or Western) (+ Footwear + Dupatta)
         if outfit_preference in ("any", "indian"):
             k_bottoms = buckets["indian_bottom"] or buckets["western_bottom"]
             for kurta in buckets["indian_kurta"][:3]:
                 for btm in k_bottoms[:3]:
-                    for shoe in buckets["footwear"][:2]:
-                        combo = [kurta, btm, shoe]
+                    for shoe in shoes[:2]:
+                        combo = [kurta, btm]
+                        if shoe is not None:
+                            combo.append(shoe)
                         if buckets["indian_dupatta"]:
                             combo.append(buckets["indian_dupatta"][0])
                         candidates.append(combo)
 
-        # 6. Indian Kurti Archetype: Kurti + Bottom + Footwear (+ Dupatta)
+        # 6. Indian Kurti Archetype: Kurti + Bottom (+ Footwear + Dupatta)
         if outfit_preference in ("any", "indian"):
             k_bottoms = buckets["indian_bottom"] or buckets["western_bottom"]
             for kurti in buckets["indian_kurti"][:3]:
                 for btm in k_bottoms[:3]:
-                    for shoe in buckets["footwear"][:2]:
-                        combo = [kurti, btm, shoe]
+                    for shoe in shoes[:2]:
+                        combo = [kurti, btm]
+                        if shoe is not None:
+                            combo.append(shoe)
                         if buckets["indian_dupatta"]:
                             combo.append(buckets["indian_dupatta"][0])
                         candidates.append(combo)
 
-        # 7. Indian Lehenga Archetype: Lehenga + Blouse + Dupatta + Footwear
+        # 7. Indian Lehenga Archetype: Lehenga (+ Blouse + Dupatta + Footwear)
         if outfit_preference in ("any", "indian"):
+            blouses = buckets["indian_blouse"][:2] or [None]
             for leh in buckets["indian_lehenga"][:2]:
-                for blz in buckets["indian_blouse"][:2]:
-                    for dup in (buckets["indian_dupatta"][:2] or [leh]):
-                        for shoe in buckets["footwear"][:2]:
-                            combo = [leh, blz, shoe]
-                            if dup != leh:
+                for blz in blouses:
+                    for dup in (buckets["indian_dupatta"][:2] or [None]):
+                        for shoe in shoes[:2]:
+                            combo = [leh]
+                            if blz is not None:
+                                combo.append(blz)
+                            if dup is not None:
                                 combo.append(dup)
+                            if shoe is not None:
+                                combo.append(shoe)
                             candidates.append(combo)
 
-        # 8. Indian Sherwani Archetype: Sherwani + Bottom + Formal Footwear
+        # 8. Indian Sherwani Archetype: Sherwani + Bottom (+ Footwear)
         if outfit_preference in ("any", "indian"):
             s_bottoms = buckets["indian_bottom"] or buckets["western_bottom"]
             for sher in buckets["indian_sherwani"][:2]:
                 for btm in s_bottoms[:2]:
-                    for shoe in buckets["footwear"][:2]:
-                        candidates.append([sher, btm, shoe])
+                    for shoe in shoes[:2]:
+                        combo = [sher, btm]
+                        if shoe is not None:
+                            combo.append(shoe)
+                        candidates.append(combo)
 
-        # 9. Fusion Kurti + Denim Archetype: Kurti + Jeans + Flats/Sneakers
+        # 9. Fusion Kurti + Denim Archetype: Kurti + Jeans (+ Footwear)
         if outfit_preference in ("any", "fusion"):
-            jeans = [i for i in buckets["western_bottom"] if "jeans" in (i.name or "").lower() or "jeans" in (i.category or "").lower()]
+            jeans = [i for i in buckets["western_bottom"] if "jeans" in (i.name or "").lower() or "jeans" in (i.category or "").lower() or "denim" in (getattr(i, "material", None) or "").lower()] or buckets["western_bottom"][:2]
             for kurti in (buckets["indian_kurti"] or buckets["indian_kurta"])[:3]:
                 for jn in jeans[:2]:
-                    for shoe in buckets["footwear"][:2]:
-                        candidates.append([kurti, jn, shoe])
+                    for shoe in shoes[:2]:
+                        combo = [kurti, jn]
+                        if shoe is not None:
+                            combo.append(shoe)
+                        candidates.append(combo)
 
-        # 10. Fusion Blazer + Kurta Archetype: Blazer + Kurta + Trousers + Footwear
+        # 10. Fusion Blazer + Kurta Archetype: Blazer + Kurta + Trousers (+ Footwear)
         if outfit_preference in ("any", "fusion"):
             blazers = [
                 i for i in buckets["outerwear"]
@@ -737,8 +846,11 @@ class RecommendationService:
             for blz in blazers[:2]:
                 for kurta in buckets["indian_kurta"][:2]:
                     for btm in (buckets["indian_bottom"] or buckets["western_bottom"])[:2]:
-                        for shoe in buckets["footwear"][:2]:
-                            candidates.append([blz, kurta, btm, shoe])
+                        for shoe in shoes[:2]:
+                            combo = [blz, kurta, btm]
+                            if shoe is not None:
+                                combo.append(shoe)
+                            candidates.append(combo)
 
         return candidates
 
@@ -748,29 +860,37 @@ class RecommendationService:
     def _passes_occasion_hard_filter(self, items: List[Clothing], occasion: str) -> bool:
         occ = occasion.lower()
 
-        # Formal / Work settings reject purely athletic or beachwear
-        if any(k in occ for k in ["work", "office", "formal", "business"]):
+        # Office / Work / Interview settings reject athletic, beachwear, shorts, distressed items
+        if any(k in occ for k in ["work", "office", "formal", "business", "interview"]):
             for i in items:
                 style = (i.style or "").lower()
                 name = (i.name or "").lower()
                 cat = (i.category or "").lower()
-                if "gym" in name or "athletic" in style or "sport" in style:
-                    return False
-                if "distressed" in name or "ripped" in name:
+                if any(w in name or w in style for w in ["gym", "athletic", "sport", "distressed", "ripped"]):
                     return False
                 if cat == "shorts" or "shorts" in name:
                     return False
 
-        # Wedding / Festive settings prefer ethnic or high formality; reject pure gym wear
-        if any(k in occ for k in ["wedding", "festive", "traditional"]):
+        # Sports / Gym settings reject formal suits, blazers, sarees, lehengas, sherwanis
+        if any(k in occ for k in ["sport", "gym", "workout", "athletic", "fitness"]):
+            for i in items:
+                c_type = classify_garment(i)
+                name = (i.name or "").lower()
+                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani"):
+                    return False
+                if any(w in name for w in ["blazer", "suit", "tuxedo"]):
+                    return False
+
+        # Wedding / Festive / Traditional settings prefer ethnic or high formality; reject pure gym wear & casual shorts
+        if any(k in occ for k in ["wedding", "festive", "traditional", "festival", "function"]):
             for i in items:
                 name = (i.name or "").lower()
                 style = (i.style or "").lower()
                 if "gym" in name or "sport" in style or "shorts" in name:
                     return False
 
-        # Casual Daily settings reject heavy bridal lehengas or black-tie sherwanis
-        if "casual" in occ:
+        # Casual Daily / College settings reject heavy bridal lehengas or black-tie sherwanis
+        if any(k in occ for k in ["casual", "college", "daily", "errands"]):
             for i in items:
                 c_type = classify_garment(i)
                 if c_type in ("indian_sherwani", "indian_lehenga"):
@@ -898,55 +1018,93 @@ class RecommendationService:
             it_occ = (i.occasion or "").lower()
             it_style = (i.style or "").lower()
             c_type = classify_garment(i)
+            name = (i.name or "").lower()
 
-            if "work" in occ or "office" in occ:
-                if c_type in ("outerwear", "western_top", "western_bottom") and ("shirt" in (i.name or "").lower() or "pants" in (i.name or "").lower() or "blazer" in (i.name or "").lower()):
+            if any(k in occ for k in ["work", "office", "interview"]):
+                if c_type in ("outerwear", "western_top", "western_bottom") and any(k in name for k in ["shirt", "pants", "trousers", "blazer", "suit"]):
                     scores.append(0.98)
                 elif c_type in ("indian_kurti", "indian_kurta"):
-                    scores.append(0.92)
+                    scores.append(0.94)
+                elif c_type == "western_dress" and "formal" in it_style:
+                    scores.append(0.95)
                 else:
                     scores.append(0.85)
-            elif "wedding" in occ or "festive" in occ:
+            elif any(k in occ for k in ["wedding", "festive", "traditional", "festival", "function"]):
                 if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani", "indian_blouse", "indian_dupatta"):
                     scores.append(0.98)
                 elif c_type in ("indian_kurta", "indian_kurti"):
-                    scores.append(0.92)
-                elif c_type == "outerwear" and "blazer" in (i.name or "").lower():
+                    scores.append(0.93)
+                elif c_type == "outerwear" and "blazer" in name:
+                    scores.append(0.90)
+                else:
+                    scores.append(0.75)
+            elif any(k in occ for k in ["date", "dinner"]):
+                if "chic" in it_style or "elegant" in it_style or c_type in ("western_dress", "indian_saree"):
+                    scores.append(0.98)
+                elif c_type in ("outerwear", "western_top") and any(k in name for k in ["blazer", "shirt", "blouse"]):
+                    scores.append(0.95)
+                else:
                     scores.append(0.88)
+            elif "party" in occ:
+                if c_type in ("western_dress", "outerwear") or "party" in it_style or "chic" in it_style:
+                    scores.append(0.98)
+                else:
+                    scores.append(0.90)
+            elif any(k in occ for k in ["sport", "gym", "workout"]):
+                if any(k in name or k in it_style for k in ["athletic", "gym", "sport", "runner", "sneakers", "hoodie", "shorts", "tee"]):
+                    scores.append(0.98)
                 else:
                     scores.append(0.70)
-            elif "date" in occ:
-                if "chic" in it_style or "elegant" in it_style or c_type in ("western_dress", "indian_saree"):
+            elif any(k in occ for k in ["travel", "college"]):
+                if any(k in name or k in it_style for k in ["casual", "sneakers", "jeans", "tee", "kurti", "hoodie", "comfortable"]):
                     scores.append(0.96)
                 else:
-                    scores.append(0.88)
+                    scores.append(0.90)
+            elif "family" in occ:
+                if c_type in ("indian_kurta", "indian_kurti", "western_dress") or "modest" in it_style or "casual" in it_style:
+                    scores.append(0.96)
+                else:
+                    scores.append(0.90)
             else:
-                # Casual daily
-                scores.append(0.92)
+                # Casual daily / General
+                scores.append(0.94)
 
         return sum(scores) / len(scores) if scores else 0.90
 
     def _compute_category_balance_score(self, items: List[Clothing]) -> float:
         types = set(classify_garment(i) for i in items)
+        has_footwear = "footwear" in types
+
         # Saree ensemble
-        if "indian_saree" in types and "indian_blouse" in types and "footwear" in types:
-            return 0.98 if "accessory" in types else 0.95
+        if "indian_saree" in types:
+            if "indian_blouse" in types:
+                return 0.98 if has_footwear else 0.95
+            return 0.94 if has_footwear else 0.91
+
         # Lehenga ensemble
-        if "indian_lehenga" in types and "indian_blouse" in types and "indian_dupatta" in types and "footwear" in types:
-            return 0.98
+        if "indian_lehenga" in types:
+            return 0.98 if ("indian_blouse" in types and has_footwear) else 0.94
+
         # Western formal suit
-        if "outerwear" in types and "western_top" in types and "western_bottom" in types and "footwear" in types:
-            return 0.98
+        if "outerwear" in types and "western_top" in types and "western_bottom" in types:
+            return 0.98 if has_footwear else 0.95
+
         # Western two-piece
-        if "western_top" in types and "western_bottom" in types and "footwear" in types:
-            return 0.96 if "outerwear" in types or "accessory" in types else 0.92
+        if "western_top" in types and "western_bottom" in types:
+            base = 0.96 if ("outerwear" in types or "accessory" in types) else 0.93
+            return base if has_footwear else (base - 0.02)
+
         # Western dress
-        if "western_dress" in types and "footwear" in types:
-            return 0.96 if "outerwear" in types or "accessory" in types else 0.92
+        if "western_dress" in types:
+            base = 0.96 if ("outerwear" in types or "accessory" in types) else 0.93
+            return base if has_footwear else (base - 0.02)
+
         # Kurta / Kurti
-        if ("indian_kurta" in types or "indian_kurti" in types) and ("indian_bottom" in types or "western_bottom" in types) and "footwear" in types:
-            return 0.96 if "indian_dupatta" in types else 0.92
-        return 0.85
+        if ("indian_kurta" in types or "indian_kurti" in types) and ("indian_bottom" in types or "western_bottom" in types):
+            base = 0.96 if "indian_dupatta" in types else 0.93
+            return base if has_footwear else (base - 0.02)
+
+        return 0.88
 
     def _compute_color_harmony_score(self, items: List[Clothing]) -> Tuple[float, str]:
         colors = [c.lower().strip() for c in (i.color for i in items if i.color)]

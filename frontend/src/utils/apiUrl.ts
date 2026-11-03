@@ -6,7 +6,7 @@
  * Ensures all API calls use the registered /api/v1 prefix without duplication.
  */
 
-export const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8000/api/v1';
+export const DEFAULT_DEV_API_BASE = 'https://vesh-backend-5sx2.onrender.com/api/v1';
 export const PRODUCTION_API_BASE = 'https://vesh-backend-5sx2.onrender.com/api/v1';
 
 function normalizeApiBaseUrl(raw: string): string {

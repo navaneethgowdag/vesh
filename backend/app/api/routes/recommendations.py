@@ -36,21 +36,34 @@ async def generate_recommendations(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Phase 3 AI Outfit Recommendation Generator.
-    Mandatory Prerequisite: Calendar Event (`req.calendar_event_id`).
-    Generates category-aware, formality-compatible, weather-calibrated outfit combinations.
+    Wardrobe-Based AI Outfit Recommendation Generator.
+    Supports three flexible modes:
+    - Path A: Calendar-assisted recommendations (optional calendar_event_id with occasion override).
+    - Path B: Manual occasion-based recommendations (13 controlled occasions, date, and context).
+    - Path C: General outfit recommendations (frictionless 'Suggest an outfit for me').
     """
     service = RecommendationService(db)
+    resolved_limit = req.limit or limit
     return await service.generate_recommendations(
         user_id=current_user.id,
         calendar_event_id=req.calendar_event_id,
+        recommendation_mode=req.recommendation_mode or ("calendar" if req.calendar_event_id else "general"),
         occasion=req.occasion,
+        custom_occasion=req.custom_occasion,
+        target_date=req.target_date,
+        target_time=req.target_time,
+        location_context=req.location_context,
+        dress_code=req.dress_code,
+        weather_preference=req.weather_preference or "automatic",
+        additional_context=req.additional_context,
+        excluded_item_ids=req.excluded_item_ids or [],
+        preferred_item_ids=req.preferred_item_ids or [],
         outfit_preference=req.outfit_preference,
         formality=req.formality,
         preferred_colors=req.preferred_colors,
         avoided_colors=req.avoided_colors,
         specific_clothing_id=req.specific_clothing_id,
-        limit=limit,
+        limit=resolved_limit,
         city=city,
         latitude=latitude,
         longitude=longitude,
