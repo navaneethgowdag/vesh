@@ -14,6 +14,8 @@ from app.repositories.social_repository import SocialRepository
 from app.services.image_service import image_service
 from app.services.cache_service import cache_service
 from app.core.redis import get_redis_client
+from app.models.poll import Poll
+from app.services.poll_service import PollService
 
 
 class MomentService:
@@ -76,6 +78,12 @@ class MomentService:
             is_liked = any(l.user_id == current_user_id for l in post.likes)
 
         user = post.user
+
+        # Fetch attached poll if present
+        poll_service = PollService(self.db)
+        poll_obj = poll_service.repo.get_poll_by_post_id(post.id)
+        formatted_poll = poll_service.format_poll(poll_obj, viewer_id=current_user_id) if poll_obj else None
+
         return {
             "id": post.id,
             "user": {
@@ -95,6 +103,7 @@ class MomentService:
             "time_remaining_seconds": remaining,
             "likes_count": likes_count,
             "is_liked": is_liked,
+            "poll": formatted_poll,
         }
 
     def create_moment(
@@ -104,6 +113,7 @@ class MomentService:
         caption: Optional[str] = "",
         occasion: Optional[str] = "Casual Daily",
         tags: Optional[List[str]] = None,
+        poll: Optional[Any] = None,
     ) -> Dict[str, Any]:
         safe_image_url = image_service.save_from_base64_if_needed(image_url)
         encoded_caption = self.encode_moment_caption(caption, occasion)
@@ -116,6 +126,35 @@ class MomentService:
         self.db.add(post)
         self.db.commit()
         self.db.refresh(post)
+
+        # Optional attached poll (expires with moment)
+        if poll:
+            poll_service = PollService(self.db)
+            expires_at = post.created_at + timedelta(hours=24)
+            if hasattr(poll, "model_copy"):
+                poll_payload = poll.model_copy()
+                poll_payload.content_type = "moment"
+                poll_payload.post_id = post.id
+            else:
+                from app.schemas.poll import PollCreate
+                poll_payload = PollCreate(
+                    question=poll.question,
+                    options=poll.options,
+                    duration_hours=24,
+                    expires_at=expires_at,
+                    allow_vote_change=getattr(poll, "allow_vote_change", False),
+                    show_results_before_vote=getattr(poll, "show_results_before_vote", False),
+                    allow_creator_vote=getattr(poll, "allow_creator_vote", False),
+                    content_type="moment",
+                    post_id=post.id,
+                )
+            poll_service.create_poll(
+                creator_user_id=user_id,
+                poll_in=poll_payload,
+                default_post_id=post.id,
+                default_expires_at=expires_at,
+            )
+
         cache_service.invalidate_moments()
         return self._format_moment(post, user_id)
 

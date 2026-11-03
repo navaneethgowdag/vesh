@@ -25,6 +25,16 @@ import {
   SocialUserSummary,
   GarmentProcessingStatus,
   LearnedPreferences,
+  Poll,
+  CreatePollPayload,
+  Community,
+  CommunityMember,
+  CommunityPost,
+  Conversation,
+  Message,
+  ExplorePostItem,
+  TrendingPostItem,
+  RecommendedPerson,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
@@ -222,6 +232,45 @@ function formatCalendarEvent(e: any): CalendarEvent {
           createdAt: e.outfit.created_at || e.outfit.createdAt || new Date().toISOString(),
         }
       : undefined,
+  };
+}
+
+export function mapPoll(p: any): Poll {
+  return {
+    id: String(p.id),
+    creator_user_id: String(p.creator_user_id),
+    question: p.question,
+    content_type: p.content_type,
+    parent_post_id: p.parent_post_id ? String(p.parent_post_id) : null,
+    parent_moment_id: p.parent_moment_id ? String(p.parent_moment_id) : null,
+    post_id: p.post_id ? String(p.post_id) : null,
+    expires_at: p.expires_at,
+    is_expired: Boolean(p.is_expired),
+    time_remaining_seconds: Number(p.time_remaining_seconds || 0),
+    allow_vote_change: Boolean(p.allow_vote_change),
+    show_results_before_vote: Boolean(p.show_results_before_vote),
+    allow_creator_vote: Boolean(p.allow_creator_vote),
+    total_votes: p.total_votes != null ? Number(p.total_votes) : null,
+    has_voted: Boolean(p.has_voted),
+    user_voted_option_id: p.user_voted_option_id ? String(p.user_voted_option_id) : null,
+    options: (p.options || []).map((o: any) => ({
+      id: String(o.id),
+      poll_id: o.poll_id ? String(o.poll_id) : undefined,
+      option_text: o.option_text,
+      display_order: Number(o.display_order || 0),
+      vote_count: o.vote_count != null ? Number(o.vote_count) : null,
+      percentage: o.percentage != null ? Number(o.percentage) : null,
+    })),
+    created_at: p.created_at,
+    creator: p.creator
+      ? {
+          id: String(p.creator.id),
+          username: p.creator.username,
+          name: p.creator.name,
+          avatar: p.creator.avatar,
+          is_verified: p.creator.is_verified,
+        }
+      : null,
   };
 }
 
@@ -835,6 +884,7 @@ export const api = {
           likesCount: c.likes_count || 0,
         })),
         createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+        poll: p.poll ? mapPoll(p.poll) : undefined,
       }));
     },
 
@@ -846,6 +896,7 @@ export const api = {
       occasion?: string;
       tags: string[];
       tagged_item_ids: string[];
+      poll?: CreatePollPayload;
     }): Promise<Post> {
       const p = await request<any>('/posts', {
         method: 'POST',
@@ -872,6 +923,7 @@ export const api = {
         isLiked: false,
         isSaved: false,
         comments: [],
+        poll: p.poll ? mapPoll(p.poll) : undefined,
         createdAt: 'Just now',
       };
     },
@@ -918,6 +970,7 @@ export const api = {
         timeRemainingSeconds: m.time_remaining_seconds || 0,
         likesCount: m.likes_count || 0,
         isLiked: m.is_liked || false,
+        poll: m.poll ? mapPoll(m.poll) : undefined,
       }));
     },
 
@@ -941,6 +994,7 @@ export const api = {
         timeRemainingSeconds: m.time_remaining_seconds || 0,
         likesCount: m.likes_count || 0,
         isLiked: m.is_liked || false,
+        poll: m.poll ? mapPoll(m.poll) : undefined,
       }));
     },
 
@@ -949,6 +1003,7 @@ export const api = {
       caption?: string;
       occasion?: string;
       tags?: string[];
+      poll?: CreatePollPayload;
     }): Promise<OutfitMoment> {
       const m = await request<any>('/moments', {
         method: 'POST',
@@ -972,6 +1027,7 @@ export const api = {
         timeRemainingSeconds: m.time_remaining_seconds || 0,
         likesCount: m.likes_count || 0,
         isLiked: m.is_liked || false,
+        poll: m.poll ? mapPoll(m.poll) : undefined,
       };
     },
 
@@ -1018,6 +1074,56 @@ export const api = {
         action: res.action,
         success: res.success,
       };
+    },
+  },
+
+  // --- POLLS ---
+  polls: {
+    async create(data: CreatePollPayload): Promise<Poll> {
+      const p = await request<any>('/polls', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return mapPoll(p);
+    },
+
+    async list(params?: {
+      content_type?: string;
+      only_active?: boolean;
+      limit?: number;
+      offset?: number;
+    }): Promise<Poll[]> {
+      const q = new URLSearchParams();
+      if (params?.content_type) q.append('content_type', params.content_type);
+      if (params?.only_active !== undefined) q.append('only_active', String(params.only_active));
+      if (params?.limit) q.append('limit', String(params.limit));
+      if (params?.offset) q.append('offset', String(params.offset));
+      const res = await request<any[]>(`/polls?${q.toString()}`);
+      return (res || []).map(mapPoll);
+    },
+
+    async get(pollId: string): Promise<Poll> {
+      const p = await request<any>(`/polls/${pollId}`);
+      return mapPoll(p);
+    },
+
+    async vote(pollId: string, optionId: string): Promise<Poll> {
+      const p = await request<any>(`/polls/${pollId}/vote`, {
+        method: 'POST',
+        body: JSON.stringify({ option_id: optionId }),
+      });
+      return mapPoll(p);
+    },
+
+    async results(pollId: string): Promise<Poll> {
+      const p = await request<any>(`/polls/${pollId}/results`);
+      return mapPoll(p);
+    },
+
+    async delete(pollId: string): Promise<void> {
+      await request<void>(`/polls/${pollId}`, {
+        method: 'DELETE',
+      });
     },
   },
 
@@ -1791,6 +1897,240 @@ export const api = {
         lowTemp: data.low_temp,
         summary: data.summary,
       };
+    },
+  },
+
+  // --- COMMUNITIES ---
+  communities: {
+    async create(data: {
+      name: string;
+      description?: string;
+      category?: string;
+      rules?: string;
+      cover_image_url?: string;
+      visibility?: 'public' | 'private';
+    }): Promise<Community> {
+      return request<Community>('/communities', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async list(params?: {
+      category?: string;
+      visibility?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<Community[]> {
+      const q = new URLSearchParams();
+      if (params?.category) q.set('category', params.category);
+      if (params?.visibility) q.set('visibility', params.visibility);
+      if (params?.limit) q.set('limit', String(params.limit));
+      if (params?.offset) q.set('offset', String(params.offset));
+      return request<Community[]>(`/communities?${q.toString()}`);
+    },
+
+    async get(identifier: string): Promise<Community> {
+      return request<Community>(`/communities/${identifier}`);
+    },
+
+    async update(
+      communityId: string,
+      data: {
+        description?: string;
+        category?: string;
+        rules?: string;
+        cover_image_url?: string;
+        visibility?: 'public' | 'private';
+      }
+    ): Promise<Community> {
+      return request<Community>(`/communities/${communityId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async join(communityId: string): Promise<{ status: string; role?: string; membership_status?: string }> {
+      return request<{ status: string; role?: string; membership_status?: string }>(
+        `/communities/${communityId}/join`,
+        { method: 'POST' }
+      );
+    },
+
+    async leave(communityId: string): Promise<{ success: boolean }> {
+      return request<{ success: boolean }>(`/communities/${communityId}/leave`, {
+        method: 'POST',
+      });
+    },
+
+    async getMembers(
+      communityId: string,
+      status: string = 'active',
+      limit: number = 50,
+      offset: number = 0
+    ): Promise<CommunityMember[]> {
+      return request<CommunityMember[]>(
+        `/communities/${communityId}/members?status=${status}&limit=${limit}&offset=${offset}`
+      );
+    },
+
+    async manageMember(
+      communityId: string,
+      targetUserId: string,
+      action: 'approve' | 'reject' | 'make_moderator' | 'remove_moderator'
+    ): Promise<any> {
+      return request<any>(`/communities/${communityId}/members/${targetUserId}/manage`, {
+        method: 'POST',
+        body: JSON.stringify({ action }),
+      });
+    },
+
+    async getFeed(communityId: string, limit: number = 50, offset: number = 0): Promise<CommunityPost[]> {
+      return request<CommunityPost[]>(`/communities/${communityId}/feed?limit=${limit}&offset=${offset}`);
+    },
+
+    async createPost(
+      communityId: string,
+      data: {
+        post_id?: string;
+        poll_id?: string;
+        title?: string;
+        message?: string;
+      }
+    ): Promise<CommunityPost> {
+      return request<CommunityPost>(`/communities/${communityId}/feed`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async deletePost(communityId: string, postId: string): Promise<{ success: boolean }> {
+      return request<{ success: boolean }>(`/communities/${communityId}/feed/${postId}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  // --- MESSAGES ---
+  messages: {
+    async listConversations(
+      conversationType?: 'direct' | 'group',
+      limit: number = 50,
+      offset: number = 0
+    ): Promise<Conversation[]> {
+      const q = new URLSearchParams();
+      if (conversationType) q.set('conversation_type', conversationType);
+      q.set('limit', String(limit));
+      q.set('offset', String(offset));
+      return request<Conversation[]>(`/messages/conversations?${q.toString()}`);
+    },
+
+    async createConversation(data: {
+      conversation_type: 'direct' | 'group';
+      recipient_user_id?: string;
+      participant_user_ids?: string[];
+      title?: string;
+    }): Promise<Conversation> {
+      return request<Conversation>('/messages/conversations', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getConversation(conversationId: string): Promise<Conversation> {
+      return request<Conversation>(`/messages/conversations/${conversationId}`);
+    },
+
+    async listMessages(
+      conversationId: string,
+      limit: number = 50,
+      offset: number = 0
+    ): Promise<Message[]> {
+      return request<Message[]>(
+        `/messages/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
+      );
+    },
+
+    async sendMessage(
+      conversationId: string,
+      data: {
+        message_type?: string;
+        text_content?: string;
+        shared_content_type?: string;
+        shared_content_id?: string;
+      }
+    ): Promise<Message> {
+      return request<Message>(`/messages/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async markAsRead(conversationId: string): Promise<{ success: boolean }> {
+      return request<{ success: boolean }>(`/messages/conversations/${conversationId}/read`, {
+        method: 'POST',
+      });
+    },
+
+    async share(data: {
+      target_type: 'conversation' | 'community';
+      target_id: string;
+      content_type: 'post' | 'poll' | 'community';
+      content_id: string;
+      message?: string;
+    }): Promise<any> {
+      return request<any>('/messages/share', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getUnreadCount(): Promise<{ unread_count: number }> {
+      return request<{ unread_count: number }>('/messages/unread-count');
+    },
+
+    async blockUser(userId: string): Promise<{ success: boolean; blocked_user_id: string }> {
+      return request<{ success: boolean; blocked_user_id: string }>('/messages/block', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId }),
+      });
+    },
+
+    async unblockUser(userId: string): Promise<{ success: boolean; unblocked_user_id: string }> {
+      return request<{ success: boolean; unblocked_user_id: string }>(`/messages/block/${userId}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  // --- EXPLORE ---
+  explore: {
+    async getFeed(limit: number = 30, offset: number = 0): Promise<{ items: ExplorePostItem[]; has_more: boolean }> {
+      return request<{ items: ExplorePostItem[]; has_more: boolean }>(
+        `/explore/feed?limit=${limit}&offset=${offset}`
+      );
+    },
+
+    async getTrending(limit: number = 30): Promise<{ items: TrendingPostItem[] }> {
+      return request<{ items: TrendingPostItem[] }>(`/explore/trending?limit=${limit}`);
+    },
+
+    async getCommunities(params?: {
+      category?: string;
+      query?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<Community[]> {
+      const q = new URLSearchParams();
+      if (params?.category) q.set('category', params.category);
+      if (params?.query) q.set('query', params.query);
+      if (params?.limit) q.set('limit', String(params.limit));
+      if (params?.offset) q.set('offset', String(params.offset));
+      return request<Community[]>(`/explore/communities?${q.toString()}`);
+    },
+
+    async getPeople(limit: number = 20): Promise<{ people: RecommendedPerson[] }> {
+      return request<{ people: RecommendedPerson[] }>(`/explore/people?limit=${limit}`);
     },
   },
 };

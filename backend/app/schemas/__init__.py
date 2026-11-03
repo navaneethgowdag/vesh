@@ -27,8 +27,70 @@ from app.schemas.social import (
     SavedItemResponse,
 )
 from app.schemas.notification import NotificationResponse
+from app.schemas.poll import (
+    PollOptionCreate,
+    PollOptionResponse,
+    PollCreate,
+    PollVoteRequest,
+    PollVoteResponse,
+    PollResponse,
+)
+from app.schemas.community import (
+    CommunityCreate,
+    CommunityUpdate,
+    CommunityResponse,
+    CommunityMemberResponse,
+    CommunityPostCreate,
+    CommunityPostResponse,
+    MembershipActionRequest,
+)
+from app.schemas.messaging import (
+    ConversationCreate,
+    ConversationResponse,
+    MessageCreate,
+    MessageResponse,
+    ParticipantResponse,
+    SharedContentPreview,
+    ShareRequest,
+    BlockUserRequest,
+)
+from app.schemas.explore import (
+    ExplorePostItem,
+    ExploreFeedResponse,
+    TrendingPostItem,
+    TrendingResponse,
+    RecommendedPerson,
+    ExplorePeopleResponse,
+)
 
 __all__ = [
+    "PollOptionCreate",
+    "PollOptionResponse",
+    "PollCreate",
+    "PollVoteRequest",
+    "PollVoteResponse",
+    "PollResponse",
+    "CommunityCreate",
+    "CommunityUpdate",
+    "CommunityResponse",
+    "CommunityMemberResponse",
+    "CommunityPostCreate",
+    "CommunityPostResponse",
+    "MembershipActionRequest",
+    "ConversationCreate",
+    "ConversationResponse",
+    "MessageCreate",
+    "MessageResponse",
+    "ParticipantResponse",
+    "SharedContentPreview",
+    "ShareRequest",
+    "BlockUserRequest",
+    "ExplorePostItem",
+    "ExploreFeedResponse",
+    "TrendingPostItem",
+    "TrendingResponse",
+    "RecommendedPerson",
+    "ExplorePeopleResponse",
     "Token",
     "TokenPayload",
     "LoginRequest",
@@ -64,4 +126,3 @@ __all__ = [
     "SavedItemResponse",
     "NotificationResponse",
 ]
-

@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field
 from app.schemas.wardrobe import ClothingResponse
+from app.schemas.poll import PollCreate, PollResponse
 
 
 class UserSummary(BaseModel):
@@ -38,6 +39,7 @@ class PostCreate(BaseModel):
     occasion: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     tagged_item_ids: List[UUID] = Field(default_factory=list)
+    poll: Optional[PollCreate] = None
 
 
 class PostResponse(BaseModel):
@@ -55,6 +57,7 @@ class PostResponse(BaseModel):
     is_liked: bool = False
     is_saved: bool = False
     comments: List[CommentResponse] = Field(default_factory=list)
+    poll: Optional[PollResponse] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -9,6 +9,7 @@ import {
   User,
   UserSettings,
   Weather,
+  CreatePollPayload,
 } from '../types';
 import { api, ApiError } from '../services/api';
 
@@ -23,7 +24,7 @@ export type WeatherStatus =
 export interface ToastMessage {
   id: string;
   message: string;
-  type: 'success' | 'info' | 'heart' | 'save';
+  type: 'success' | 'info' | 'heart' | 'save' | 'error';
 }
 
 interface AppContextType {
@@ -62,7 +63,7 @@ interface AppContextType {
   theme: 'light' | 'dark' | 'system';
   setTheme: (t: 'light' | 'dark' | 'system') => void;
   toasts: ToastMessage[];
-  showToast: (message: string, type?: 'success' | 'info' | 'heart' | 'save') => void;
+  showToast: (message: string, type?: 'success' | 'info' | 'heart' | 'save' | 'error') => void;
   dismissToast: (id: string) => void;
 
   // Actions — every mutation below persists through FastAPI into Neon.
@@ -79,6 +80,7 @@ interface AppContextType {
     occasion: Occasion;
     location?: string;
     taggedItemIds?: string[];
+    poll?: CreatePollPayload;
   }) => Promise<Post>;
   deletePost: (postId: string) => Promise<void>;
   updateProfile: (data: {
@@ -228,7 +230,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Toast dispatch
-  const showToast = useCallback((message: string, type: 'success' | 'info' | 'heart' | 'save' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'heart' | 'save' | 'error' = 'info') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -809,6 +811,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     occasion: Occasion;
     location?: string;
     taggedItemIds?: string[];
+    poll?: CreatePollPayload;
   }): Promise<Post> => {
     const created = await api.posts.create({
       caption: postData.caption,
@@ -817,6 +820,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       occasion: postData.occasion,
       tags: postData.tags,
       tagged_item_ids: postData.taggedItemIds || [],
+      poll: postData.poll,
     });
     setPosts((prev) => [created, ...prev]);
     showToast('Your outfit post is live on StyleSphere!', 'success');

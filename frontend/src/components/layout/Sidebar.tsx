@@ -5,6 +5,7 @@ import {
   Sparkles,
   Calendar as CalendarIcon,
   Compass,
+  MessageSquare,
   Shirt,
   PlusCircle,
   Bookmark,
@@ -16,17 +17,33 @@ import {
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../../utils/cn';
+import { api } from '../../services/api';
 
 export const Sidebar: React.FC = () => {
   const { unreadNotifsCount, wardrobe, logout, showToast } = useApp();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
+  const [unreadMessages, setUnreadMessages] = React.useState(0);
+
+  React.useEffect(() => {
+    let mounted = true;
+    api.messages
+      .getUnreadCount()
+      .then((res) => {
+        if (mounted) setUnreadMessages(res.unread_count);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const navItems = [
     { name: 'Home', path: '/home', icon: Home },
     { name: 'Daily Fit', path: '/daily-fit', icon: Sparkles, badge: 'AI' },
     { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
     { name: 'Explore', path: '/explore', icon: Compass },
+    { name: 'Messages', path: '/inbox', icon: MessageSquare, count: unreadMessages },
     { name: 'Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
     { name: 'Create', path: '/create', icon: PlusCircle, highlight: true },
     { name: 'Saved', path: '/saved', icon: Bookmark },

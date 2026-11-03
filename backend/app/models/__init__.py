@@ -23,12 +23,25 @@ from app.models.background_job import BackgroundJob
 from app.models.upload_batch import UploadBatch
 from app.models.user_identity import UserIdentity
 from app.models.google_calendar_connection import GoogleCalendarConnection
+from app.models.poll import Poll, PollOption, PollVote
+from app.models.community import Community, CommunityMember, CommunityPost
+from app.models.conversation import Conversation, ConversationParticipant, Message, UserBlock
 
 __all__ = [
     "Base",
     "User",
     "UserIdentity",
     "GoogleCalendarConnection",
+    "Poll",
+    "PollOption",
+    "PollVote",
+    "Community",
+    "CommunityMember",
+    "CommunityPost",
+    "Conversation",
+    "ConversationParticipant",
+    "Message",
+    "UserBlock",
     "UploadBatch",
     "UserPreference",
     "LearnedPreference",

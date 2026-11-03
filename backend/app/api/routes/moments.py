@@ -55,6 +55,7 @@ def publish_moment(
         caption=moment_in.caption,
         occasion=moment_in.occasion,
         tags=moment_in.tags,
+        poll=moment_in.poll,
     )
 
 

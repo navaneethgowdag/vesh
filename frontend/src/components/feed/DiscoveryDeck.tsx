@@ -6,6 +6,7 @@ import { OutfitMoment } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
+import { PollWidget } from '../social/PollWidget';
 
 interface DiscoveryDeckProps {
   moments: OutfitMoment[];
@@ -335,6 +336,13 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
                   </span>
                 )}
               </div>
+
+              {/* Attached Poll */}
+              {currentMoment.poll && (
+                <div className="pt-2">
+                  <PollWidget poll={currentMoment.poll} compact={true} />
+                </div>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

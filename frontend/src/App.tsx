@@ -21,6 +21,8 @@ import { Profile } from './pages/Profile';
 import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Calendar } from './pages/Calendar';
+import { Inbox } from './pages/Inbox';
+import { CommunityDetail } from './pages/CommunityDetail';
 import { NotFound } from './pages/NotFound';
 import { OAuthCallback } from './pages/OAuthCallback';
 
@@ -90,6 +92,30 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Explore />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/communities/:slug"
+              element={
+                <ProtectedRoute>
+                  <CommunityDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community/:slug"
+              element={
+                <ProtectedRoute>
+                  <CommunityDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inbox"
+              element={
+                <ProtectedRoute>
+                  <Inbox />
                 </ProtectedRoute>
               }
             />

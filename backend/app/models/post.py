@@ -52,3 +52,4 @@ class Post(Base):
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
     likes = relationship("Like", back_populates="post", cascade="all, delete-orphan")
     saved_by = relationship("SavedItem", back_populates="post", cascade="all, delete-orphan")
+    poll = relationship("Poll", back_populates="post", uselist=False, cascade="all, delete-orphan")

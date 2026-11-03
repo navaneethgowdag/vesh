@@ -9,13 +9,17 @@ import {
   Eye,
   X,
   Layers,
+  BarChart2,
+  Plus,
+  Trash2,
+  HelpCircle,
   Image as ImageIcon,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
-import { Occasion } from '../types';
+import { Occasion, CreatePollPayload } from '../types';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
 
 const OCCASIONS: Occasion[] = [
@@ -34,10 +38,13 @@ export const CreatePost: React.FC = () => {
   const { wardrobe, publishPost, showToast } = useApp();
   const currentUser = useCurrentUser();
 
-  const [publishType, setPublishType] = useState<'post' | 'moment'>(() => {
+  const [publishType, setPublishType] = useState<'post' | 'moment' | 'poll'>(() => {
     const t = searchParams.get('type');
-    return t === 'moment' ? 'moment' : 'post';
+    if (t === 'moment') return 'moment';
+    if (t === 'poll') return 'poll';
+    return 'post';
   });
+
   const [image, setImage] = useState('');
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('');
@@ -48,8 +55,37 @@ export const CreatePost: React.FC = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
+  // Poll state
+  const [includePoll, setIncludePoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollDurationHours, setPollDurationHours] = useState<number>(24);
+  const [allowVoteChange, setAllowVoteChange] = useState<boolean>(false);
+  const [showResultsBeforeVote, setShowResultsBeforeVote] = useState<boolean>(false);
+  const [allowCreatorVote, setAllowCreatorVote] = useState<boolean>(false);
+
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddPollOption = () => {
+    if (pollOptions.length < 6) {
+      setPollOptions((prev) => [...prev, '']);
+    }
+  };
+
+  const handleRemovePollOption = (index: number) => {
+    if (pollOptions.length > 2) {
+      setPollOptions((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handlePollOptionChange = (index: number, val: string) => {
+    setPollOptions((prev) => {
+      const copy = [...prev];
+      copy[index] = val;
+      return copy;
+    });
+  };
 
   const processFile = async (file: File) => {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -69,7 +105,7 @@ export const CreatePost: React.FC = () => {
       const uploaded = await api.media.upload(file);
       setImage(uploaded.image_url);
       showToast('Image uploaded and optimized to WebP', 'success');
-    } catch (err) {
+    } catch {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -97,9 +133,45 @@ export const CreatePost: React.FC = () => {
     );
   };
 
+  const buildPollPayload = (contentType: 'post' | 'moment' | 'standalone'): CreatePollPayload => {
+    const cleaned = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (!pollQuestion.trim()) {
+      throw new Error('Please enter a question for your poll');
+    }
+    if (cleaned.length < 2) {
+      throw new Error('Please enter at least 2 distinct poll options');
+    }
+    return {
+      question: pollQuestion.trim(),
+      options: cleaned,
+      duration_hours: contentType === 'moment' ? 24 : pollDurationHours,
+      allow_vote_change: allowVoteChange,
+      show_results_before_vote: showResultsBeforeVote,
+      allow_creator_vote: allowCreatorVote,
+      content_type: contentType,
+    };
+  };
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Standalone poll submission
+    if (publishType === 'poll') {
+      try {
+        setIsPublishing(true);
+        const pollPayload = buildPollPayload('standalone');
+        await api.polls.create(pollPayload);
+        showToast('Community Poll published successfully!', 'success');
+        navigate('/home');
+      } catch (err: any) {
+        showToast(err?.message || 'Failed to publish poll', 'info');
+      } finally {
+        setIsPublishing(false);
+      }
+      return;
+    }
+
+    // Post / Moment submission requires photo
     if (!image) {
       showToast('Please upload or select an outfit photo', 'info');
       return;
@@ -118,6 +190,11 @@ export const CreatePost: React.FC = () => {
         .map((t) => t.trim().replace(/^#/, ''))
         .filter(Boolean);
 
+      let pollPayload: CreatePollPayload | undefined = undefined;
+      if (includePoll) {
+        pollPayload = buildPollPayload(publishType === 'post' ? 'post' : 'moment');
+      }
+
       if (publishType === 'post') {
         await publishPost({
           image,
@@ -126,6 +203,7 @@ export const CreatePost: React.FC = () => {
           occasion,
           location: location.trim() || undefined,
           taggedItemIds,
+          poll: pollPayload,
         });
         showToast('Permanent outfit post published to profile & Following feed', 'success');
         navigate('/home?tab=following');
@@ -135,12 +213,13 @@ export const CreatePost: React.FC = () => {
           caption: caption.trim(),
           occasion,
           tags: parsedTags,
+          poll: pollPayload,
         });
         showToast('24-Hour Outfit Moment live in For You discovery!', 'success');
         navigate('/home?tab=for-you');
       }
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to publish', 'info');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to publish', 'info');
     } finally {
       setIsPublishing(false);
     }
@@ -154,10 +233,10 @@ export const CreatePost: React.FC = () => {
         {/* Page Title */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            Publish Outfit Look
+            Publish Look or Poll
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-            Share your daily styling with the StyleSphere community as a permanent look or a 24-hour discovery moment.
+            Share your daily styling as a permanent look, 24-hour discovery moment, or ask the community with a fashion poll.
           </p>
         </div>
 
@@ -166,7 +245,7 @@ export const CreatePost: React.FC = () => {
           <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
             Publication Channel
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setPublishType('post')}
@@ -189,31 +268,50 @@ export const CreatePost: React.FC = () => {
               }`}
             >
               <Clock className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">24h Outfit Moment</span>
+              <span className="truncate">24h Moment</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPublishType('poll')}
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+                publishType === 'poll'
+                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
+                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+              }`}
+            >
+              <BarChart2 className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">Community Poll</span>
             </button>
           </div>
           <div className="mt-2.5 px-1 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-            {publishType === 'post' ? (
+            {publishType === 'post' && (
               <>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                <span>Permanent Post: Stays on your profile grid and appears in your followers&apos; Following feed.</span>
+                <span>Permanent Post: Stays on your profile grid and appears in your followers&apos; feed with optional poll.</span>
               </>
-            ) : (
+            )}
+            {publishType === 'moment' && (
               <>
                 <span className="w-2 h-2 rounded-full bg-amber-500 inline-block flex-shrink-0" />
-                <span>24-Hour Moment: Shared exclusively with users who follow you. Automatically expires after 24 hours.</span>
+                <span>24-Hour Moment: Appears in For You discovery deck. Automatically expires after 24 hours.</span>
+              </>
+            )}
+            {publishType === 'poll' && (
+              <>
+                <span className="w-2 h-2 rounded-full bg-blue-500 inline-block flex-shrink-0" />
+                <span>Community Poll: Collect style opinions, vote on pieces or outfit pairings directly from the fashion community.</span>
               </>
             )}
           </div>
         </div>
 
         <form onSubmit={handlePublish} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Image & Tagging */}
+          {/* Left Column: Image & Poll Options */}
           <div className="lg:col-span-6 space-y-6">
-            {/* Image Preview & Upload */}
+            {/* Image Preview & Upload (Required for Post/Moment, Optional for Standalone Poll) */}
             <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-                Outfit Photography *
+                Outfit Photography {publishType !== 'poll' && '*'}
               </label>
 
               {/* Hidden file inputs */}
@@ -250,138 +348,293 @@ export const CreatePost: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="border border-dashed border-zinc-300 dark:border-zinc-700 rounded-md aspect-[4/5] flex flex-col items-center justify-center p-6 text-center bg-zinc-50 dark:bg-zinc-800/40 mb-3">
-                  <div className="w-14 h-14 rounded-md bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 mb-3">
-                    <ImageIcon className="w-7 h-7" />
+                <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-md p-8 text-center flex flex-col items-center justify-center gap-3 bg-zinc-50 dark:bg-zinc-800/40 min-h-[220px]">
+                  <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500 dark:text-zinc-400">
+                    <ImageIcon className="w-8 h-8" />
                   </div>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                    Upload Lookbook Photo
-                  </h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-xs">
-                    Choose from device gallery or take an instant outfit photo.
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
-                    <button
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {publishType === 'poll' ? 'Attach optional look photo' : 'Upload look photo'}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                      WebP, JPEG, or PNG supported (auto-optimized)
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                    <Button
                       type="button"
-                      disabled={isUploadingImage}
+                      variant="outline"
+                      size="sm"
                       onClick={() => galleryInputRef.current?.click()}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 min-h-[44px] rounded-md text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>{isUploadingImage ? 'Uploading...' : 'Choose File'}</span>
-                    </button>
-                    <button
-                      type="button"
                       disabled={isUploadingImage}
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 min-h-[44px] rounded-md text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+                      icon={<Upload className="w-4 h-4" />}
                     >
-                      <Camera className="w-4 h-4" />
-                      <span>Take Photo</span>
-                    </button>
+                      {isUploadingImage ? 'Uploading...' : 'Choose File'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      icon={<Camera className="w-4 h-4" />}
+                    >
+                      Take Photo
+                    </Button>
                   </div>
                 </div>
               )}
-
-              {/* Direct Image URL fallback */}
-              <div>
-                <input
-                  type="url"
-                  placeholder="Or enter image URL (https://...)"
-                  value={image.startsWith('http') ? image : ''}
-                  onChange={(e) => setImage(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 min-h-[44px] text-base sm:text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-                />
-              </div>
             </div>
 
-            {/* Tagged Wardrobe Items Section (Only for permanent posts) */}
+            {/* Wardrobe Tagging for Permanent Post */}
             {publishType === 'post' && (
-              <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                      Tag Wardrobe Items ({taggedItemIds.length})
+              <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Tag Wardrobe Garments
                     </span>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowWardrobePicker(!showWardrobePicker)}
-                    className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline cursor-pointer"
                   >
-                    {showWardrobePicker ? 'Done Tagging' : '+ Tag From Wardrobe'}
-                  </button>
+                    {showWardrobePicker ? 'Hide Picker' : '+ Select Pieces'}
+                  </Button>
                 </div>
 
-                {/* Tagged Items Pills */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {taggedItems.map((item) => (
-                    <span
-                      key={item.id}
-                      className="inline-flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs px-2.5 py-1 rounded-md border border-zinc-200 dark:border-zinc-700"
-                    >
-                      <img src={item.image} alt={item.name} className="w-4 h-4 rounded object-cover" />
-                      <span>{item.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleTagItem(item.id)}
-                        className="hover:text-rose-600 ml-1 cursor-pointer"
+                {taggedItems.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {taggedItems.map((item) => (
+                      <span
+                        key={item.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                {/* Wardrobe picker drawer */}
-                {showWardrobePicker && (
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700 max-h-52 overflow-y-auto space-y-1.5">
-                    <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-2">
-                      Click items from your digital closet to tag:
-                    </p>
-                    {wardrobe.map((item) => {
-                      const isTagged = taggedItemIds.includes(item.id);
-                      return (
-                        <div
-                          key={item.id}
+                        {item.name}
+                        <button
+                          type="button"
                           onClick={() => toggleTagItem(item.id)}
-                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-xs transition-colors ${
-                            isTagged
-                              ? 'bg-zinc-900 dark:bg-zinc-100 font-bold text-white dark:text-zinc-900'
-                              : 'bg-white dark:bg-zinc-800 hover:bg-zinc-100 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200'
-                          }`}
+                          className="hover:text-rose-500"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <img src={item.image} alt={item.name} className="w-8 h-8 rounded object-cover" />
-                            <span className="truncate">{item.name}</span>
-                          </div>
-                          <span>{isTagged ? '✓ Tagged' : '+ Add'}</span>
-                        </div>
-                      );
-                    })}
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {showWardrobePicker && (
+                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 max-h-48 overflow-y-auto space-y-1">
+                    {wardrobe.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => toggleTagItem(item.id)}
+                        className={`flex items-center justify-between p-2 rounded cursor-pointer text-xs ${
+                          taggedItemIds.includes(item.id)
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        }`}
+                      >
+                        <span className="font-medium truncate">{item.name}</span>
+                        <span className="opacity-70 capitalize ml-2">{item.category}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Right Column: Metadata, Caption & Live Preview */}
+          {/* Right Column: Post Details & Poll Configuration */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-4">
+            {/* Poll Configuration Section */}
+            {(publishType === 'poll' || includePoll) ? (
+              <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-blue-200 dark:border-blue-900/50 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                      {publishType === 'poll' ? 'Community Poll Setup' : 'Attached Poll Setup'}
+                    </span>
+                  </div>
+                  {publishType !== 'poll' && (
+                    <button
+                      type="button"
+                      onClick={() => setIncludePoll(false)}
+                      className="text-xs text-rose-500 hover:underline"
+                    >
+                      Remove Poll
+                    </button>
+                  )}
+                </div>
+
+                {/* Question */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Poll Question *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Which shoes should I pair with this blazer?"
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  />
+                </div>
+
+                {/* Options List */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                    Poll Options (2 to 6) *
+                  </label>
+                  {pollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-zinc-400 w-4 text-center">{idx + 1}</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder={`Option ${idx + 1}`}
+                        value={opt}
+                        onChange={(e) => handlePollOptionChange(idx, e.target.value)}
+                        className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePollOption(idx)}
+                          className="p-2 text-zinc-400 hover:text-rose-500 rounded transition-colors"
+                          title="Remove option"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {pollOptions.length < 6 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddPollOption}
+                      icon={<Plus className="w-3.5 h-3.5" />}
+                      className="mt-1"
+                    >
+                      Add Option
+                    </Button>
+                  )}
+                </div>
+
+                {/* Duration */}
+                {publishType !== 'moment' ? (
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                      Poll Duration
+                    </label>
+                    <select
+                      value={pollDurationHours}
+                      onChange={(e) => setPollDurationHours(Number(e.target.value))}
+                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
+                    >
+                      <option value={24}>24 Hours (1 Day)</option>
+                      <option value={72}>3 Days</option>
+                      <option value={168}>7 Days (1 Week)</option>
+                      <option value={336}>14 Days (2 Weeks)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Poll automatically closes when this 24-hour outfit moment expires.</span>
+                  </p>
+                )}
+
+                {/* Advanced Voting Rules */}
+                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                  <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Voting Policies
+                  </span>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-800 dark:text-zinc-200">
+                    <input
+                      type="checkbox"
+                      checked={allowVoteChange}
+                      onChange={(e) => setAllowVoteChange(e.target.checked)}
+                      className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 focus:ring-0"
+                    />
+                    <span>Allow voters to change their vote before the poll closes</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-800 dark:text-zinc-200">
+                    <input
+                      type="checkbox"
+                      checked={showResultsBeforeVote}
+                      onChange={(e) => setShowResultsBeforeVote(e.target.checked)}
+                      className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 focus:ring-0"
+                    />
+                    <span>Show live results before voting (otherwise hidden until user votes or poll closes)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-800 dark:text-zinc-200">
+                    <input
+                      type="checkbox"
+                      checked={allowCreatorVote}
+                      onChange={(e) => setAllowCreatorVote(e.target.checked)}
+                      className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 focus:ring-0"
+                    />
+                    <span>Allow me to vote on my own poll (disabled by default to prevent bias)</span>
+                  </label>
+                </div>
+              </div>
+            ) : (
+              /* Toggle to Attach Poll to Post / Moment */
+              <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-md">
+                    <BarChart2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Add a Community Poll
+                    </h4>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Ask your audience for styling feedback or vote on outfit pieces
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIncludePoll(true)}
+                >
+                  + Add Poll
+                </Button>
+              </div>
+            )}
+
+            {/* Post Details Card */}
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-4">
               {/* Caption */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Caption / Styling Thoughts *
+                  {publishType === 'poll' ? 'Background Context (Optional)' : 'Look Caption *'}
                 </label>
                 <textarea
                   rows={3}
-                  required
-                  placeholder="Share the inspiration behind this look, styling advice, or garment fit notes..."
+                  required={publishType !== 'poll'}
+                  placeholder={
+                    publishType === 'poll'
+                      ? 'Add any styling context, dress code details, or styling dilemmas...'
+                      : 'Share the inspiration behind this look, styling advice, or garment fit notes...'
+                  }
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
                 />
               </div>
 
@@ -395,7 +648,7 @@ export const CreatePost: React.FC = () => {
                   placeholder="#Minimal #QuietLuxury #Tailoring #DailyFit"
                   value={hashtags}
                   onChange={(e) => setHashtags(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2.5 min-h-[44px] text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                 />
               </div>
 
@@ -408,7 +661,7 @@ export const CreatePost: React.FC = () => {
                   <select
                     value={occasion}
                     onChange={(e) => setOccasion(e.target.value as Occasion)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2.5 min-h-[44px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
                   >
                     {OCCASIONS.map((occ) => (
                       <option key={occ} value={occ}>
@@ -429,33 +682,12 @@ export const CreatePost: React.FC = () => {
                         placeholder="e.g. SoHo, New York"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
-                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                       />
                       <MapPin className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-3.5" />
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Live Card Preview Box */}
-              <div className="pt-2">
-                <span className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                  {publishType === 'post' ? 'Feed Preview' : 'Discovery Moment Preview'}
-                </span>
-                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">@{currentUser.username}</span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {publishType === 'post' ? '· Permanent Post' : '· 24h Outfit Moment'}
-                    </span>
-                    <span className="ml-auto text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded font-semibold text-zinc-900 dark:text-zinc-100">
-                      {occasion}
-                    </span>
-                  </div>
-                  <p className="text-zinc-900 dark:text-zinc-100 line-clamp-2">{caption || '(Caption preview will appear here...)'}</p>
-                  {hashtags && <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1 font-medium">{hashtags}</p>}
-                </div>
               </div>
 
               {/* Publish Button */}
@@ -467,7 +699,11 @@ export const CreatePost: React.FC = () => {
                   isLoading={isPublishing}
                   className="w-full min-h-[44px]"
                 >
-                  {publishType === 'post' ? 'Publish Outfit to Feed' : 'Publish 24h Outfit Moment'}
+                  {publishType === 'poll'
+                    ? 'Publish Community Poll'
+                    : publishType === 'post'
+                    ? (includePoll ? 'Publish Post with Poll' : 'Publish Outfit to Feed')
+                    : (includePoll ? 'Publish 24h Moment with Poll' : 'Publish 24h Outfit Moment')}
                 </Button>
               </div>
             </div>

@@ -12,6 +12,8 @@ from app.repositories.social_repository import SocialRepository
 from app.repositories.wardrobe_repository import WardrobeRepository
 from app.services.cache_service import cache_service
 from app.services.image_service import image_service
+from app.models.poll import Poll
+from app.services.poll_service import PollService
 
 
 class FeedService:
@@ -41,6 +43,12 @@ class FeedService:
         liked_post_ids = batch["liked_post_ids"]
         saved_post_ids = batch["saved_post_ids"]
         following_author_ids = batch["following_author_ids"]
+
+        # Batch lookup attached polls for posts via repo
+        poll_service = PollService(self.db)
+        polls = [p for p in [poll_service.repo.get_poll_by_post_id(pid) for pid in post_ids] if p]
+        formatted_polls = poll_service.format_polls_batch(polls, viewer_id=current_user_id)
+        polls_by_post_id = {fp["post_id"]: fp for fp in formatted_polls if fp.get("post_id")}
 
         formatted = []
         for p in posts:
@@ -99,6 +107,7 @@ class FeedService:
                 "is_liked": is_liked,
                 "is_saved": is_saved,
                 "comments": comments_data,
+                "poll": polls_by_post_id.get(p.id),
                 "created_at": p.created_at,
             })
         return formatted
@@ -149,6 +158,34 @@ class FeedService:
             caption=caption,
             image_url=safe_image_url,
         )
+
+        # Optional attached poll
+        poll_in = extra.get("poll")
+        if poll_in:
+            poll_service = PollService(self.db)
+            if hasattr(poll_in, "model_copy"):
+                poll_payload = poll_in.model_copy()
+                poll_payload.content_type = "post"
+                poll_payload.post_id = post.id
+            else:
+                from app.schemas.poll import PollCreate
+                poll_payload = PollCreate(
+                    question=poll_in.question,
+                    options=poll_in.options,
+                    duration_hours=getattr(poll_in, "duration_hours", 24),
+                    expires_at=getattr(poll_in, "expires_at", None),
+                    allow_vote_change=getattr(poll_in, "allow_vote_change", False),
+                    show_results_before_vote=getattr(poll_in, "show_results_before_vote", False),
+                    allow_creator_vote=getattr(poll_in, "allow_creator_vote", False),
+                    content_type="post",
+                    post_id=post.id,
+                )
+            poll_service.create_poll(
+                creator_user_id=user_id,
+                poll_in=poll_payload,
+                default_post_id=post.id,
+            )
+
         cache_service.invalidate_feed()
         return self._format_post(post, user_id)
 

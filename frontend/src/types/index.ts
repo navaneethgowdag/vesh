@@ -233,6 +233,57 @@ export interface Comment {
   isLiked?: boolean;
 }
 
+export interface PollOption {
+  id: string;
+  poll_id?: string;
+  option_text: string;
+  display_order: number;
+  vote_count?: number | null;
+  percentage?: number | null;
+}
+
+export interface PollCreatorSummary {
+  id: string;
+  username: string;
+  name?: string;
+  avatar?: string;
+  is_verified?: boolean;
+}
+
+export interface Poll {
+  id: string;
+  creator_user_id: string;
+  question: string;
+  content_type: 'standalone' | 'post' | 'moment';
+  parent_post_id?: string | null;
+  parent_moment_id?: string | null;
+  post_id?: string | null;
+  expires_at: string;
+  is_expired: boolean;
+  time_remaining_seconds: number;
+  allow_vote_change: boolean;
+  show_results_before_vote: boolean;
+  allow_creator_vote: boolean;
+  total_votes?: number | null;
+  has_voted: boolean;
+  user_voted_option_id?: string | null;
+  options: PollOption[];
+  created_at: string;
+  creator?: PollCreatorSummary | null;
+}
+
+export interface CreatePollPayload {
+  question: string;
+  options: string[];
+  duration_hours?: number;
+  expires_at?: string;
+  allow_vote_change?: boolean;
+  show_results_before_vote?: boolean;
+  allow_creator_vote?: boolean;
+  content_type?: 'standalone' | 'post' | 'moment';
+  post_id?: string;
+}
+
 export interface Post {
   id: string;
   user: {
@@ -244,17 +295,20 @@ export interface Post {
     isFollowing?: boolean;
   };
   image: string;
+  image_url?: string;
   caption: string;
   tags: string[];
   taggedItems?: ClothingItem[];
   occasion: Occasion;
   location?: string;
   likesCount: number;
+  likes_count?: number;
   commentsCount: number;
   savesCount: number;
   isLiked: boolean;
   isSaved: boolean;
   comments?: Comment[];
+  poll?: Poll;
   createdAt: string;
 }
 
@@ -497,6 +551,7 @@ export interface OutfitMoment {
   weatherSummary?: string;
   likesCount: number;
   isLiked: boolean;
+  poll?: Poll;
 }
 
 export interface UserSearchResult {
@@ -518,8 +573,120 @@ export interface SocialUserSummary {
   username: string;
   name: string;
   avatar: string;
-  isVerified: boolean;
-  isFollowing: boolean;
-  isMe: boolean;
+  isVerified?: boolean;
+  is_verified?: boolean;
+  isFollowing?: boolean;
+  is_following?: boolean;
+  isMe?: boolean;
+  is_me?: boolean;
 }
 
+
+
+// ==========================================
+// Communities, Messaging & Explore Types
+// ==========================================
+
+export interface Community {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  cover_image_url?: string;
+  coverImageUrl?: string;
+  category: string;
+  rules?: string;
+  visibility: 'public' | 'private';
+  owner: SocialUserSummary;
+  members_count: number;
+  membersCount?: number;
+  is_member: boolean;
+  isMember?: boolean;
+  membership_role?: 'owner' | 'moderator' | 'member';
+  membershipRole?: 'owner' | 'moderator' | 'member';
+  membership_status?: 'active' | 'pending' | 'rejected';
+  membershipStatus?: 'active' | 'pending' | 'rejected';
+  created_at: string;
+  createdAt?: string;
+}
+
+export interface CommunityMember {
+  id: string;
+  community_id: string;
+  user: SocialUserSummary;
+  role: 'owner' | 'moderator' | 'member';
+  status: 'active' | 'pending' | 'rejected';
+  joined_at: string;
+}
+
+export interface CommunityPost {
+  id: string;
+  community_id: string;
+  shared_by: SocialUserSummary;
+  title?: string;
+  message?: string;
+  post?: Post;
+  poll?: Poll;
+  is_pinned: boolean;
+  created_at: string;
+}
+
+export interface SharedContentPreview {
+  content_type: 'post' | 'poll' | 'community';
+  id: string;
+  title_or_caption?: string;
+  image_url?: string;
+  author_name?: string;
+  extra?: Record<string, any>;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender: SocialUserSummary;
+  message_type: 'text' | 'post_share' | 'poll_share' | 'community_share';
+  text_content?: string;
+  shared_content?: SharedContentPreview;
+  created_at: string;
+}
+
+export interface ConversationParticipant {
+  id: string;
+  user: SocialUserSummary;
+  role: string;
+  joined_at: string;
+  last_read_at?: string;
+}
+
+export interface Conversation {
+  id: string;
+  conversation_type: 'direct' | 'group';
+  title?: string;
+  image_url?: string;
+  participants: ConversationParticipant[];
+  other_participant?: SocialUserSummary;
+  last_message?: Message;
+  unread_count: number;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface ExplorePostItem {
+  item_type: 'post' | 'poll' | 'community_post';
+  post?: Post;
+  poll?: Poll;
+  community?: Community;
+}
+
+export interface TrendingPostItem {
+  post: Post;
+  score: number;
+  rank: number;
+}
+
+export interface RecommendedPerson {
+  user: SocialUserSummary;
+  match_reason: string;
+  mutual_followers_count: number;
+  common_styles: string[];
+}

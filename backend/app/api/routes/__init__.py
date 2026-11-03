@@ -16,6 +16,10 @@ from app.api.routes import (
     calendar,
     media,
     moments,
+    polls,
+    communities,
+    messages,
+    explore,
 )
 
 api_router = APIRouter()
@@ -36,6 +40,9 @@ api_router.include_router(notifications.router)
 api_router.include_router(calendar.router)
 api_router.include_router(media.router)
 api_router.include_router(moments.router)
+api_router.include_router(polls.router)
+api_router.include_router(communities.router)
+api_router.include_router(messages.router)
+api_router.include_router(explore.router)
 
 __all__ = ["api_router"]
-

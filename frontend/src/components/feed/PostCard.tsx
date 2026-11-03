@@ -18,6 +18,7 @@ import { CommentModal } from '../social/CommentDrawer';
 import { ShareModal } from '../social/ShareModal';
 import { cn } from '../../utils/cn';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
+import { PollWidget } from '../social/PollWidget';
 
 interface PostCardProps {
   post: Post;
@@ -142,52 +143,54 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           )}
         </div>
 
-        {/* Post Image Container */}
-        <div
-          onDoubleClick={handleDoubleTap}
-          className="relative bg-zinc-100 dark:bg-zinc-950 aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
-        >
-          <img
-            src={resolveImageUrl(post.image) || FALLBACK_POST_IMAGE}
-            alt={post.caption}
-            onError={(e) => {
-              if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
-                e.currentTarget.src = FALLBACK_POST_IMAGE;
-              }
-            }}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
-            loading="lazy"
-          />
-
-          {/* Double tap like animation overlay */}
-          {likeBurst && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 1 }}
-              exit={{ scale: 1.6, opacity: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <div className="w-20 h-20 rounded-md bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                <Heart className="w-10 h-10 text-rose-500 fill-rose-500" />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Tagged Items Button Overlay */}
-          {post.taggedItems && post.taggedItems.length > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowTags(!showTags);
+        {/* Post Image Container (if present) */}
+        {post.image ? (
+          <div
+            onDoubleClick={handleDoubleTap}
+            className="relative bg-zinc-100 dark:bg-zinc-950 aspect-[4/5] sm:aspect-[4/4.5] overflow-hidden cursor-pointer select-none group"
+          >
+            <img
+              src={resolveImageUrl(post.image) || FALLBACK_POST_IMAGE}
+              alt={post.caption}
+              onError={(e) => {
+                if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {
+                  e.currentTarget.src = FALLBACK_POST_IMAGE;
+                }
               }}
-              className="absolute bottom-3 left-3 px-2.5 py-1.5 rounded-md bg-black/70 hover:bg-black/90 text-white backdrop-blur-md text-xs font-medium flex items-center gap-1.5 transition-colors"
-            >
-              <Tag className="w-3.5 h-3.5 text-zinc-300" />
-              <span>{post.taggedItems.length} {post.taggedItems.length === 1 ? 'piece' : 'pieces'}</span>
-            </button>
-          )}
-        </div>
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+              loading="lazy"
+            />
+
+            {/* Double tap like animation overlay */}
+            {likeBurst && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                exit={{ scale: 1.6, opacity: 0 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <div className="w-20 h-20 rounded-md bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                  <Heart className="w-10 h-10 text-rose-500 fill-rose-500" />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Tagged Items Button Overlay */}
+            {post.taggedItems && post.taggedItems.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTags(!showTags);
+                }}
+                className="absolute bottom-3 left-3 px-2.5 py-1.5 rounded-md bg-black/70 hover:bg-black/90 text-white backdrop-blur-md text-xs font-medium flex items-center gap-1.5 transition-colors"
+              >
+                <Tag className="w-3.5 h-3.5 text-zinc-300" />
+                <span>{post.taggedItems.length} {post.taggedItems.length === 1 ? 'piece' : 'pieces'}</span>
+              </button>
+            )}
+          </div>
+        ) : null}
 
         {/* Tagged Clothing drawer / pills */}
         {showTags && post.taggedItems && post.taggedItems.length > 0 && (
@@ -287,6 +290,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   {t.startsWith('#') ? t : `#${t}`}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Attached Poll */}
+          {post.poll && (
+            <div className="pt-2">
+              <PollWidget poll={post.poll} />
             </div>
           )}
         </div>

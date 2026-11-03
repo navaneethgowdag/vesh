@@ -9,16 +9,20 @@ import {
   ArrowRight,
   RefreshCw,
   PlusCircle,
+  BarChart2,
+  Plus,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { DailyFitWidget } from '../components/feed/DailyFitWidget';
 import { PostCard } from '../components/feed/PostCard';
 import { DiscoveryDeck } from '../components/feed/DiscoveryDeck';
+import { PollWidget } from '../components/social/PollWidget';
+import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
-import { Post, OutfitMoment } from '../types';
+import { Post, OutfitMoment, Poll } from '../types';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -27,13 +31,13 @@ export const Home: React.FC = () => {
   const { followingIds, isFollowingUser, refreshData } = useApp();
 
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<'for_you' | 'following'>(
-    tabParam === 'following' ? 'following' : 'for_you'
+  const [activeTab, setActiveTab] = useState<'for_you' | 'following' | 'polls'>(
+    tabParam === 'following' ? 'following' : tabParam === 'polls' ? 'polls' : 'for_you'
   );
 
   useEffect(() => {
-    if (tabParam === 'following' || tabParam === 'for-you') {
-      setActiveTab(tabParam === 'following' ? 'following' : 'for_you');
+    if (tabParam === 'following' || tabParam === 'for-you' || tabParam === 'polls') {
+      setActiveTab(tabParam === 'following' ? 'following' : tabParam === 'polls' ? 'polls' : 'for_you');
     }
   }, [tabParam]);
 
@@ -46,6 +50,11 @@ export const Home: React.FC = () => {
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
   const [followingError, setFollowingError] = useState<string | null>(null);
+
+  // Community Polls feed
+  const [pollsList, setPollsList] = useState<Poll[]>([]);
+  const [isLoadingPolls, setIsLoadingPolls] = useState(false);
+  const [pollsError, setPollsError] = useState<string | null>(null);
 
   // Time-aware greeting
   const getGreeting = () => {
@@ -83,13 +92,29 @@ export const Home: React.FC = () => {
     }
   }, []);
 
+  // Load community polls
+  const loadPolls = useCallback(async () => {
+    setIsLoadingPolls(true);
+    setPollsError(null);
+    try {
+      const data = await api.polls.list();
+      setPollsList(data);
+    } catch (err: any) {
+      setPollsError(err?.message || 'Failed to load community polls.');
+    } finally {
+      setIsLoadingPolls(false);
+    }
+  }, []);
+
   // Reload moments and following feed
   useEffect(() => {
     loadForYouMoments();
     if (activeTab === 'following') {
       loadFollowingPosts();
+    } else if (activeTab === 'polls') {
+      loadPolls();
     }
-  }, [loadForYouMoments, loadFollowingPosts, followingIds, activeTab]);
+  }, [loadForYouMoments, loadFollowingPosts, loadPolls, followingIds, activeTab]);
 
   // Ensure only moments from followed accounts are displayed
   const visibleMoments = forYouMoments.filter(
@@ -199,9 +224,9 @@ export const Home: React.FC = () => {
           <DailyFitWidget />
         </div>
 
-        {/* Feed Tabs: Only "For You" and "Following" */}
+        {/* Feed Tabs: "For You", "Following", "Polls" */}
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 mb-6">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 sm:gap-8">
             <button
               onClick={() => setActiveTab('for_you')}
               className={`pb-3 min-h-[44px] text-xs sm:text-sm font-medium tracking-wide transition-all relative ${
@@ -235,6 +260,23 @@ export const Home: React.FC = () => {
                 />
               )}
             </button>
+
+            <button
+              onClick={() => setActiveTab('polls')}
+              className={`pb-3 min-h-[44px] text-xs sm:text-sm font-medium tracking-wide transition-all relative ${
+                activeTab === 'polls'
+                  ? 'text-zinc-900 dark:text-zinc-100 font-bold'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              }`}
+            >
+              Polls · Community
+              {activeTab === 'polls' && (
+                <motion.div
+                  layoutId="homeFeedTab"
+                  className="absolute bottom-0 inset-x-0 h-0.5 bg-zinc-900 dark:bg-zinc-100"
+                />
+              )}
+            </button>
           </div>
 
           {activeTab === 'following' && (
@@ -246,6 +288,25 @@ export const Home: React.FC = () => {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFollowing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
+          )}
+
+          {activeTab === 'polls' && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/create?type=poll')}
+                className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90 transition-opacity"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Ask Poll</span>
+              </button>
+              <button
+                onClick={loadPolls}
+                disabled={isLoadingPolls}
+                className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 pb-3 min-h-[44px] font-medium transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingPolls ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           )}
         </div>
 
@@ -338,6 +399,100 @@ export const Home: React.FC = () => {
               <div className="space-y-6">
                 {followingPosts.map((post) => (
                   <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Community Polls Feed Tab */}
+        {activeTab === 'polls' && (
+          <div className="space-y-6">
+            {isLoadingPolls ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse space-y-3"
+                  >
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                    <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+                    <div className="space-y-2 pt-2">
+                      <div className="h-9 bg-zinc-100 dark:bg-zinc-800 rounded w-full" />
+                      <div className="h-9 bg-zinc-100 dark:bg-zinc-800 rounded w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : pollsError ? (
+              <div className="text-center py-16 px-4 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 max-w-md mx-auto">
+                <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mb-2">Polls Unavailable</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">{pollsError}</p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={loadPolls}
+                  icon={<RefreshCw className="w-3.5 h-3.5" />}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : pollsList.length === 0 ? (
+              <div className="text-center py-20 px-6 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="w-14 h-14 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-800 dark:text-zinc-200 mx-auto mb-4">
+                  <BarChart2 className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-1">
+                  No Active Community Polls
+                </h3>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mb-6">
+                  Be the first to ask the fashion community a question about styling, outfit pairings, or wardrobe choices.
+                </p>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => navigate('/create?type=poll')}
+                    icon={<Plus className="w-4 h-4" />}
+                  >
+                    Create a Poll
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {pollsList.map((p) => (
+                  <div
+                    key={p.id}
+                    className="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-3"
+                  >
+                    {/* Creator Header */}
+                    {p.creator && (
+                      <div
+                        onClick={() => navigate(`/profile/${p.creator?.username}`)}
+                        className="flex items-center gap-2.5 cursor-pointer group"
+                      >
+                        <Avatar
+                          src={p.creator.avatar}
+                          alt={p.creator.name || p.creator.username}
+                          size="sm"
+                          isVerified={p.creator.is_verified}
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:underline">
+                            {p.creator.name || p.creator.username}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            @{p.creator.username}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <PollWidget poll={p} onVoteSuccess={(updated) => {
+                      setPollsList((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+                    }} />
+                  </div>
                 ))}
               </div>
             )}

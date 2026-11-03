@@ -3,6 +3,7 @@ from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel, Field
 from app.schemas.social import UserSummary
+from app.schemas.poll import PollCreate, PollResponse
 
 
 class MomentCreate(BaseModel):
@@ -10,6 +11,7 @@ class MomentCreate(BaseModel):
     caption: Optional[str] = Field(default="", max_length=1000)
     occasion: Optional[str] = Field(default="Casual Daily", max_length=100)
     tags: List[str] = Field(default_factory=list)
+    poll: Optional[PollCreate] = None
 
 
 class MomentResponse(BaseModel):
@@ -24,6 +26,7 @@ class MomentResponse(BaseModel):
     time_remaining_seconds: int
     likes_count: int = 0
     is_liked: bool = False
+    poll: Optional[PollResponse] = None
 
     model_config = {"from_attributes": True}
 

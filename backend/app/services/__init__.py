@@ -9,6 +9,10 @@ from app.services.feedback_service import FeedbackService
 from app.services.recommendation_service import RecommendationService
 from app.services.feed_service import FeedService
 from app.services.notification_service import NotificationService
+from app.services.poll_service import PollService
+from app.services.community_service import CommunityService
+from app.services.messaging_service import MessagingService
+from app.services.explore_service import ExploreService
 
 __all__ = [
     "AuthService",
@@ -23,5 +27,8 @@ __all__ = [
     "RecommendationService",
     "FeedService",
     "NotificationService",
+    "PollService",
+    "CommunityService",
+    "MessagingService",
+    "ExploreService",
 ]
-

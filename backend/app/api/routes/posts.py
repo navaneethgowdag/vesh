@@ -51,6 +51,7 @@ def create_post(
         occasion=post_in.occasion,
         tags=post_in.tags,
         tagged_item_ids=[str(tid) for tid in post_in.tagged_item_ids],
+        poll=post_in.poll,
     )
 
 
