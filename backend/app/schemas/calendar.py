@@ -1,5 +1,5 @@
 from datetime import date as dt_date, time as dt_time, datetime as dt_datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.outfit import OutfitResponse
@@ -16,6 +16,23 @@ class CalendarEventBase(BaseModel):
     notes: Optional[str] = None
     status: str = Field(default="scheduled", description="scheduled, completed, cancelled")
 
+    # Google Calendar & Metadata Extension
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    is_all_day: bool = False
+    google_calendar_id: Optional[str] = None
+    google_event_id: Optional[str] = None
+    event_source: str = Field(default="tailorbird", description="google or tailorbird")
+    last_synced_at: Optional[dt_datetime] = None
+
+    # Inferred Fashion & Context Attributes
+    inferred_occasion: Optional[str] = None
+    inferred_formality: Optional[float] = None
+    inferred_dress_code: Optional[str] = None
+    inferred_context: Optional[Dict[str, Any]] = None
+
 
 class CalendarEventCreate(CalendarEventBase):
     pass
@@ -30,6 +47,12 @@ class CalendarEventUpdate(BaseModel):
     occasion: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    inferred_occasion: Optional[str] = None
+    inferred_dress_code: Optional[str] = None
+    inferred_formality: Optional[float] = None
 
 
 class CalendarEventResponse(CalendarEventBase):
@@ -47,3 +70,61 @@ class ScheduleRecommendationRequest(BaseModel):
     time: Optional[dt_time] = None
     occasion: Optional[str] = None
     notes: Optional[str] = None
+
+
+# --------------------------------------------------------------------------
+# Google Calendar Integration Schemas
+# --------------------------------------------------------------------------
+
+class GoogleCalendarConnectResponse(BaseModel):
+    authorization_url: str
+    state: str
+
+
+class GoogleCalendarStatusResponse(BaseModel):
+    is_connected: bool
+    google_email: Optional[str] = None
+    selected_calendars: List[str] = Field(default_factory=lambda: ["primary"])
+    last_sync_time: Optional[dt_datetime] = None
+    sync_status: str = "idle"
+    last_sync_error: Optional[str] = None
+    event_count: int = 0
+
+
+class GoogleCalendarSyncResponse(BaseModel):
+    status: str = "success"
+    synced_at: dt_datetime
+    events_imported: int
+    events_updated: int
+    events_cancelled: int
+    message: str
+
+
+class GoogleCalendarItem(BaseModel):
+    id: str
+    summary: str
+    primary: bool = False
+    backgroundColor: Optional[str] = None
+    accessRole: Optional[str] = None
+
+
+class GoogleCalendarSelectRequest(BaseModel):
+    calendar_ids: List[str] = Field(..., min_length=1, description="List of Google calendar IDs to synchronize")
+
+
+class EventContextUpdateRequest(BaseModel):
+    occasion: Optional[str] = None
+    dress_code: Optional[str] = None
+    formality: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    notes: Optional[str] = None
+
+
+class DayAgendaSummaryResponse(BaseModel):
+    date: dt_date
+    event_count: int
+    events: List[CalendarEventResponse]
+    is_outfit_change_recommended: bool
+    reason: str
+    suggested_overall_occasion: str
+    suggested_dress_code: str
+    formality_range: List[float]

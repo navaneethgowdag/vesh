@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
+import { Lock, Mail, Eye, EyeOff, AlertCircle, Info } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { useApp } from '../context/AppContext';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { login, showToast, authError } = useApp();
 
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const destination = (location.state as any)?.from?.pathname || '/home';
+  const oauthError = searchParams.get('error');
+  const oauthEmail = searchParams.get('email');
+
+  useEffect(() => {
+    if (oauthError === 'account_collision') {
+      if (oauthEmail) {
+        setUsernameOrEmail(oauthEmail);
+      }
+    } else if (oauthError === 'cancelled') {
+      showToast('Google sign-in was cancelled.', 'info');
+    } else if (oauthError === 'invalid_state') {
+      setGoogleError('Security validation failed (invalid state token). Please try again.');
+    } else if (oauthError === 'invalid_ticket') {
+      setGoogleError('Authentication exchange timed out. Please try signing in again.');
+    } else if (oauthError) {
+      setGoogleError('Google sign-in could not be completed. Please use your password or try again.');
+    }
+  }, [oauthError, oauthEmail]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +85,36 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-zinc-900 py-8 px-6 sm:px-10 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-6">
-          {authError && (
-            <div className="p-3.5 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{authError}</span>
+          {oauthError === 'account_collision' && (
+            <div className="p-3.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+              <div>
+                <span className="font-semibold block mb-0.5">Account already exists</span>
+                An account with {oauthEmail ? <strong className="font-semibold">{oauthEmail}</strong> : 'this email'} was created using a password. Please sign in below with your password to access your account.
+              </div>
             </div>
           )}
+
+          {(authError || googleError) && (
+            <div className="p-3.5 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{authError || googleError}</span>
+            </div>
+          )}
+
+          {/* Social Sign In */}
+          <GoogleSignInButton
+            destination={destination}
+            action="login"
+            onError={(msg) => setGoogleError(msg)}
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-zinc-200 dark:border-zinc-800 w-full" />
+            <span className="bg-white dark:bg-zinc-900 px-3 text-[11px] uppercase tracking-wider font-semibold text-zinc-400 dark:text-zinc-500 absolute">
+              or continue with email
+            </span>
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>

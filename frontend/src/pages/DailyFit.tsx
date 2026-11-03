@@ -104,6 +104,22 @@ export const DailyFit: React.FC = () => {
 
       const events = await api.calendar.listEvents(todayStr, nextWeekStr);
       setCalendarEvents(events);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetEventId = urlParams.get('calendar_event_id');
+      const targetOccasion = urlParams.get('occasion');
+      if (targetOccasion && (OCCASIONS as string[]).includes(targetOccasion)) {
+        setSelectedOccasion(targetOccasion as Occasion);
+      }
+
+      if (targetEventId) {
+        const found = events.find((e) => e.id === targetEventId);
+        if (found) {
+          setSelectedCalendarEvent(found);
+          return;
+        }
+      }
+
       if (events.length > 0 && !selectedCalendarEvent) {
         setSelectedCalendarEvent(events[0]);
       }

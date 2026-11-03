@@ -22,6 +22,7 @@ import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Calendar } from './pages/Calendar';
 import { NotFound } from './pages/NotFound';
+import { OAuthCallback } from './pages/OAuthCallback';
 
 export const App: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<Landing />} />
 
             {/* Auth routes (redirects to /home if already logged in) */}
+            <Route path="/auth/callback" element={<OAuthCallback />} />
             <Route
               path="/login"
               element={

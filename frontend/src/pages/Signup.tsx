@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, AtSign, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { useApp } from '../context/AppContext';
 
 export const Signup: React.FC = () => {
@@ -124,6 +125,21 @@ export const Signup: React.FC = () => {
               <span>{displayedError}</span>
             </div>
           )}
+
+          {/* Social Sign Up */}
+          <GoogleSignInButton
+            label="Sign up with Google"
+            destination="/onboarding"
+            action="signup"
+            onError={(msg) => setFormError(msg)}
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-zinc-200 dark:border-zinc-800 w-full" />
+            <span className="bg-white dark:bg-zinc-900 px-3 text-[11px] uppercase tracking-wider font-semibold text-zinc-400 dark:text-zinc-500 absolute">
+              or register with email
+            </span>
+          </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div>

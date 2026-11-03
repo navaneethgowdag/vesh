@@ -150,6 +150,12 @@ class Settings(BaseSettings):
     AI_ENABLE_ML: bool = True
     AI_ENABLE_IMAGE_ANALYSIS: bool = True
     
+    # Google OAuth 2.0 / OpenID Connect
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = ""
+    BACKEND_URL: str = "http://localhost:8000"
+    
     _cached_resolved_url: Optional[str] = None
 
     model_config = SettingsConfigDict(
@@ -157,6 +163,19 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    @property
+    def google_redirect_uri(self) -> str:
+        """Normalized OAuth callback redirect URI."""
+        if self.GOOGLE_REDIRECT_URI and self.GOOGLE_REDIRECT_URI.strip():
+            return self.GOOGLE_REDIRECT_URI.strip()
+        backend = (self.BACKEND_URL or "http://localhost:8000").rstrip("/")
+        return f"{backend}/api/v1/auth/google/callback"
+
+    @property
+    def is_google_oauth_configured(self) -> bool:
+        """True if Google OAuth credentials are provided."""
+        return bool(self.GOOGLE_CLIENT_ID and self.GOOGLE_CLIENT_SECRET)
 
     @property
     def redis_connection_url(self) -> str:

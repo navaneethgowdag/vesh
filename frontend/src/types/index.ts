@@ -389,19 +389,92 @@ export interface UserSettings {
 
 export interface CalendarEvent {
   id: string;
-  userId: string;
-  eventDate: string; // YYYY-MM-DD
+  userId?: string;
+  user_id?: string;
+  eventDate?: string; // YYYY-MM-DD
+  event_date?: string; // YYYY-MM-DD
   startTime?: string;
+  start_time?: string;
   endTime?: string;
-  eventType: 'planned_outfit' | 'outfit_worn' | 'special_event';
+  end_time?: string;
+  eventType?: 'planned_outfit' | 'outfit_worn' | 'special_event' | string;
+  event_type?: 'planned_outfit' | 'outfit_worn' | 'special_event' | string;
   outfitId?: string;
+  outfit_id?: string;
   recommendationId?: string;
+  recommendation_id?: string;
   occasion?: string;
   notes?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  createdAt: string;
-  updatedAt: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
   outfit?: Outfit;
+
+  // Google Calendar extension
+  title?: string;
+  description?: string;
+  location?: string;
+  timezone?: string;
+  isAllDay?: boolean;
+  is_all_day?: boolean;
+  googleCalendarId?: string;
+  google_calendar_id?: string;
+  googleEventId?: string;
+  google_event_id?: string;
+  eventSource?: 'google' | 'tailorbird' | string;
+  event_source?: 'google' | 'tailorbird' | string;
+  lastSyncedAt?: string;
+  last_synced_at?: string;
+
+  // Inferred Fashion & Context
+  inferredOccasion?: string;
+  inferred_occasion?: string;
+  inferredFormality?: number;
+  inferred_formality?: number;
+  inferredDressCode?: string;
+  inferred_dress_code?: string;
+  inferredContext?: Record<string, any>;
+  inferred_context?: Record<string, any>;
+}
+
+export interface GoogleCalendarStatus {
+  is_connected: boolean;
+  google_email?: string;
+  selected_calendars: string[];
+  last_sync_time?: string;
+  sync_status: 'idle' | 'syncing' | 'error' | string;
+  last_sync_error?: string;
+  event_count: number;
+}
+
+export interface GoogleCalendarItem {
+  id: string;
+  summary: string;
+  primary: boolean;
+  backgroundColor?: string;
+  accessRole?: string;
+}
+
+export interface GoogleCalendarSyncResult {
+  status: string;
+  synced_at: string;
+  events_imported: number;
+  events_updated: number;
+  events_cancelled: number;
+  message: string;
+}
+
+export interface DayAgendaSummary {
+  date: string;
+  event_count: number;
+  events: CalendarEvent[];
+  is_outfit_change_recommended: boolean;
+  reason: string;
+  suggested_overall_occasion: string;
+  suggested_dress_code: string;
+  formality_range: number[];
 }
 
 export interface OutfitMoment {

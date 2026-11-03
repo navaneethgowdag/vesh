@@ -16,6 +16,10 @@ import {
   Weather,
   Occasion,
   CalendarEvent,
+  GoogleCalendarStatus,
+  GoogleCalendarItem,
+  GoogleCalendarSyncResult,
+  DayAgendaSummary,
   OutfitMoment,
   UserSearchResult,
   SocialUserSummary,
@@ -145,6 +149,82 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return response.json();
 }
 
+function formatCalendarEvent(e: any): CalendarEvent {
+  if (!e) return {} as CalendarEvent;
+  return {
+    id: String(e.id),
+    userId: String(e.user_id || e.userId || ''),
+    user_id: String(e.user_id || e.userId || ''),
+    eventDate: e.event_date || e.eventDate || '',
+    event_date: e.event_date || e.eventDate || '',
+    startTime: e.start_time || e.startTime || undefined,
+    start_time: e.start_time || e.startTime || undefined,
+    endTime: e.end_time || e.endTime || undefined,
+    end_time: e.end_time || e.endTime || undefined,
+    eventType: e.event_type || e.eventType || 'planned_outfit',
+    event_type: e.event_type || e.eventType || 'planned_outfit',
+    outfitId: e.outfit_id || e.outfitId ? String(e.outfit_id || e.outfitId) : undefined,
+    outfit_id: e.outfit_id || e.outfitId ? String(e.outfit_id || e.outfitId) : undefined,
+    recommendationId: e.recommendation_id || e.recommendationId ? String(e.recommendation_id || e.recommendationId) : undefined,
+    recommendation_id: e.recommendation_id || e.recommendationId ? String(e.recommendation_id || e.recommendationId) : undefined,
+    occasion: e.occasion || e.inferred_occasion || undefined,
+    notes: e.notes || undefined,
+    status: e.status || 'scheduled',
+    title: e.title || undefined,
+    description: e.description || undefined,
+    location: e.location || undefined,
+    timezone: e.timezone || undefined,
+    isAllDay: !!(e.is_all_day ?? e.isAllDay),
+    is_all_day: !!(e.is_all_day ?? e.isAllDay),
+    googleCalendarId: e.google_calendar_id || e.googleCalendarId || undefined,
+    google_calendar_id: e.google_calendar_id || e.googleCalendarId || undefined,
+    googleEventId: e.google_event_id || e.googleEventId || undefined,
+    google_event_id: e.google_event_id || e.googleEventId || undefined,
+    eventSource: e.event_source || e.eventSource || 'tailorbird',
+    event_source: e.event_source || e.eventSource || 'tailorbird',
+    lastSyncedAt: e.last_synced_at || e.lastSyncedAt || undefined,
+    last_synced_at: e.last_synced_at || e.lastSyncedAt || undefined,
+    inferredOccasion: e.inferred_occasion || e.inferredOccasion || undefined,
+    inferred_occasion: e.inferred_occasion || e.inferredOccasion || undefined,
+    inferredFormality: typeof e.inferred_formality === 'number' ? e.inferred_formality : (typeof e.inferredFormality === 'number' ? e.inferredFormality : undefined),
+    inferred_formality: typeof e.inferred_formality === 'number' ? e.inferred_formality : (typeof e.inferredFormality === 'number' ? e.inferredFormality : undefined),
+    inferredDressCode: e.inferred_dress_code || e.inferredDressCode || undefined,
+    inferred_dress_code: e.inferred_dress_code || e.inferredDressCode || undefined,
+    inferredContext: e.inferred_context || e.inferredContext || undefined,
+    inferred_context: e.inferred_context || e.inferredContext || undefined,
+    createdAt: e.created_at || e.createdAt || new Date().toISOString(),
+    created_at: e.created_at || e.createdAt || new Date().toISOString(),
+    updatedAt: e.updated_at || e.updatedAt || new Date().toISOString(),
+    updated_at: e.updated_at || e.updatedAt || new Date().toISOString(),
+    outfit: e.outfit
+      ? {
+          id: String(e.outfit.id),
+          title: e.outfit.name || e.outfit.title || 'Curated Outfit',
+          description: e.outfit.description,
+          pieces: (e.outfit.clothing_items || e.outfit.pieces || []).map((ci: any) => ({
+            id: String(ci.id),
+            name: ci.name,
+            category: ci.category,
+            color: ci.color,
+            style: ci.occasion || ci.style || 'Casual',
+            season: ci.season || 'All-Season',
+            brand: ci.brand,
+            image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
+            preferredImageUrl: ci.preferred_image_url,
+            createdAt: ci.created_at || new Date().toISOString(),
+          })),
+          occasion: (e.outfit.occasion as Occasion) || 'Casual Daily',
+          style: e.outfit.style || 'Minimal',
+          season: e.outfit.season || 'All-Season',
+          score: Math.round((e.outfit.compatibility_score || e.outfit.score || 0.9) * 100),
+          image: e.outfit.image_url || e.outfit.image || '',
+          tags: e.outfit.tags || [],
+          createdAt: e.outfit.created_at || e.outfit.createdAt || new Date().toISOString(),
+        }
+      : undefined,
+  };
+}
+
 export const api = {
   // --- AUTH ---
   auth: {
@@ -205,6 +285,41 @@ export const api = {
       } finally {
         tokenStorage.clear();
       }
+    },
+
+    async getGoogleAuthUrl(destination: string = '/home', action: string = 'login'): Promise<{ authorization_url: string; state: string }> {
+      const p = new URLSearchParams({ destination, action });
+      return request<{ authorization_url: string; state: string }>(`/auth/google/url?${p.toString()}`);
+    },
+
+    async exchangeGoogleTicket(ticket: string): Promise<{ access_token: string; user_id: string; username: string; destination?: string }> {
+      const res = await request<{ access_token: string; user_id: string; username: string; destination?: string }>('/auth/google/exchange', {
+        method: 'POST',
+        body: JSON.stringify({ ticket }),
+      });
+      if (res?.access_token) {
+        tokenStorage.set(res.access_token);
+      }
+      return res;
+    },
+
+    async linkGoogleWithCredentials(data: { username_or_email: string; password: string; code?: string; id_token?: string }): Promise<{ access_token: string; user_id: string; username: string }> {
+      const res = await request<{ access_token: string; user_id: string; username: string }>('/auth/google/link', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (res?.access_token) {
+        tokenStorage.set(res.access_token);
+      }
+      return res;
+    },
+
+    async getGoogleStatus(): Promise<{ is_google_linked: boolean; identities: any[] }> {
+      return request<{ is_google_linked: boolean; identities: any[] }>('/auth/google/status');
+    },
+
+    async unlinkGoogle(): Promise<{ message: string }> {
+      return request<{ message: string }>('/auth/google/unlink', { method: 'DELETE' });
     },
   },
 
@@ -1529,52 +1644,19 @@ export const api = {
 
   // --- CALENDAR & OUTFIT PLANNING ---
   calendar: {
-    async listEvents(startDate?: string, endDate?: string, status?: string): Promise<CalendarEvent[]> {
+    async listEvents(
+      startDate?: string,
+      endDate?: string,
+      status?: string,
+      source?: string
+    ): Promise<CalendarEvent[]> {
       const params = new URLSearchParams();
       if (startDate) params.set('start_date', startDate);
       if (endDate) params.set('end_date', endDate);
       if (status) params.set('status', status);
+      if (source) params.set('source', source);
       const items = await request<any[]>(`/calendar/events?${params.toString()}`);
-      return items.map((e) => ({
-        id: String(e.id),
-        userId: String(e.user_id),
-        eventDate: e.event_date,
-        startTime: e.start_time || undefined,
-        endTime: e.end_time || undefined,
-        eventType: e.event_type || 'planned_outfit',
-        outfitId: e.outfit_id ? String(e.outfit_id) : undefined,
-        recommendationId: e.recommendation_id ? String(e.recommendation_id) : undefined,
-        occasion: e.occasion || undefined,
-        notes: e.notes || undefined,
-        status: e.status || 'scheduled',
-        createdAt: e.created_at,
-        updatedAt: e.updated_at,
-        outfit: e.outfit
-          ? {
-              id: String(e.outfit.id),
-              title: e.outfit.name,
-              description: e.outfit.description,
-              pieces: (e.outfit.clothing_items || []).map((ci: any) => ({
-                id: String(ci.id),
-                name: ci.name,
-                category: ci.category,
-                color: ci.color,
-                style: ci.occasion || 'Casual',
-                season: ci.season || 'All-Season',
-                brand: ci.brand,
-                image: ci.image_url,
-                createdAt: ci.created_at || new Date().toISOString(),
-              })),
-              occasion: e.outfit.occasion as Occasion,
-              style: e.outfit.style || 'Minimal',
-              season: e.outfit.season || 'All-Season',
-              score: Math.round((e.outfit.compatibility_score || 0.9) * 100),
-              image: e.outfit.image_url,
-              tags: e.outfit.tags || [],
-              createdAt: e.outfit.created_at || new Date().toISOString(),
-            }
-          : undefined,
-      }));
+      return (items || []).map(formatCalendarEvent);
     },
 
     async createEvent(data: {
@@ -1585,26 +1667,14 @@ export const api = {
       outfit_id?: string;
       occasion?: string;
       notes?: string;
+      title?: string;
+      location?: string;
     }): Promise<CalendarEvent> {
       const res = await request<any>('/calendar/events', {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      return {
-        id: String(res.id),
-        userId: String(res.user_id),
-        eventDate: res.event_date,
-        startTime: res.start_time || undefined,
-        endTime: res.end_time || undefined,
-        eventType: res.event_type || 'planned_outfit',
-        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
-        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
-        occasion: res.occasion || undefined,
-        notes: res.notes || undefined,
-        status: res.status || 'scheduled',
-        createdAt: res.created_at,
-        updatedAt: res.updated_at,
-      };
+      return formatCalendarEvent(res);
     },
 
     async updateEvent(
@@ -1618,27 +1688,14 @@ export const api = {
         occasion?: string;
         notes?: string;
         status?: string;
+        title?: string;
       }>
     ): Promise<CalendarEvent> {
       const res = await request<any>(`/calendar/events/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       });
-      return {
-        id: String(res.id),
-        userId: String(res.user_id),
-        eventDate: res.event_date,
-        startTime: res.start_time || undefined,
-        endTime: res.end_time || undefined,
-        eventType: res.event_type || 'planned_outfit',
-        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
-        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
-        occasion: res.occasion || undefined,
-        notes: res.notes || undefined,
-        status: res.status || 'scheduled',
-        createdAt: res.created_at,
-        updatedAt: res.updated_at,
-      };
+      return formatCalendarEvent(res);
     },
 
     async deleteEvent(id: string): Promise<void> {
@@ -1653,20 +1710,58 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      return formatCalendarEvent(res);
+    },
+
+    // --- Google Calendar Endpoints ---
+    async getGoogleCalendarConnectUrl(destination: string = '/calendar'): Promise<{ authorization_url: string; state: string }> {
+      const params = new URLSearchParams({ destination });
+      return request<{ authorization_url: string; state: string }>(`/calendar/google/connect?${params.toString()}`);
+    },
+
+    async getGoogleCalendarStatus(): Promise<GoogleCalendarStatus> {
+      return request<GoogleCalendarStatus>('/calendar/google/status');
+    },
+
+    async syncGoogleCalendar(pastDays: number = 30, futureDays: number = 90): Promise<GoogleCalendarSyncResult> {
+      return request<GoogleCalendarSyncResult>(`/calendar/google/sync?past_days=${pastDays}&future_days=${futureDays}`, {
+        method: 'POST',
+      });
+    },
+
+    async getGoogleCalendars(): Promise<GoogleCalendarItem[]> {
+      return request<GoogleCalendarItem[]>('/calendar/google/calendars');
+    },
+
+    async updateGoogleCalendars(calendarIds: string[]): Promise<string[]> {
+      return request<string[]>('/calendar/google/calendars', {
+        method: 'PUT',
+        body: JSON.stringify({ calendar_ids: calendarIds }),
+      });
+    },
+
+    async disconnectGoogleCalendar(): Promise<{ success: boolean; message: string }> {
+      return request<{ success: boolean; message: string }>('/calendar/google/disconnect', {
+        method: 'DELETE',
+      });
+    },
+
+    async updateEventContext(
+      eventId: string,
+      data: { occasion?: string; dress_code?: string; formality?: number; notes?: string }
+    ): Promise<CalendarEvent> {
+      const res = await request<any>(`/calendar/events/${eventId}/context`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+      return formatCalendarEvent(res);
+    },
+
+    async getDayAgenda(dateStr: string): Promise<DayAgendaSummary> {
+      const res = await request<any>(`/calendar/day-agenda?date=${dateStr}`);
       return {
-        id: String(res.id),
-        userId: String(res.user_id),
-        eventDate: res.event_date,
-        startTime: res.start_time || undefined,
-        endTime: res.end_time || undefined,
-        eventType: res.event_type || 'planned_outfit',
-        outfitId: res.outfit_id ? String(res.outfit_id) : undefined,
-        recommendationId: res.recommendation_id ? String(res.recommendation_id) : undefined,
-        occasion: res.occasion || undefined,
-        notes: res.notes || undefined,
-        status: res.status || 'scheduled',
-        createdAt: res.created_at,
-        updatedAt: res.updated_at,
+        ...res,
+        events: (res.events || []).map(formatCalendarEvent),
       };
     },
   },

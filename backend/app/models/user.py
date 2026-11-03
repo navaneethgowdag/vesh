@@ -61,6 +61,7 @@ class User(Base):
     collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     calendar_events = relationship("CalendarEvent", back_populates="user", cascade="save-update, merge", passive_deletes="all")
+    google_calendar_connection = relationship("GoogleCalendarConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")
     background_jobs = relationship("BackgroundJob", back_populates="user", cascade="save-update, merge", passive_deletes="all")
 
     following = relationship(

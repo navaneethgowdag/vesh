@@ -1,11 +1,14 @@
-from datetime import date, datetime, timezone
-from typing import Optional, List
+import uuid
+from datetime import date, time, datetime, timezone
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import inspect
 from app.models.calendar_event import CalendarEvent
 from app.models.outfit import Outfit
 from app.models.wear_history import WearHistory
+from app.models.learned_preference import LearnedPreference
 
 
 def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
@@ -42,6 +45,7 @@ def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
         end_time=None,
         status=wh.weather_condition or "scheduled",
         event_type=event_type,
+        event_source="tailorbird",
         outfit_id=wh.outfit_id,
         recommendation_id=rec_id,
         occasion=wh.occasion,
@@ -65,8 +69,67 @@ class CalendarRepository:
         except Exception:
             return False
 
+    def _dict_to_calendar_event(self, d: Dict[str, Any]) -> CalendarEvent:
+        """Converts JSONB fallback dict to CalendarEvent model instance."""
+        ev_id = UUID(d["id"]) if isinstance(d["id"], str) else d["id"]
+        u_id = UUID(d["user_id"]) if isinstance(d["user_id"], str) else d["user_id"]
+        o_id = UUID(d["outfit_id"]) if d.get("outfit_id") else None
+        r_id = UUID(d["recommendation_id"]) if d.get("recommendation_id") else None
+
+        ev_date = date.fromisoformat(d["event_date"]) if isinstance(d.get("event_date"), str) else d.get("event_date", date.today())
+        start_t = time.fromisoformat(d["start_time"]) if isinstance(d.get("start_time"), str) else d.get("start_time")
+        end_t = time.fromisoformat(d["end_time"]) if isinstance(d.get("end_time"), str) else d.get("end_time")
+
+        ev = CalendarEvent(
+            id=ev_id,
+            user_id=u_id,
+            event_date=ev_date,
+            start_time=start_t,
+            end_time=end_t,
+            status=d.get("status", "scheduled"),
+            event_type=d.get("event_type", "special_event"),
+            outfit_id=o_id,
+            recommendation_id=r_id,
+            occasion=d.get("occasion"),
+            notes=d.get("notes"),
+            title=d.get("title"),
+            description=d.get("description"),
+            location=d.get("location"),
+            timezone=d.get("timezone"),
+            is_all_day=d.get("is_all_day", False),
+            google_calendar_id=d.get("google_calendar_id"),
+            google_event_id=d.get("google_event_id"),
+            event_source=d.get("event_source", "google"),
+            last_synced_at=datetime.fromisoformat(d["last_synced_at"]) if d.get("last_synced_at") else None,
+            recurrence_rule=d.get("recurrence_rule"),
+            inferred_occasion=d.get("inferred_occasion"),
+            inferred_formality=d.get("inferred_formality"),
+            inferred_dress_code=d.get("inferred_dress_code"),
+            inferred_context=d.get("inferred_context"),
+            created_at=datetime.fromisoformat(d["created_at"]) if d.get("created_at") else datetime.now(timezone.utc),
+            updated_at=datetime.fromisoformat(d["updated_at"]) if d.get("updated_at") else datetime.now(timezone.utc),
+        )
+        if o_id:
+            ev.outfit = (
+                self.db.query(Outfit)
+                .options(joinedload(Outfit.clothing_items))
+                .filter(Outfit.id == o_id)
+                .first()
+            )
+        return ev
+
     def get_by_id(self, event_id: UUID, user_id: Optional[UUID] = None) -> Optional[CalendarEvent]:
         if not self._has_table:
+            # 1. Check fallback Google events in LearnedPreference
+            if user_id:
+                lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
+                if lp and isinstance(lp.weather_scores, dict):
+                    g_events = lp.weather_scores.get("_google_calendar_events", {})
+                    for ev_data in g_events.values():
+                        if ev_data.get("id") == str(event_id):
+                            return self._dict_to_calendar_event(ev_data)
+
+            # 2. Check WearHistory fallback for native events
             q = (
                 self.db.query(WearHistory)
                 .options(joinedload(WearHistory.outfit).joinedload(Outfit.clothing_items))
@@ -85,6 +148,30 @@ class CalendarRepository:
         if user_id:
             q = q.filter(CalendarEvent.user_id == user_id)
         return q.first()
+
+    def get_by_google_event(
+        self, user_id: UUID, calendar_id: str, google_event_id: str
+    ) -> Optional[CalendarEvent]:
+        """Finds an imported event by user ID, Google calendar ID, and Google event ID."""
+        if not self._has_table:
+            lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
+            if not lp or not isinstance(lp.weather_scores, dict):
+                return None
+            g_events = lp.weather_scores.get("_google_calendar_events", {})
+            key = f"{calendar_id}:{google_event_id}"
+            ev_data = g_events.get(key)
+            return self._dict_to_calendar_event(ev_data) if ev_data else None
+
+        return (
+            self.db.query(CalendarEvent)
+            .options(joinedload(CalendarEvent.outfit).joinedload(Outfit.clothing_items))
+            .filter(
+                CalendarEvent.user_id == user_id,
+                CalendarEvent.google_calendar_id == calendar_id,
+                CalendarEvent.google_event_id == google_event_id,
+            )
+            .first()
+        )
 
     def get_by_recommendation_and_date(
         self, recommendation_id: UUID, event_date: date, user_id: UUID
@@ -127,26 +214,50 @@ class CalendarRepository:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         status: Optional[str] = None,
+        source: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[CalendarEvent]:
         if not self._has_table:
-            q = (
-                self.db.query(WearHistory)
-                .options(joinedload(WearHistory.outfit).joinedload(Outfit.clothing_items))
-                .filter(WearHistory.user_id == user_id)
-            )
-            if start_date:
-                start_dt = datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0, tzinfo=timezone.utc)
-                q = q.filter(WearHistory.worn_at >= start_dt)
-            if end_date:
-                end_dt = datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, tzinfo=timezone.utc)
-                q = q.filter(WearHistory.worn_at <= end_dt)
-            if status:
-                q = q.filter(WearHistory.weather_condition == status)
+            all_events: List[CalendarEvent] = []
 
-            items = q.order_by(WearHistory.worn_at.asc()).offset(offset).limit(limit).all()
-            return [_wh_to_calendar_event(wh) for wh in items]
+            # 1. Collect Google events from LearnedPreference fallback
+            if source != "tailorbird":
+                lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
+                if lp and isinstance(lp.weather_scores, dict):
+                    g_events = lp.weather_scores.get("_google_calendar_events", {})
+                    for ev_data in g_events.values():
+                        ev = self._dict_to_calendar_event(ev_data)
+                        if start_date and ev.event_date < start_date:
+                            continue
+                        if end_date and ev.event_date > end_date:
+                            continue
+                        if status and ev.status != status:
+                            continue
+                        all_events.append(ev)
+
+            # 2. Collect native WearHistory events
+            if source != "google":
+                q = (
+                    self.db.query(WearHistory)
+                    .options(joinedload(WearHistory.outfit).joinedload(Outfit.clothing_items))
+                    .filter(WearHistory.user_id == user_id)
+                )
+                if start_date:
+                    start_dt = datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0, tzinfo=timezone.utc)
+                    q = q.filter(WearHistory.worn_at >= start_dt)
+                if end_date:
+                    end_dt = datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, tzinfo=timezone.utc)
+                    q = q.filter(WearHistory.worn_at <= end_dt)
+                if status:
+                    q = q.filter(WearHistory.weather_condition == status)
+
+                wh_items = q.all()
+                all_events.extend([_wh_to_calendar_event(wh) for wh in wh_items])
+
+            # Sort chronologically by date then start_time
+            all_events.sort(key=lambda x: (x.event_date, x.start_time or time(0, 0)))
+            return all_events[offset : offset + limit]
 
         q = (
             self.db.query(CalendarEvent)
@@ -159,8 +270,110 @@ class CalendarRepository:
             q = q.filter(CalendarEvent.event_date <= end_date)
         if status:
             q = q.filter(CalendarEvent.status == status)
+        if source:
+            q = q.filter(CalendarEvent.event_source == source)
 
-        return q.order_by(CalendarEvent.event_date.asc(), CalendarEvent.start_time.asc().nullsfirst()).offset(offset).limit(limit).all()
+        return (
+            q.order_by(CalendarEvent.event_date.asc(), CalendarEvent.start_time.asc().nullsfirst())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+    def count_for_user(self, user_id: UUID, source: Optional[str] = None) -> int:
+        """Counts events for a user, optionally filtered by event source."""
+        if not self._has_table:
+            count = 0
+            if source != "tailorbird":
+                lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
+                if lp and isinstance(lp.weather_scores, dict):
+                    g_events = lp.weather_scores.get("_google_calendar_events", {})
+                    count += len(g_events)
+            if source != "google":
+                count += self.db.query(WearHistory).filter(WearHistory.user_id == user_id).count()
+            return count
+
+        q = self.db.query(CalendarEvent).filter(CalendarEvent.user_id == user_id)
+        if source:
+            q = q.filter(CalendarEvent.event_source == source)
+        return q.count()
+
+    def upsert_google_event(self, user_id: UUID, **kwargs) -> str:
+        """
+        Idempotently inserts or updates an imported Google Calendar event.
+        Returns 'imported', 'updated', or 'cancelled'.
+        Preserves existing user outfit associations.
+        """
+        cal_id = kwargs.get("google_calendar_id")
+        event_id = kwargs.get("google_event_id")
+        if not cal_id or not event_id:
+            return "skipped"
+
+        existing = self.get_by_google_event(user_id=user_id, calendar_id=cal_id, google_event_id=event_id)
+
+        if not self._has_table:
+            lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
+            if not lp:
+                lp = LearnedPreference(user_id=user_id)
+                self.db.add(lp)
+                self.db.flush()
+
+            scores = dict(lp.weather_scores or {})
+            g_events = dict(scores.get("_google_calendar_events", {}))
+            key = f"{cal_id}:{event_id}"
+
+            if existing:
+                # Update attributes while preserving outfit associations
+                current_data = g_events.get(key, {})
+                for k, v in kwargs.items():
+                    if k in ("outfit_id", "recommendation_id") and v is None:
+                        continue
+                    if isinstance(v, (date, time, datetime)):
+                        current_data[k] = v.isoformat()
+                    else:
+                        current_data[k] = v
+                current_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+                g_events[key] = current_data
+                scores["_google_calendar_events"] = g_events
+                lp.weather_scores = scores
+                flag_modified(lp, "weather_scores")
+                self.db.commit()
+                return "cancelled" if kwargs.get("status") == "cancelled" else "updated"
+            else:
+                new_id = str(uuid.uuid4())
+                event_data = {
+                    "id": new_id,
+                    "user_id": str(user_id),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+                for k, v in kwargs.items():
+                    if isinstance(v, (date, time, datetime)):
+                        event_data[k] = v.isoformat()
+                    else:
+                        event_data[k] = v
+                g_events[key] = event_data
+                scores["_google_calendar_events"] = g_events
+                lp.weather_scores = scores
+                flag_modified(lp, "weather_scores")
+                self.db.commit()
+                return "imported"
+
+        # Relational table path
+        if existing:
+            # Preserve existing outfit association if user already assigned an outfit
+            for key, val in kwargs.items():
+                if key in ("outfit_id", "recommendation_id") and val is None:
+                    continue
+                if hasattr(existing, key):
+                    setattr(existing, key, val)
+            self.db.commit()
+            return "cancelled" if kwargs.get("status") == "cancelled" else "updated"
+        else:
+            new_event = CalendarEvent(user_id=user_id, **kwargs)
+            self.db.add(new_event)
+            self.db.commit()
+            return "imported"
 
     def create(self, user_id: UUID, **kwargs) -> CalendarEvent:
         if not self._has_table:
@@ -197,6 +410,30 @@ class CalendarRepository:
 
     def update(self, event: CalendarEvent, **kwargs) -> CalendarEvent:
         if not self._has_table:
+            # Check if this is a fallback Google event in LearnedPreference
+            lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == event.user_id).first()
+            if lp and isinstance(lp.weather_scores, dict):
+                g_events = dict(lp.weather_scores.get("_google_calendar_events", {}))
+                for key, data in g_events.items():
+                    if data.get("id") == str(event.id):
+                        for k, v in kwargs.items():
+                            if v is not None:
+                                if isinstance(v, (date, time, datetime)):
+                                    data[k] = v.isoformat()
+                                elif isinstance(v, UUID):
+                                    data[k] = str(v)
+                                else:
+                                    data[k] = v
+                        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+                        g_events[key] = data
+                        scores = dict(lp.weather_scores)
+                        scores["_google_calendar_events"] = g_events
+                        lp.weather_scores = scores
+                        flag_modified(lp, "weather_scores")
+                        self.db.commit()
+                        return self._dict_to_calendar_event(data)
+
+            # Native WearHistory update
             wh = self.db.query(WearHistory).filter(WearHistory.id == event.id).first()
             if not wh:
                 return event
@@ -228,6 +465,24 @@ class CalendarRepository:
 
     def delete(self, event: CalendarEvent) -> None:
         if not self._has_table:
+            # Check if this is a fallback Google event
+            lp = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == event.user_id).first()
+            if lp and isinstance(lp.weather_scores, dict):
+                g_events = dict(lp.weather_scores.get("_google_calendar_events", {}))
+                to_delete_key = None
+                for key, data in g_events.items():
+                    if data.get("id") == str(event.id):
+                        to_delete_key = key
+                        break
+                if to_delete_key:
+                    del g_events[to_delete_key]
+                    scores = dict(lp.weather_scores)
+                    scores["_google_calendar_events"] = g_events
+                    lp.weather_scores = scores
+                    flag_modified(lp, "weather_scores")
+                    self.db.commit()
+                    return
+
             wh = self.db.query(WearHistory).filter(WearHistory.id == event.id).first()
             if wh:
                 self.db.delete(wh)

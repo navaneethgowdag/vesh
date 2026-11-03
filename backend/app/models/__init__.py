@@ -20,10 +20,16 @@ from app.models.wear_history import WearHistory
 from app.models.notification import Notification
 from app.models.calendar_event import CalendarEvent
 from app.models.background_job import BackgroundJob
+from app.models.upload_batch import UploadBatch
+from app.models.user_identity import UserIdentity
+from app.models.google_calendar_connection import GoogleCalendarConnection
 
 __all__ = [
     "Base",
     "User",
+    "UserIdentity",
+    "GoogleCalendarConnection",
+    "UploadBatch",
     "UserPreference",
     "LearnedPreference",
     "Clothing",
