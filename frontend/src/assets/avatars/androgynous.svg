@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="a-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#18181B" />
+    </linearGradient>
+    <linearGradient id="a-skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4F4F5" />
+      <stop offset="100%" stop-color="#E4E4E7" />
+    </linearGradient>
+    <linearGradient id="a-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3F3F46" />
+      <stop offset="100%" stop-color="#27272A" />
+    </linearGradient>
+    <linearGradient id="a-hair-base" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#09090B" />
+    </linearGradient>
+    <linearGradient id="a-hair-sheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#52525B" />
+      <stop offset="100%" stop-color="#27272A" />
+    </linearGradient>
+  </defs>
+
+  <!-- Circular Base -->
+  <rect width="120" height="120" rx="60" fill="url(#a-bg)" />
+
+  <!-- 1. Back Hair Underlay (Flaring behind neck and shoulders) -->
+  <path d="M37 54 C35 63, 39 70, 48 74 L48 62 C41 58, 39 54, 38 50 Z" fill="#09090B" />
+  <path d="M83 54 C85 63, 81 70, 72 74 L72 62 C79 58, 81 54, 82 50 Z" fill="#09090B" />
+
+  <!-- Architectural Mock-Neck Shoulders -->
+  <path d="M20 120 C22 95, 36 82, 50 78 L50 72 L70 72 L70 78 C84 82, 98 95, 100 120 Z" fill="url(#a-top)" />
+  <!-- Mock Neck Collar -->
+  <path d="M50 70 L50 79 L70 79 L70 70 Z" fill="#52525B" />
+
+  <!-- Slender Neck -->
+  <path d="M53 58 L53 72 L67 72 L67 58 Z" fill="url(#a-skin)" />
+
+  <!-- Minimalist Ears -->
+  <path d="M42 45 C39 45, 39 53, 42 53 Z" fill="url(#a-skin)" />
+  <path d="M78 45 C81 45, 81 53, 78 53 Z" fill="url(#a-skin)" />
+
+  <!-- Faceless Head Oval (Completely clear face) -->
+  <ellipse cx="60" cy="46" rx="16.5" ry="21.5" fill="url(#a-skin)" />
+
+  <!-- ======================================================== -->
+  <!-- ANDROGYNOUS HAIRSTYLE: TEXTURED CURTAINED CROP / WOLF BOB -->
+  <!-- ======================================================== -->
+
+  <!-- 2. Main Volumetric Crown & Side Curtain Strands -->
+  <path d="M38 52 C37 40, 39 30, 47 21 C53 15, 67 15, 73 21 C81 30, 83 40, 82 52 C81 58, 77 62, 75 58 C74 53, 75 44, 73 38 C71 32, 65 29, 61 27 C60.5 28.5, 60 30, 59 27 C55 29, 49 32, 47 38 C45 44, 46 53, 45 58 C43 62, 39 58, 38 52 Z" fill="url(#a-hair-base)" />
+
+  <!-- 3. Left Curtain Fringe Wave & Sweep -->
+  <path d="M47 21 C53 16, 60 17, 60 27 C56 28, 51 31, 48 36 C46 31, 46 25, 47 21 Z" fill="url(#a-hair-sheen)" />
+
+  <!-- 4. Right Curtain Fringe Wave & Sweep -->
+  <path d="M73 21 C67 16, 60 17, 60 27 C64 28, 69 31, 72 36 C74 31, 74 25, 73 21 Z" fill="url(#a-hair-sheen)" />
+
+  <!-- 5. Soft Fluid Temple Strands Framing the Face -->
+  <path d="M48 37 C46 43, 46 51, 44 56 C45 51, 46 44, 48 37 Z" stroke="#3F3F46" stroke-width="1.2" stroke-linecap="round" />
+  <path d="M72 37 C74 43, 74 51, 76 56 C75 51, 74 44, 72 37 Z" stroke="#3F3F46" stroke-width="1.2" stroke-linecap="round" />
+</svg>

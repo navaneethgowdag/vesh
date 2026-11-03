@@ -44,7 +44,7 @@ export const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(usernameOrEmail.trim(), password);
-      showToast('Welcome back to StyleSphere', 'success');
+      showToast('Welcome back to TailorBird', 'success');
       navigate(destination, { replace: true });
     } catch (err: any) {
       showToast(err?.message || 'Invalid credentials', 'info');
@@ -62,10 +62,10 @@ export const Login: React.FC = () => {
           className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-sm transition-colors">
-            S
+            T
           </div>
           <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            StyleSphere
+            TailorBird
           </span>
         </div>
       </div>
@@ -191,7 +191,7 @@ export const Login: React.FC = () => {
 
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              New to StyleSphere?{' '}
+              New to TailorBird?{' '}
               <Link
                 to="/signup"
                 className="text-zinc-900 dark:text-zinc-100 hover:underline font-semibold"
@@ -205,7 +205,7 @@ export const Login: React.FC = () => {
 
       {/* Footer minimal info */}
       <div className="text-center text-xs text-zinc-400">
-        StyleSphere &middot; Powered by Neon PostgreSQL
+        TailorBird &middot; Powered by Neon PostgreSQL
       </div>
     </div>
   );

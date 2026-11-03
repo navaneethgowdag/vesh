@@ -1,13 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import neutralAvatarSvg from '../assets/avatars/neutral.svg';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Fallback high-res curated fashion images
-export const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+// Fallback faceless illustrated fashion avatar (replaces legacy external human photo)
+export const DEFAULT_AVATAR = neutralAvatarSvg;
 
 export const FALLBACK_GARMENT_IMAGE =
   'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80';

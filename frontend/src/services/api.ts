@@ -38,6 +38,7 @@ import {
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
+import { getDefaultAvatar } from '../utils/avatarHelper';
 
 export const API_BASE = getApiBaseUrl();
 
@@ -100,8 +101,9 @@ export class ApiError extends Error {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const apiBase = getApiBaseUrl();
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> | undefined),
   };
 
@@ -129,7 +131,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       }
       throw new ApiError(
         0,
-        `Unable to reach StyleSphere API server (${apiBase}). Please verify your network or check backend status.`
+        `Unable to reach TailorBird API server (${apiBase}). Please verify your network or check backend status.`
       );
     }
     throw err;
@@ -306,9 +308,12 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email,
-        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || getDefaultAvatar(raw.gender, raw.avatar_style),
         bio: raw.bio || '',
         location: raw.location || '',
+        gender: raw.gender || '',
+        avatarStyle: raw.avatar_style || 'neutral',
+        onboarding_completed: raw.onboarding_completed ?? false,
         followersCount: raw.followers_count || 0,
         followingCount: raw.following_count || 0,
         postsCount: raw.posts_count || 0,
@@ -850,7 +855,7 @@ export const api = {
           id: String(p.user?.id || ''),
           name: p.user?.name || 'User',
           username: p.user?.username || 'user',
-          avatar: resolveImageUrl(p.user?.avatar) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+          avatar: resolveImageUrl(p.user?.avatar) || getDefaultAvatar(p.user?.gender, p.user?.avatar_style),
           isVerified: p.user?.is_verified,
           isFollowing: p.user?.is_following,
         },
@@ -1232,6 +1237,8 @@ export const api = {
         displayName: u.display_name,
         bio: u.bio || '',
         avatar: resolveImageUrl(u.avatar || u.profile_image_url),
+        gender: u.gender,
+        avatarStyle: u.avatar_style || u.avatarStyle,
         isVerified: u.is_verified || false,
         followersCount: u.followers_count || 0,
         followingCount: u.following_count || 0,
@@ -1248,9 +1255,12 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email || '',
-        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || getDefaultAvatar(raw.gender, raw.avatar_style),
         bio: raw.bio || '',
         location: raw.location || '',
+        gender: raw.gender || '',
+        avatarStyle: raw.avatar_style || 'neutral',
+        onboarding_completed: raw.onboarding_completed ?? false,
         followersCount: raw.followers_count || 0,
         followingCount: raw.following_count || 0,
         postsCount: raw.posts_count || 0,
@@ -1301,6 +1311,12 @@ export const api = {
       favorite_occasions?: string[];
       preferred_seasons?: string[];
       climate_preference?: string;
+      gender?: string;
+      avatar_style?: string;
+      styling_preference?: string;
+      budget_preference?: string;
+      country?: string;
+      preferred_language?: string;
     }): Promise<void> {
       await request<void>('/users/me/preferences', {
         method: 'PUT',
@@ -1316,6 +1332,7 @@ export const api = {
       avatar_url?: string;
       profile_image_url?: string;
       location?: string;
+      gender?: string;
     }): Promise<User> {
       const raw = await request<any>('/users/me', {
         method: 'PATCH',
@@ -1326,9 +1343,12 @@ export const api = {
         name: raw.display_name || raw.username,
         username: raw.username,
         email: raw.email,
-        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        avatar: resolveImageUrl(raw.profile_image_url || raw.avatar_url) || getDefaultAvatar(raw.gender, raw.avatar_style),
         bio: raw.bio || '',
         location: raw.location || '',
+        gender: raw.gender || '',
+        avatarStyle: raw.avatar_style || 'neutral',
+        onboarding_completed: raw.onboarding_completed ?? false,
         followersCount: raw.followers_count || 0,
         followingCount: raw.following_count || 0,
         postsCount: raw.posts_count || 0,
@@ -1344,6 +1364,42 @@ export const api = {
           fitPreference: 'Classic / Regular',
         },
       };
+    },
+
+    async uploadAvatar(file: File): Promise<{ success: boolean; avatar_url: string; message: string }> {
+      const formData = new FormData();
+      formData.append('file', file);
+      return request<{ success: boolean; avatar_url: string; message: string }>('/users/me/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+    },
+
+    async removeAvatar(): Promise<{ success: boolean; avatar_url: null; message: string }> {
+      return request<{ success: boolean; avatar_url: null; message: string }>('/users/me/avatar', {
+        method: 'DELETE',
+      });
+    },
+
+    async completeOnboarding(data: {
+      display_name?: string;
+      gender?: string;
+      avatar_style?: string;
+      date_of_birth?: string;
+      country?: string;
+      preferred_language?: string;
+      preferred_styles?: string[];
+      preferred_categories?: string[];
+      preferred_colors?: string[];
+      preferred_occasions?: string[];
+      preferred_fit?: string;
+      styling_preference?: string;
+      budget_preference?: string;
+    }): Promise<any> {
+      return request<any>('/users/me/onboarding', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     },
   },
 
@@ -1364,6 +1420,8 @@ export const api = {
         username: u.username,
         name: u.name || u.display_name || u.username,
         avatar: resolveImageUrl(u.avatar || u.profile_image_url),
+        gender: u.gender,
+        avatarStyle: u.avatar_style || u.avatarStyle,
         isVerified: u.is_verified || false,
         isFollowing: u.is_following || false,
         isMe: u.is_me || false,
@@ -1377,6 +1435,8 @@ export const api = {
         username: u.username,
         name: u.name || u.display_name || u.username,
         avatar: resolveImageUrl(u.avatar || u.profile_image_url),
+        gender: u.gender,
+        avatarStyle: u.avatar_style || u.avatarStyle,
         isVerified: u.is_verified || false,
         isFollowing: u.is_following || false,
         isMe: u.is_me || false,

@@ -74,7 +74,7 @@ export const Signup: React.FC = () => {
         email: cleanEmail,
         password,
       });
-      showToast('Welcome to StyleSphere! Let us configure your wardrobe.', 'success');
+      showToast('Welcome to TailorBird! Let us configure your wardrobe.', 'success');
       navigate('/onboarding');
     } catch (err: any) {
       const msg = err?.message || 'Failed to create account. Please try again.';
@@ -96,10 +96,10 @@ export const Signup: React.FC = () => {
           className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-sm transition-colors">
-            S
+            T
           </div>
           <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            StyleSphere
+            TailorBird
           </span>
         </div>
       </div>
@@ -295,7 +295,7 @@ export const Signup: React.FC = () => {
 
       {/* Footer minimal info */}
       <div className="text-center text-xs text-zinc-400">
-        StyleSphere &middot; Powered by Neon PostgreSQL
+        TailorBird &middot; Powered by Neon PostgreSQL
       </div>
     </div>
   );

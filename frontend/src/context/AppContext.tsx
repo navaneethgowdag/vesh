@@ -138,8 +138,8 @@ const DEFAULT_SETTINGS: UserSettings = {
 // dereferences a null user.
 const PLACEHOLDER_USER: User = {
   id: '',
-  name: 'StyleSphere',
-  username: 'stylesphere',
+  name: 'TailorBird',
+  username: 'tailorbird',
   email: '',
   avatar: '',
   bio: '',
@@ -530,7 +530,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setNotifications([]);
         setDailyFit(null);
       } else {
-        showToast('Could not reach the StyleSphere backend. Check that FastAPI is running.', 'info');
+        showToast('Could not reach the TailorBird backend. Check that FastAPI is running.', 'info');
       }
     } finally {
       setIsBootstrapping(false);
@@ -823,7 +823,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       poll: postData.poll,
     });
     setPosts((prev) => [created, ...prev]);
-    showToast('Your outfit post is live on StyleSphere!', 'success');
+    showToast('Your outfit post is live on TailorBird!', 'success');
     return created;
   };
 

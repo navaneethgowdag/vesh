@@ -72,6 +72,9 @@ export interface User {
   wardrobeCount: number;
   isFollowing?: boolean;
   isVerified?: boolean;
+  gender?: string;
+  avatarStyle?: string;
+  onboarding_completed?: boolean;
   preferences: StylePreference;
   joinedDate: string;
 }
@@ -561,6 +564,8 @@ export interface UserSearchResult {
   displayName: string;
   bio?: string;
   avatar?: string;
+  gender?: string;
+  avatarStyle?: string;
   isVerified: boolean;
   followersCount: number;
   followingCount: number;

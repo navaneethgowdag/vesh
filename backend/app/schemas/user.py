@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserPreferenceBase(BaseModel):
@@ -49,8 +49,24 @@ class UserPreferenceResponse(BaseModel):
     avoid_recently_worn_days: int = 7
     comfort_priority: float = 0.5
     favorite_occasions: List[str] = Field(default_factory=list)
+    gender: Optional[str] = None
+    avatar_style: Optional[str] = None
+    styling_preference: Optional[str] = None
+    budget_preference: Optional[str] = None
+    country: Optional[str] = None
+    preferred_language: Optional[str] = None
+    onboarding_completed: bool = False
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("preferred_fits", mode="before")
+    @classmethod
+    def parse_preferred_fits(cls, v):
+        if isinstance(v, dict):
+            return v.get("fits", [])
+        if isinstance(v, list):
+            return v
+        return []
 
     model_config = {"from_attributes": True}
 
@@ -128,6 +144,9 @@ class UserResponse(UserBase):
     wardrobe_count: int = 0
     is_following: Optional[bool] = False
     preferences: Optional[UserPreferenceBase] = None
+    gender: Optional[str] = None
+    avatar_style: Optional[str] = None
+    onboarding_completed: Optional[bool] = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -139,6 +158,8 @@ class UserSearchResponse(BaseModel):
     display_name: str
     bio: Optional[str] = ""
     avatar: Optional[str] = None
+    gender: Optional[str] = None
+    avatar_style: Optional[str] = None
     is_verified: bool = False
     followers_count: int = 0
     following_count: int = 0
@@ -147,3 +168,24 @@ class UserSearchResponse(BaseModel):
     is_me: bool = False
 
     model_config = {"from_attributes": True}
+
+
+class OnboardingRequest(BaseModel):
+    display_name: Optional[str] = None
+    gender: Optional[str] = None
+    avatar_style: Optional[str] = None
+    preferred_styles: List[str] = Field(default_factory=list)
+    disliked_styles: List[str] = Field(default_factory=list)
+    favorite_colors: List[str] = Field(default_factory=list)
+    preferred_colors: List[str] = Field(default_factory=list)
+    preferred_categories: List[str] = Field(default_factory=list)
+    preferred_occasions: List[str] = Field(default_factory=list)
+    preferred_fits: List[str] = Field(default_factory=list)
+    preferred_fit: Optional[str] = None
+    wardrobe_staples: List[str] = Field(default_factory=list)
+    lifestyle_occasions: List[str] = Field(default_factory=list)
+    budget_preference: Optional[str] = None
+    styling_preference: Optional[str] = None
+    country: Optional[str] = None
+    preferred_language: Optional[str] = None
+    date_of_birth: Optional[str] = None

@@ -592,9 +592,19 @@ class RecommendationService:
                     recent_outfit_ids=recent_outfit_ids,
                 )
                 conf = float(getattr(learned_pref, "confidence_score", 0.05) or 0.05)
+                # Explicit onboarding preferences take immediate priority even at cold start
+                has_explicit = bool(
+                    user_pref and (
+                        getattr(user_pref, "preferred_styles", None) or
+                        getattr(user_pref, "preferred_colors", None) or
+                        getattr(user_pref, "onboarding_completed", False)
+                    )
+                )
+                effective_conf = max(conf, 0.45 if has_explicit else 0.05)
+
                 # Dynamic weighting for cold-start adaptation:
-                # As confidence increases, personalization weight scales up to 25%
-                w_pref = 0.25 * conf
+                # As confidence increases, personalization weight scales up to 30%
+                w_pref = 0.30 * effective_conf
                 w_div = 0.10
                 w_compat = 1.0 - w_pref - w_div
                 final_score = round(w_compat * compat_score + w_pref * s_pref + w_div * s_div, 3)
@@ -1207,9 +1217,9 @@ class RecommendationService:
         preferred_colors: List[str],
         user_pref: Any,
     ) -> float:
-        bonus = 0.80
+        bonus = 0.75
 
-        # Preferred colors match
+        # 1. Preferred colors match
         pref_set = set(c.lower().strip() for c in preferred_colors)
         if user_pref and getattr(user_pref, "preferred_colors", None):
             for c in user_pref.preferred_colors:
@@ -1218,12 +1228,43 @@ class RecommendationService:
         if pref_set:
             has_pref = any((i.color or "").lower().strip() in pref_set for i in items)
             if has_pref:
-                bonus += 0.10
+                bonus += 0.08
 
-        # Underused wear rotation bonus: reward unworn pieces (wear_count == 0)
+        # 2. Preferred styles match from onboarding
+        if user_pref and getattr(user_pref, "preferred_styles", None):
+            user_styles = set(s.lower().strip() for s in user_pref.preferred_styles)
+            # Map common onboarding styles
+            has_style_match = False
+            for i in items:
+                it_style = (getattr(i, "style", None) or "").lower().strip()
+                cat = (getattr(i, "category", None) or "").lower().strip()
+                name = (getattr(i, "name", None) or "").lower().strip()
+
+                if it_style in user_styles:
+                    has_style_match = True
+                    break
+                if "minimalist" in user_styles and (it_style in ("minimal", "minimalist", "clean") or (getattr(i, "pattern", "") or "").lower() == "solid"):
+                    has_style_match = True
+                    break
+                if any(es in user_styles for es in ("traditional indian", "ethnic fusion")) and any(k in name or k in cat for k in ("saree", "kurta", "kurti", "lehenga", "ethnic")):
+                    has_style_match = True
+                    break
+                if "streetwear" in user_styles and any(k in name or k in cat for k in ("sneaker", "hoodie", "tee", "cargo", "oversized")):
+                    has_style_match = True
+                    break
+            if has_style_match:
+                bonus += 0.08
+
+        # 3. Preferred categories match
+        if user_pref and getattr(user_pref, "preferred_categories", None):
+            user_cats = set(c.lower().strip() for c in user_pref.preferred_categories)
+            if any((getattr(i, "category", "") or "").lower().strip() in user_cats or (getattr(i, "name", "") or "").lower().strip() in user_cats for i in items):
+                bonus += 0.05
+
+        # 4. Underused wear rotation bonus: reward unworn pieces (wear_count <= 1)
         unworn_count = sum(1 for i in items if (getattr(i, "wear_count", 0) or 0) <= 1)
         if unworn_count > 0:
-            bonus += 0.08  # Encourages capsule wardrobe rotation!
+            bonus += 0.06  # Encourages capsule wardrobe rotation
 
         return min(1.0, bonus)
 

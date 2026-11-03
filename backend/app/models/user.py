@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Boolean, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -30,9 +31,21 @@ class User(Base):
             return " ".join(parts)
         return self.username
 
+    @display_name.setter
+    def display_name(self, value: Optional[str]):
+        if not value:
+            return
+        parts = value.strip().split(" ", 1)
+        self.first_name = parts[0]
+        self.last_name = parts[1] if len(parts) > 1 else ""
+
     @property
-    def profile_image_url(self) -> str:
-        return self.avatar_url or ""
+    def profile_image_url(self) -> Optional[str]:
+        return self.avatar_url
+
+    @profile_image_url.setter
+    def profile_image_url(self, value: Optional[str]):
+        self.avatar_url = value
 
     @property
     def location(self) -> str:
@@ -40,7 +53,39 @@ class User(Base):
 
     @property
     def gender(self) -> str:
+        if self.preference and hasattr(self.preference, "gender") and self.preference.gender:
+            return self.preference.gender
         return ""
+
+    @gender.setter
+    def gender(self, value: Optional[str]):
+        if self.preference and hasattr(self.preference, "gender"):
+            self.preference.gender = value
+
+    @property
+    def avatar_style(self) -> str:
+        if self.preference and hasattr(self.preference, "avatar_style") and self.preference.avatar_style:
+            return self.preference.avatar_style
+        return "neutral"
+
+    @avatar_style.setter
+    def avatar_style(self, value: Optional[str]):
+        if self.preference and hasattr(self.preference, "avatar_style"):
+            self.preference.avatar_style = value
+
+    @property
+    def onboarding_completed(self) -> bool:
+        if self.preference and hasattr(self.preference, "onboarding_completed"):
+            if self.preference.onboarding_completed:
+                return True
+        try:
+            if self.clothing_items and len(self.clothing_items) > 0:
+                return True
+            if self.posts and len(self.posts) > 0:
+                return True
+        except Exception:
+            pass
+        return False
 
     @property
     def age_range(self) -> str:

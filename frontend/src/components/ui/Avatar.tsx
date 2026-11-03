@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { cn, DEFAULT_AVATAR } from '../../utils/cn';
+import { cn } from '../../utils/cn';
 import { resolveImageUrl } from '../../utils/imageUrl';
+import { getDefaultAvatar, AvatarStyle } from '../../utils/avatarHelper';
 
 interface AvatarProps {
   src?: string;
@@ -8,6 +9,8 @@ interface AvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
   isVerified?: boolean;
+  gender?: string | null;
+  avatarStyle?: AvatarStyle | string | null;
 }
 
 const sizeMap = {
@@ -25,20 +28,14 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = 'md',
   className,
   isVerified = false,
+  gender,
+  avatarStyle,
 }) => {
   const [imageError, setImageError] = useState(false);
 
-  const initials = alt
-    ? alt
-        .split(' ')
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'SP';
-
+  const fallbackAvatar = getDefaultAvatar(gender, avatarStyle);
   const resolvedSrc = resolveImageUrl(src);
-  const imageSrc = !imageError && resolvedSrc ? resolvedSrc : DEFAULT_AVATAR;
+  const imageSrc = !imageError && resolvedSrc ? resolvedSrc : fallbackAvatar;
 
   return (
     <div className={cn('relative inline-block flex-shrink-0', className)}>

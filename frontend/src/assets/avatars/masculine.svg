@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="m-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#18181B" />
+    </linearGradient>
+    <linearGradient id="m-skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4F4F5" />
+      <stop offset="100%" stop-color="#E4E4E7" />
+    </linearGradient>
+    <linearGradient id="m-coat" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3F3F46" />
+      <stop offset="100%" stop-color="#27272A" />
+    </linearGradient>
+    <linearGradient id="m-hair" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#111113" />
+    </linearGradient>
+  </defs>
+
+  <!-- Circular Background -->
+  <rect width="120" height="120" rx="60" fill="url(#m-bg)" />
+
+  <!-- Sartorial Shoulders & Suit Coat -->
+  <path d="M18 120 C20 95, 34 82, 48 78 L52 88 L68 88 L72 78 C86 82, 100 95, 102 120 Z" fill="url(#m-coat)" />
+  <!-- Lapel Left -->
+  <path d="M48 78 L56 98 L40 120 Z" fill="#52525B" />
+  <!-- Lapel Right -->
+  <path d="M72 78 L64 98 L80 120 Z" fill="#52525B" />
+  <!-- Shirt V -->
+  <path d="M52 82 L60 102 L68 82 Z" fill="#FAFAFA" />
+  <!-- Silk Tie Accent -->
+  <path d="M58 88 L62 88 L61 106 L59 106 Z" fill="#18181B" />
+
+  <!-- Neck -->
+  <path d="M53 58 L53 82 L67 82 L67 58 Z" fill="url(#m-skin)" />
+
+  <!-- Ears -->
+  <path d="M43 43 C39 43, 39 52, 43 52 Z" fill="url(#m-skin)" />
+  <path d="M77 43 C81 43, 81 52, 77 52 Z" fill="url(#m-skin)" />
+
+  <!-- Clean, Unobstructed Faceless Head Oval (No black across face) -->
+  <ellipse cx="60" cy="46" rx="17" ry="22" fill="url(#m-skin)" />
+
+  <!-- ========================================================== -->
+  <!-- MASCULINE HAIRCUT: SARTORIAL SIDE-PART QUIFF / TAPER FADE   -->
+  <!-- Confined strictly to crown and hairline, face remains clear -->
+  <!-- ========================================================== -->
+
+  <!-- Main Hair Mass (Crown, sides, and clean hairline above brow) -->
+  <path d="M 42 45 C 40 37, 41 28, 46 20 C 51 14, 61 13, 70 15 C 77 17, 80 23, 80 31 C 80 37, 79 41, 78 45 C 76.5 40, 75 34, 72 30 C 67 27, 60 26, 54 28 C 48 30, 45 34, 43 40 Z" fill="url(#m-hair)" />
+
+  <!-- Textured Quiff Directional Volume Sweep -->
+  <path d="M 48 22 C 55 15, 65 14, 73 17 C 78 20, 79 24, 79 28 C 75 22, 68 19, 61 19 C 54 19, 49 21, 48 22 Z" fill="#3F3F46" opacity="0.65" />
+
+  <!-- Natural Side-Part Accent Line -->
+  <path d="M 50 25 C 53 20, 58 17, 64 16" stroke="#18181B" stroke-width="1.2" stroke-linecap="round" />
+
+  <!-- Clean Sideburn Points -->
+  <path d="M 42 42 L 43 46 L 42 46 Z" fill="#18181B" />
+  <path d="M 78 42 L 77 46 L 78 46 Z" fill="#18181B" />
+</svg>

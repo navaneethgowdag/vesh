@@ -17,7 +17,9 @@ import {
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
-import { useApp } from '../context/AppContext';
+import { useApp, useCurrentUser } from '../context/AppContext';
+import { ProfilePhotoUploader } from '../components/profile/ProfilePhotoUploader';
+import { AVATAR_OPTIONS, AvatarStyle } from '../utils/avatarHelper';
 import { useTheme } from '../context/ThemeContext';
 import { ClothingColor, StyleVibe, UserSettings, LearnedPreferences } from '../types';
 import { api } from '../services/api';
@@ -48,6 +50,7 @@ const COLORS_ALL: ClothingColor[] = [
 
 export const Settings: React.FC = () => {
   const { userSettings, updateUserSettings, showToast, refreshData } = useApp();
+  const currentUser = useCurrentUser();
   const { themePreference, setThemePreference } = useTheme();
 
   const [activeTab, setActiveTab] = useState<
@@ -236,9 +239,11 @@ export const Settings: React.FC = () => {
                       Account & Public Profile
                     </h2>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      Your public presence within the StyleSphere network.
+                      Your public presence within the TailorBird network.
                     </p>
                   </div>
+
+                  <ProfilePhotoUploader size="xl" />
 
                   <div className="space-y-3 pt-2">
                     <div>
@@ -385,7 +390,7 @@ export const Settings: React.FC = () => {
                 </div>
               )}
 
-              {/* PERSONALIZATION & CONTINUOUS LEARNING ENGINE TAB */}
+              {/* 3. PERSONALIZATION & CONTINUOUS LEARNING ENGINE TAB */}
               {activeTab === 'Personalization' && (
                 <div className="space-y-6">
                   <div>

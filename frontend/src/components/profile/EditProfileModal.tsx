@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, User, MapPin, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, User, MapPin, FileText, Loader2 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
-import { Avatar } from '../ui/Avatar';
+import { ProfilePhotoUploader } from './ProfilePhotoUploader';
 import { Button } from '../ui/Button';
 
 interface EditProfileModalProps {
@@ -15,7 +15,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
   const [name, setName] = useState(currentUser.name || '');
   const [bio, setBio] = useState(currentUser.bio || '');
-  const [avatar, setAvatar] = useState(currentUser.avatar || '');
   const [location, setLocation] = useState(currentUser.location || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +35,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       await updateProfile({
         name: name.trim(),
         bio: bio.trim(),
-        avatar: avatar.trim(),
         location: location.trim(),
       });
       onClose();
@@ -76,25 +74,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar Preview & URL */}
-          <div className="flex items-center gap-4 p-4 rounded-md bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
-            <Avatar src={avatar || currentUser.avatar} alt={name || currentUser.name} size="xl" />
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                Profile Image URL
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-8 pr-3 py-2 text-base sm:text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-                />
-                <ImageIcon className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-3" />
-              </div>
-            </div>
-          </div>
+          {/* Direct Profile Photo Upload Component (BYTEA Storage) */}
+          <ProfilePhotoUploader size="xl" />
 
           {/* Full Name / Display Name */}
           <div>

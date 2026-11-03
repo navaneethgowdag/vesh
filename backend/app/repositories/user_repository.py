@@ -160,6 +160,19 @@ class UserRepository:
         if "preferred_fits" in kwargs and isinstance(kwargs["preferred_fits"], list):
             fits_data["fits"] = kwargs["preferred_fits"]
 
+        for fld in (
+            "gender",
+            "avatar_style",
+            "styling_preference",
+            "budget_preference",
+            "country",
+            "preferred_language",
+            "date_of_birth",
+            "onboarding_completed",
+        ):
+            if fld in kwargs and kwargs[fld] is not None:
+                fits_data[fld] = kwargs[fld]
+
         pref.preferred_fits = fits_data
 
         self.db.commit()
@@ -233,6 +246,7 @@ class UserRepository:
                     User.bio.ilike(search_pattern),
                 ),
             )
+            .order_by(User.created_at.desc())
             .limit(limit)
             .all()
         )

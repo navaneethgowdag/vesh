@@ -67,6 +67,11 @@ export const Explore: React.FC = () => {
   const [recommendedPeople, setRecommendedPeople] = useState<RecommendedPerson[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // People Search State & Debouncing
+  const [peopleSearchQuery, setPeopleSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [isSearchingPeople, setIsSearchingPeople] = useState(false);
+
   // Community modal state
   const [isCreateCommModalOpen, setIsCreateCommModalOpen] = useState(false);
 
@@ -98,6 +103,31 @@ export const Explore: React.FC = () => {
   useEffect(() => {
     loadTabData();
   }, [activeTab, activeCommCategory]);
+
+  // Debounced People Search Effect (300ms)
+  useEffect(() => {
+    if (activeTab !== 'people') return;
+    const trimmed = peopleSearchQuery.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setIsSearchingPeople(false);
+      return;
+    }
+
+    setIsSearchingPeople(true);
+    const handler = setTimeout(async () => {
+      try {
+        const results = await api.users.search(trimmed, 30);
+        setSearchResults(results);
+      } catch (err: any) {
+        showToast(err?.message || 'Creator search failed', 'error');
+      } finally {
+        setIsSearchingPeople(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [peopleSearchQuery, activeTab]);
 
   const handleRefresh = async () => {
     await Promise.all([refreshData(), loadTabData()]);
@@ -292,6 +322,29 @@ export const Explore: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* TAB 4: PEOPLE SEARCH INPUT */}
+          {activeTab === 'people' && (
+            <div className="relative">
+              <input
+                type="text"
+                value={peopleSearchQuery}
+                onChange={(e) => setPeopleSearchQuery(e.target.value)}
+                placeholder="Search creators by display name, @username, or bio..."
+                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-10 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none"
+              />
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
+              {peopleSearchQuery && (
+                <button
+                  onClick={() => setPeopleSearchQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-3.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* LOADING STATE */}
@@ -475,73 +528,176 @@ export const Explore: React.FC = () => {
         {/* TAB 4 CONTENT: PEOPLE & TASTEMAKERS */}
         {!isLoading && activeTab === 'people' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  Taste-Matched Creators
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Curators recommended based on shared aesthetic vibes and style categories.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {recommendedPeople.map((person) => {
-                const following = isFollowingUser(person.user.id);
-                const isMe = currentUser && person.user.id === currentUser.id;
-
-                return (
-                  <div
-                    key={person.user.id}
-                    className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-start justify-between gap-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all"
-                  >
-                    <div
-                      onClick={() => navigate(`/profile/${person.user.username}`)}
-                      className="flex items-start gap-3.5 cursor-pointer min-w-0 flex-1"
-                    >
-                      <Avatar
-                        src={person.user.avatar}
-                        alt={person.user.name}
-                        size="md"
-                        isVerified={person.user.is_verified}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                          {person.user.name}
-                        </p>
-                        <p className="text-xs text-zinc-500 truncate">@{person.user.username}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-1">
-                          {person.match_reason}
-                        </p>
-
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {person.common_styles.map((style) => (
-                            <span
-                              key={style}
-                              className="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                            >
-                              {style}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {!isMe && (
-                      <Button
-                        size="sm"
-                        variant={following ? 'outline' : 'primary'}
-                        onClick={() => toggleFollowUser(person.user.id)}
-                        className="text-xs px-3 py-1 flex-shrink-0 min-h-[36px]"
-                      >
-                        {following ? 'Following' : '+ Follow'}
-                      </Button>
-                    )}
+            {/* If searching */}
+            {peopleSearchQuery.trim() ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                      Search Results for &ldquo;{peopleSearchQuery.trim()}&rdquo;
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Found {searchResults.length} {searchResults.length === 1 ? 'creator' : 'creators'}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+
+                {isSearchingPeople ? (
+                  <div className="text-center py-16">
+                    <Sparkles className="w-5 h-5 text-zinc-400 animate-spin mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">Searching creators...</p>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                    <Users className="w-8 h-8 text-zinc-400 mx-auto mb-2 opacity-60" />
+                    <p className="font-bold text-zinc-900 dark:text-zinc-100">No creators found</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+                      No creators found matching &ldquo;{peopleSearchQuery.trim()}&rdquo;. Try searching another name or aesthetic.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPeopleSearchQuery('')}
+                      className="mt-3 text-xs"
+                    >
+                      Clear Search
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {searchResults.map((user) => {
+                      const following = isFollowingUser(user.id) || user.isFollowing;
+                      const isMe = (currentUser && user.id === currentUser.id) || user.isMe;
+
+                      return (
+                        <div
+                          key={user.id}
+                          className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-start justify-between gap-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all"
+                        >
+                          <div
+                            onClick={() => navigate(`/profile/${user.username}`)}
+                            className="flex items-start gap-3.5 cursor-pointer min-w-0 flex-1"
+                          >
+                            <Avatar
+                              src={user.avatar}
+                              gender={user.gender}
+                              avatarStyle={user.avatarStyle}
+                              alt={user.displayName}
+                              size="md"
+                              isVerified={user.isVerified}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                {user.displayName}
+                              </p>
+                              <p className="text-xs text-zinc-500 truncate">@{user.username}</p>
+                              {user.bio && (
+                                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                                  {user.bio}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-3 mt-2 text-[11px] text-zinc-500">
+                                <span>
+                                  <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{user.followersCount}</strong> followers
+                                </span>
+                                <span>&bull;</span>
+                                <span>
+                                  <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{user.postsCount}</strong> outfits
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {!isMe && (
+                            <Button
+                              size="sm"
+                              variant={following ? 'outline' : 'primary'}
+                              onClick={() => toggleFollowUser(user.id)}
+                              className="text-xs px-3 py-1 flex-shrink-0 min-h-[36px]"
+                            >
+                              {following ? 'Following' : '+ Follow'}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* If not searching: Taste-matched creators */
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                      Taste-Matched Creators
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Curators recommended based on shared aesthetic vibes and style categories.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {recommendedPeople.map((person) => {
+                    const following = isFollowingUser(person.user.id);
+                    const isMe = currentUser && person.user.id === currentUser.id;
+
+                    return (
+                      <div
+                        key={person.user.id}
+                        className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-start justify-between gap-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all"
+                      >
+                        <div
+                          onClick={() => navigate(`/profile/${person.user.username}`)}
+                          className="flex items-start gap-3.5 cursor-pointer min-w-0 flex-1"
+                        >
+                          <Avatar
+                            src={person.user.avatar}
+                            gender={(person.user as any).gender}
+                            avatarStyle={(person.user as any).avatar_style || (person.user as any).avatarStyle}
+                            alt={person.user.name}
+                            size="md"
+                            isVerified={person.user.is_verified}
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                              {person.user.name}
+                            </p>
+                            <p className="text-xs text-zinc-500 truncate">@{person.user.username}</p>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-1">
+                              {person.match_reason}
+                            </p>
+
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {person.common_styles.map((style) => (
+                                <span
+                                  key={style}
+                                  className="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                                >
+                                  {style}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {!isMe && (
+                          <Button
+                            size="sm"
+                            variant={following ? 'outline' : 'primary'}
+                            onClick={() => toggleFollowUser(person.user.id)}
+                            className="text-xs px-3 py-1 flex-shrink-0 min-h-[36px]"
+                          >
+                            {following ? 'Following' : '+ Follow'}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -11,7 +11,7 @@ export const LuxuryPageLoader: React.FC = () => {
         </div>
       </div>
       <h2 className="text-xl tracking-wider text-zinc-900 dark:text-zinc-100 font-bold mb-2">
-        STYLESPHERE
+        TAILORBIRD
       </h2>
       <p className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-medium">
         Curating Wardrobe &amp; Intelligence

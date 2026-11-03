@@ -32,7 +32,7 @@ export const OAuthCallback: React.FC = () => {
         setStatusMessage('Loading your capsule wardrobe...');
         await refreshData();
 
-        showToast('Welcome to StyleSphere! Signed in with Google.', 'success');
+        showToast('Welcome to TailorBird! Signed in with Google.', 'success');
         const target = res.destination || destination || '/home';
         navigate(target, { replace: true });
       } catch (err: any) {

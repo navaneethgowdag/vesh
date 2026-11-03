@@ -97,4 +97,76 @@ class UserPreference(Base):
     def climate_preference(self):
         return "Moderate"
 
+    @property
+    def gender(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("gender", "")
+        return ""
+
+    @gender.setter
+    def gender(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["gender"] = value
+        self.preferred_fits = data
+
+    @property
+    def avatar_style(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("avatar_style", "neutral")
+        return "neutral"
+
+    @avatar_style.setter
+    def avatar_style(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["avatar_style"] = value
+        self.preferred_fits = data
+
+    @property
+    def styling_preference(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("styling_preference", "")
+        return ""
+
+    @property
+    def budget_preference(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("budget_preference", "")
+        return ""
+
+    @property
+    def country(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("country", "")
+        return ""
+
+    @property
+    def preferred_language(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("preferred_language", "English")
+        return "English"
+
+    @property
+    def date_of_birth(self) -> str:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("date_of_birth", "")
+        return ""
+
+    @property
+    def onboarding_completed(self) -> bool:
+        if isinstance(self.preferred_fits, dict):
+            return bool(self.preferred_fits.get("onboarding_completed", False))
+        return False
+
+    @onboarding_completed.setter
+    def onboarding_completed(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["onboarding_completed"] = bool(value)
+        self.preferred_fits = data
+
     user = relationship("User", back_populates="preference")

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="n-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#18181B" />
+    </linearGradient>
+    <linearGradient id="n-torso" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E4E4E7" />
+      <stop offset="100%" stop-color="#D4D4D8" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="60" fill="url(#n-bg)" />
+  <!-- Atelier Mannequin Torso -->
+  <path d="M26 120 C28 98, 40 84, 52 80 L52 75 L68 75 L68 80 C80 84, 92 98, 94 120 Z" fill="url(#n-torso)" />
+  <!-- Mannequin Seam Lines -->
+  <path d="M60 80 L60 120" stroke="#A1A1AA" stroke-width="1.5" stroke-dasharray="3 2" />
+  <path d="M44 95 C52 98, 68 98, 76 95" stroke="#A1A1AA" stroke-width="1" fill="none" />
+  <!-- Wood Atelier Neck Block -->
+  <rect x="54" y="65" width="12" height="12" rx="2" fill="#71717A" />
+  <!-- Mannequin Head Form (Pure Faceless) -->
+  <ellipse cx="60" cy="46" rx="16" ry="21" fill="url(#n-torso)" />
+  <!-- Atelier Crown Cap -->
+  <ellipse cx="60" cy="27" rx="8" ry="3.5" fill="#71717A" />
+  <circle cx="60" cy="24" r="2.5" fill="#A1A1AA" />
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="f-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#18181B" />
+    </linearGradient>
+    <linearGradient id="f-skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4F4F5" />
+      <stop offset="100%" stop-color="#E4E4E7" />
+    </linearGradient>
+    <linearGradient id="f-dress" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#52525B" />
+      <stop offset="100%" stop-color="#3F3F46" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="60" fill="url(#f-bg)" />
+  <!-- Graceful Shoulders & Drape -->
+  <path d="M22 120 C24 96, 38 84, 52 82 C56 86, 64 86, 68 82 C82 84, 96 96, 98 120 Z" fill="url(#f-dress)" />
+  <!-- Drape Accent -->
+  <path d="M52 82 C56 94, 64 94, 68 82 L72 120 L48 120 Z" fill="#27272A" opacity="0.4" />
+  <!-- Slender Neck -->
+  <path d="M54 58 L54 82 L66 82 L66 58 Z" fill="url(#f-skin)" />
+  <!-- Faceless Head Oval -->
+  <ellipse cx="60" cy="46" rx="16" ry="21" fill="url(#f-skin)" />
+  <!-- Elegant Flowing Sculpted Hair -->
+  <path d="M42 45 C42 26, 50 18, 60 18 C70 18, 78 26, 78 45 C78 55, 76 68, 80 75 C75 72, 74 62, 74 54 C74 36, 68 28, 60 28 C52 28, 46 36, 46 54 C46 62, 45 72, 40 75 C44 68, 42 55, 42 45 Z" fill="#18181B" />
+</svg>

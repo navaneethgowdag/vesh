@@ -1,6 +1,6 @@
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Response, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.schemas.user import (
@@ -11,8 +11,10 @@ from app.schemas.user import (
     LearnedPreferenceResponse,
     PersonalizationResetResponse,
     UserSearchResponse,
+    OnboardingRequest,
 )
 from app.services.user_service import UserService
+from app.services.profile_image_service import ProfileImageService
 from app.models.user import User
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -39,7 +41,141 @@ def update_profile(
 ):
     service = UserService(db)
     data = update_data.model_dump(exclude_unset=True)
+    # If avatar_url was passed as a URL string or None, ignore external URLs
+    # Profile photos must be uploaded directly via /me/avatar
+    if "avatar_url" in data and data["avatar_url"] and data["avatar_url"].startswith("http"):
+        data.pop("avatar_url")
+    if "profile_image_url" in data and data["profile_image_url"] and data["profile_image_url"].startswith("http"):
+        data.pop("profile_image_url")
     service.update_profile(current_user, **data)
+    return service.get_by_username(current_user.username, viewer_id=current_user.id)
+
+
+@router.post("/me/avatar")
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Direct profile photo upload from user's device.
+    Validates content, normalizes dimensions to 512x512, and stores in PostgreSQL BYTEA.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Please upload a valid image file (JPG, PNG, or WebP).",
+        )
+
+    file_bytes = await file.read()
+    image_service = ProfileImageService(db)
+    avatar_url = image_service.store_avatar(current_user.id, file_bytes, file.content_type)
+
+    return {
+        "success": True,
+        "avatar_url": avatar_url,
+        "message": "Profile photo updated successfully.",
+    }
+
+
+@router.delete("/me/avatar")
+def remove_profile_photo(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Remove user's uploaded profile photo and revert to faceless illustrated avatar.
+    """
+    image_service = ProfileImageService(db)
+    image_service.delete_avatar(current_user.id)
+    return {
+        "success": True,
+        "avatar_url": None,
+        "message": "Profile photo removed successfully.",
+    }
+
+
+@router.get("/me/avatar")
+def get_my_avatar(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Retrieve current authenticated user's profile image binary stream.
+    """
+    image_service = ProfileImageService(db)
+    res = image_service.get_avatar(current_user.id)
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No uploaded profile image found.")
+    image_bytes, mime_type = res
+    return Response(
+        content=image_bytes,
+        media_type=mime_type,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@router.get("/{user_id}/avatar")
+def get_user_avatar(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Public profile photo retrieval endpoint for avatars across feed, explore, and comments.
+    """
+    image_service = ProfileImageService(db)
+    res = image_service.get_avatar(user_id)
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile image not found.")
+    image_bytes, mime_type = res
+    return Response(
+        content=image_bytes,
+        media_type=mime_type,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@router.post("/me/onboarding", response_model=UserResponse)
+def complete_onboarding(
+    data: OnboardingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Persist first-time user onboarding answers and activate personalized recommendations.
+    """
+    service = UserService(db)
+
+    # 1. Update display name if provided
+    if data.display_name and data.display_name.strip():
+        service.update_profile(current_user, display_name=data.display_name.strip())
+
+    # 2. Update preferences
+    colors = data.preferred_colors or data.favorite_colors
+    occasions = data.preferred_occasions or data.lifestyle_occasions
+    categories = data.preferred_categories or data.wardrobe_staples
+    fits = data.preferred_fits if data.preferred_fits else ([data.preferred_fit] if data.preferred_fit else ["Regular"])
+
+    pref_kwargs = {
+        "preferred_styles": data.preferred_styles,
+        "styles": data.preferred_styles,
+        "preferred_categories": categories,
+        "preferred_colors": colors,
+        "favorite_colors": colors,
+        "preferred_occasions": occasions,
+        "favorite_occasions": occasions,
+        "preferred_fits": fits,
+        "gender": data.gender,
+        "avatar_style": data.avatar_style or "neutral",
+        "styling_preference": data.styling_preference,
+        "budget_preference": data.budget_preference,
+        "country": data.country,
+        "preferred_language": data.preferred_language,
+        "date_of_birth": data.date_of_birth,
+        "onboarding_completed": True,
+    }
+
+    service.update_preferences(current_user.id, **pref_kwargs)
     return service.get_by_username(current_user.username, viewer_id=current_user.id)
 
 

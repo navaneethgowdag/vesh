@@ -13,7 +13,7 @@ from app.ai.model_manager import model_manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup tasks
-    print("StyleSphere API starting up...")
+    print("TailorBird API starting up...")
     db_connected = verify_database_connection()
     if db_connected:
         print("Connected to Neon PostgreSQL.")
@@ -27,12 +27,12 @@ async def lifespan(app: FastAPI):
     model_manager.load_recommendation_model()
     yield
     # Shutdown tasks
-    print("StyleSphere API shutting down...")
+    print("TailorBird API shutting down...")
     close_redis()
 
 
 app = FastAPI(
-    title="StyleSphere API",
+    title="TailorBird API",
     description="Production-grade AI Wardrobe & Social Fashion Platform API",
     version="1.0.0",
     lifespan=lifespan,
@@ -95,7 +95,7 @@ def root_endpoint():
     Root service endpoint directing developers to OpenAPI documentation and health checks.
     """
     return {
-        "service": "StyleSphere API",
+        "service": "TailorBird API",
         "status": "running",
         "version": "1.0.0",
         "docs": "/docs",
@@ -124,7 +124,7 @@ def health_check():
     """
     return {
         "status": "ok",
-        "app": "StyleSphere",
+        "app": "TailorBird",
         "version": "1.0.0",
         "env": settings.APP_ENV,
     }
@@ -147,7 +147,7 @@ def readiness_check(response: Response):
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "status": "not_ready",
-            "app": "StyleSphere",
+            "app": "TailorBird",
             "database": "disconnected",
             "redis": redis_health["status"],
             "detail": "Database connection check failed",
@@ -155,7 +155,7 @@ def readiness_check(response: Response):
 
     return {
         "status": "ready",
-        "app": "StyleSphere",
+        "app": "TailorBird",
         "database": "Neon PostgreSQL",
         "redis": redis_health["status"],
     }

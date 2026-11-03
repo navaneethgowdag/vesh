@@ -12,10 +12,10 @@ export const NotFound: React.FC = () => {
       <header className="flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
           <span className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center text-sm font-bold">
-            S
+            T
           </span>
           <span className="tracking-wide text-sm font-bold uppercase">
-            StyleSphere
+            TailorBird
           </span>
         </div>
       </header>
@@ -68,7 +68,7 @@ export const NotFound: React.FC = () => {
 
       {/* Footer */}
       <footer className="text-center text-xs text-zinc-500 dark:text-zinc-400 max-w-6xl mx-auto w-full pt-8 border-t border-zinc-200 dark:border-zinc-800">
-        StyleSphere © {new Date().getFullYear()} · All rights reserved.
+        TailorBird © {new Date().getFullYear()} · All rights reserved.
       </footer>
     </div>
   );

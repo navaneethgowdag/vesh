@@ -49,11 +49,11 @@ export const Landing: React.FC = () => {
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-zinc-100 dark:text-zinc-900 font-bold text-base shadow-sm">
-              S
+              T
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                StyleSphere
+                TailorBird
               </span>
             </div>
           </div>
@@ -106,7 +106,7 @@ export const Landing: React.FC = () => {
             </h1>
 
             <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-w-xl font-normal leading-relaxed">
-              StyleSphere translates your physical wardrobe into a living digital capsule. Calibrated for real-world weather, your calendar engagements, and aesthetic nuance.
+              TailorBird translates your physical wardrobe into a living digital capsule. Calibrated for real-world weather, your calendar engagements, and aesthetic nuance.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -282,7 +282,7 @@ export const Landing: React.FC = () => {
               S
             </div>
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-              StyleSphere
+              TailorBird
             </span>
             <span className="text-[11px]">&copy; {new Date().getFullYear()} All rights reserved.</span>
           </div>

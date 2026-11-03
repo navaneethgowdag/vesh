@@ -57,7 +57,7 @@ export const Sidebar: React.FC = () => {
     e.stopPropagation();
     try {
       await logout();
-      showToast('Signed out of StyleSphere', 'info');
+      showToast('Signed out of TailorBird', 'info');
       navigate('/login');
     } catch {
       navigate('/login');
@@ -73,11 +73,11 @@ export const Sidebar: React.FC = () => {
           className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-6"
         >
           <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-base transition-colors">
-            S
+            T
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 transition-colors">
-              StyleSphere
+              TailorBird
             </span>
           </div>
         </div>
@@ -169,7 +169,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <button
             onClick={handleLogout}
-            title="Log Out of StyleSphere"
+            title="Log Out of TailorBird"
             aria-label="Log Out"
             className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
           >
