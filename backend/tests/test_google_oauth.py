@@ -579,3 +579,75 @@ def test_regression_existing_password_login():
     )
     assert login_email_resp.status_code == 200
     assert "access_token" in login_email_resp.json()
+
+
+def test_public_google_auth_url_parameters():
+    """Verify Google OAuth authorization URL is configured for public access with account selector and offline access."""
+    resp = client.get("/api/v1/auth/google/url?destination=/daily-fit&frontend_url=http://localhost:5173")
+    assert resp.status_code == 200
+    data = resp.json()
+    auth_url = data["authorization_url"]
+    parsed = urlparse(auth_url)
+    q = parse_qs(parsed.query)
+
+    assert q["prompt"][0] == "select_account"
+    assert q["access_type"][0] == "offline"
+    assert q["response_type"][0] == "code"
+    assert "openid" in q["scope"][0]
+    assert "email" in q["scope"][0]
+    assert "profile" in q["scope"][0]
+
+
+def test_user_identity_stores_provider_subject_and_verified_email():
+    """Verify that UserIdentity properly stores and exposes provider_subject and verified_email."""
+    unique_sub = f"google-sub-{uuid.uuid4().hex[:12]}"
+    unique_email = f"public_user_{uuid.uuid4().hex[:8]}@gmail.com"
+    mock_id_info = {
+        "sub": unique_sub,
+        "email": unique_email,
+        "name": "Public Google User",
+        "email_verified": True,
+        "iss": "https://accounts.google.com",
+    }
+
+    db = SessionLocal()
+    try:
+        service = GoogleOAuthService(db)
+        user, is_new = service.authenticate_or_register_google_user(mock_id_info)
+        assert is_new is True
+
+        identity_service = UserIdentityService(db)
+        identities = identity_service.get_identities_for_user(user.id)
+        assert len(identities) >= 1
+
+        google_ident = next(i for i in identities if i.get("provider") == "google")
+        assert google_ident["provider_subject"] == unique_sub
+        assert google_ident["provider_user_id"] == unique_sub
+        assert google_ident["verified_email"] == unique_email
+
+        # Also verify lookup by sub
+        found_user = identity_service.find_user_by_provider_sub("google", unique_sub)
+        assert found_user is not None
+        assert found_user.id == user.id
+    finally:
+        db.close()
+
+
+def test_id_token_validation_invalid_issuer():
+    """Verify that tokens from unknown/untrusted issuers are rejected."""
+    db = SessionLocal()
+    try:
+        service = GoogleOAuthService(db)
+        invalid_issuer_payload = {
+            "sub": "sub-12345",
+            "email": "test@example.com",
+            "email_verified": True,
+            "iss": "https://evil-untrusted-issuer.com",
+        }
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=invalid_issuer_payload):
+            with pytest.raises(Exception) as excinfo:
+                service.verify_id_token("token_invalid_issuer")
+            assert "invalid google token issuer" in str(excinfo.value.detail).lower()
+    finally:
+        db.close()
+

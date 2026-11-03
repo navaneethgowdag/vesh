@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import inspect
+from sqlalchemy import inspect, or_
 
 from app.models.user import User
 from app.models.user_identity import UserIdentity
@@ -44,7 +44,10 @@ class UserIdentityService:
                     self.db.query(UserIdentity)
                     .filter(
                         UserIdentity.provider == provider_clean,
-                        UserIdentity.provider_user_id == pid_str,
+                        or_(
+                            UserIdentity.provider_subject == pid_str,
+                            UserIdentity.provider_user_id == pid_str,
+                        ),
                     )
                     .first()
                 )
@@ -64,7 +67,9 @@ class UserIdentityService:
                 ws = rec.weather_scores or {}
                 identities = ws.get(IDENTITIES_KEY, [])
                 for item in identities:
-                    if item.get("provider") == provider_clean and str(item.get("provider_user_id")) == pid_str:
+                    item_prov = (item.get("provider") or "").strip().lower()
+                    item_sub = str(item.get("provider_subject") or item.get("provider_user_id") or "").strip()
+                    if item_prov == provider_clean and item_sub == pid_str:
                         return self.db.query(User).filter(User.id == rec.user_id).first()
         except Exception as e:
             logger.error(f"[UserIdentityService] Query JSONB fallback failed: {e}")
@@ -81,10 +86,12 @@ class UserIdentityService:
         provider: str,
         provider_user_id: str,
         email: Optional[str] = None,
+        provider_subject: Optional[str] = None,
     ) -> None:
         """Link an OAuth identity to an existing user."""
-        pid_str = str(provider_user_id).strip()
+        pid_str = str(provider_subject or provider_user_id).strip()
         provider_clean = provider.strip().lower()
+        email_clean = email.strip().lower() if email else None
 
         # Enforce uniqueness across all users
         existing_owner = self.find_user_by_provider_sub(provider_clean, pid_str)
@@ -99,7 +106,10 @@ class UserIdentityService:
                     .filter(
                         UserIdentity.user_id == user_id,
                         UserIdentity.provider == provider_clean,
-                        UserIdentity.provider_user_id == pid_str,
+                        or_(
+                            UserIdentity.provider_subject == pid_str,
+                            UserIdentity.provider_user_id == pid_str,
+                        ),
                     )
                     .first()
                 )
@@ -109,10 +119,23 @@ class UserIdentityService:
                         user_id=user_id,
                         provider=provider_clean,
                         provider_user_id=pid_str,
+                        provider_subject=pid_str,
+                        verified_email=email_clean,
                     )
                     self.db.add(ident)
                     self.db.commit()
                     logger.info(f"[UserIdentityService] Linked {provider_clean} sub {pid_str} to user {user_id}")
+                    return
+                else:
+                    updated = False
+                    if not existing.provider_subject:
+                        existing.provider_subject = pid_str
+                        updated = True
+                    if email_clean and not existing.verified_email:
+                        existing.verified_email = email_clean
+                        updated = True
+                    if updated:
+                        self.db.commit()
                     return
             except Exception as e:
                 self.db.rollback()
@@ -142,23 +165,33 @@ class UserIdentityService:
             ws = dict(record.weather_scores) if isinstance(record.weather_scores, dict) else {}
             identities = list(ws.get(IDENTITIES_KEY, []))
 
-            # Deduplicate
-            already_present = any(
-                item.get("provider") == provider_clean and str(item.get("provider_user_id")) == pid_str
-                for item in identities
-            )
+            # Deduplicate or update
+            already_present = False
+            for item in identities:
+                item_sub = str(item.get("provider_subject") or item.get("provider_user_id") or "").strip()
+                if item.get("provider") == provider_clean and item_sub == pid_str:
+                    already_present = True
+                    item["provider_subject"] = pid_str
+                    item["provider_user_id"] = pid_str
+                    if email_clean:
+                        item["verified_email"] = email_clean
+                        item["email"] = email_clean
+                    break
+
             if not already_present:
                 identities.append({
                     "id": str(uuid.uuid4()),
                     "provider": provider_clean,
+                    "provider_subject": pid_str,
                     "provider_user_id": pid_str,
-                    "email": email.strip().lower() if email else None,
+                    "verified_email": email_clean,
+                    "email": email_clean,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                 })
-                ws[IDENTITIES_KEY] = identities
-                record.weather_scores = ws
-                self.db.commit()
-                logger.info(f"[UserIdentityService] Linked {provider_clean} sub {pid_str} to user {user_id} in JSONB")
+            ws[IDENTITIES_KEY] = identities
+            record.weather_scores = ws
+            self.db.commit()
+            logger.info(f"[UserIdentityService] Linked {provider_clean} sub {pid_str} to user {user_id} in JSONB")
         except Exception as e:
             self.db.rollback()
             logger.error(f"[UserIdentityService] Failed to link identity: {e}")
@@ -174,7 +207,9 @@ class UserIdentityService:
                     results.append({
                         "id": str(r.id),
                         "provider": r.provider,
-                        "provider_user_id": r.provider_user_id,
+                        "provider_subject": r.provider_subject or r.provider_user_id,
+                        "provider_user_id": r.provider_user_id or r.provider_subject,
+                        "verified_email": r.verified_email,
                         "created_at": r.created_at.isoformat() if r.created_at else None,
                     })
                 if results:
@@ -185,7 +220,19 @@ class UserIdentityService:
         # Check JSONB fallback
         record = self.db.query(LearnedPreference).filter(LearnedPreference.user_id == user_id).first()
         if record and isinstance(record.weather_scores, dict):
-            return record.weather_scores.get(IDENTITIES_KEY, [])
+            raw_identities = record.weather_scores.get(IDENTITIES_KEY, [])
+            for item in raw_identities:
+                sub = item.get("provider_subject") or item.get("provider_user_id")
+                email = item.get("verified_email") or item.get("email")
+                results.append({
+                    "id": item.get("id"),
+                    "provider": item.get("provider"),
+                    "provider_subject": sub,
+                    "provider_user_id": sub,
+                    "verified_email": email,
+                    "created_at": item.get("created_at"),
+                })
+            return results
         return []
 
     def unlink_identity(self, user_id: UUID, provider: str) -> bool:

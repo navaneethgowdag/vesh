@@ -339,6 +339,7 @@ class GoogleOAuthService:
                 provider="google",
                 provider_user_id=sub,
                 email=email,
+                provider_subject=sub,
             )
             logger.info(f"[GoogleOAuth] Successfully registered new user '{username}' ({email}) via Google.")
             return new_user, True
@@ -374,4 +375,5 @@ class GoogleOAuthService:
             provider="google",
             provider_user_id=sub,
             email=email,
+            provider_subject=sub,
         )
