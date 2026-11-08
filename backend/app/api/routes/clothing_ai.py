@@ -55,6 +55,44 @@ async def analyze_clothing_image(
 
 
 @router.post(
+    "/predict",
+    dependencies=[Depends(RateLimit(requests=30, window=60, scope="clothing_predict"))],
+)
+async def predict_fashion_attributes(
+    file: Optional[UploadFile] = File(None),
+    image_url: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Direct model inference endpoint returning structured multi-task fashion predictions:
+    article_type, master_category, sub_category, base_colour, gender, season, usage,
+    pattern, age_group, model_version, and confidence scores.
+    """
+    from app.ai.fashion_model import fashion_model_service
+
+    if file:
+        try:
+            content = await file.read()
+            img = Image.open(io.BytesIO(content))
+            return fashion_model_service.predict(img)
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid image file: {e}")
+
+    if image_url:
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                resp = await client.get(image_url)
+                if resp.status_code == 200:
+                    img = Image.open(io.BytesIO(resp.content))
+                    return fashion_model_service.predict(img)
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to fetch image from URL: {e}")
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Must provide an image file or image_url")
+
+
+@router.post(
     "/jobs",
     response_model=JobResponse,
     status_code=status.HTTP_202_ACCEPTED,

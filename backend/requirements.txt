@@ -22,4 +22,6 @@ redis>=5.0.0
 rq>=1.16.0
 google-auth>=2.0.0
 requests>=2.31.0
+torch>=2.0.0
+torchvision>=0.15.0
 

@@ -31,7 +31,7 @@ async def generate_recommendations(
     city: str = Query("New York"),
     latitude: Optional[float] = Query(None),
     longitude: Optional[float] = Query(None),
-    limit: int = Query(5, ge=1, le=10),
+    limit: int = Query(1, ge=1, le=10),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -43,7 +43,7 @@ async def generate_recommendations(
     - Path C: General outfit recommendations (frictionless 'Suggest an outfit for me').
     """
     service = RecommendationService(db)
-    resolved_limit = req.limit or limit
+    resolved_limit = req.limit if req.limit is not None else limit
     return await service.generate_recommendations(
         user_id=current_user.id,
         calendar_event_id=req.calendar_event_id,

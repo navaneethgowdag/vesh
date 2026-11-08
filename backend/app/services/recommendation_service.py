@@ -212,7 +212,7 @@ class RecommendationService:
         preferred_colors: Optional[List[str]] = None,
         avoided_colors: Optional[List[str]] = None,
         specific_clothing_id: Optional[UUID] = None,
-        limit: int = 5,
+        limit: int = 1,
         city: str = "New York",
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
@@ -645,7 +645,7 @@ class RecommendationService:
         created_recommendations: List[Recommendation] = []
 
         for idx, (selected_items, s_data) in enumerate(distinct_combinations):
-            outfit_name = f"{target_occasion} Look {idx + 1}"
+            outfit_name = f"{target_occasion} Look" if len(distinct_combinations) == 1 else f"{target_occasion} Look {idx + 1}"
             clothing_ids = [i.id for i in selected_items]
 
             # Create or reuse persistent Outfit in Neon PostgreSQL
@@ -1514,7 +1514,7 @@ class RecommendationService:
             user_id=user_id,
             calendar_event_id=ev.id,
             occasion=occasion,
-            limit=5,
+            limit=1,
             city=city,
             latitude=latitude,
             longitude=longitude,

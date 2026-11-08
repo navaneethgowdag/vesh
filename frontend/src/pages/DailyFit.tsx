@@ -188,7 +188,7 @@ export const DailyFit: React.FC = () => {
     try {
       let payload: any = {
         city: weather?.city || undefined,
-        limit: 5,
+        limit: 1,
         weatherPreference,
         outfitPreference: outfitPreference !== 'any' ? outfitPreference : undefined,
         dressCode: dressCode || undefined,
@@ -236,7 +236,12 @@ export const DailyFit: React.FC = () => {
             : activePath === 'general'
             ? 'Daily Look'
             : chosenOccasion;
-        showToast(`Synthesized ${recs.length} personalized looks for ${occasionLabel}!`, 'success');
+        showToast(
+          recs.length === 1
+            ? `Synthesized your personalized look for ${occasionLabel}!`
+            : `Synthesized ${recs.length} personalized looks for ${occasionLabel}!`,
+          'success'
+        );
       } else {
         setGenerationError('No complete outfits could be synthesized. Add more tops, bottoms, or dresses to your wardrobe.');
       }
@@ -322,7 +327,7 @@ export const DailyFit: React.FC = () => {
       if (candidateRecommendations.length > 1) {
         setActiveCandidateIndex((prev) => (prev + 1) % candidateRecommendations.length);
       } else {
-        cycleDailyFit();
+        await handleGenerate();
       }
     } catch (err) {
       console.error('Failed to dismiss recommendation', err);

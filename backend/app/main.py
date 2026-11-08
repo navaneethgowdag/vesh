@@ -8,6 +8,7 @@ from app.core.database import verify_database_connection
 from app.core.redis import init_redis, close_redis, check_redis_health
 from app.api.routes import api_router
 from app.ai.model_manager import model_manager
+from app.ai.fashion_model import fashion_model_service
 
 
 @asynccontextmanager
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 
     # Load ML models if available
     model_manager.load_recommendation_model()
+    fashion_model_service.load_model()
     yield
     # Shutdown tasks
     print("TailorBird API shutting down...")

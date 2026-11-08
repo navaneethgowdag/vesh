@@ -1,0 +1,87 @@
+{
+  "tasks": {
+    "articleType": {
+      "accuracy": 0.8611736455050277,
+      "macro_precision": 0.6163877544755524,
+      "macro_recall": 0.5804232096089306,
+      "macro_f1": 0.5868266344598475,
+      "weighted_precision": 0.849675768374135,
+      "weighted_recall": 0.8611736455050277,
+      "weighted_f1": 0.8518617977089151,
+      "top_3_accuracy": 0.9732853069188053,
+      "top_5_accuracy": 0.9869428185502026
+    },
+    "masterCategory": {
+      "accuracy": 0.9882935614588023,
+      "macro_precision": 0.8241706012109747,
+      "macro_recall": 0.7701270980371939,
+      "macro_f1": 0.7915898551824889,
+      "weighted_precision": 0.9860568758129922,
+      "weighted_recall": 0.9882935614588023,
+      "weighted_f1": 0.987154751867502
+    },
+    "subCategory": {
+      "accuracy": 0.9530241632898094,
+      "macro_precision": 0.7344993318815343,
+      "macro_recall": 0.7061311382085633,
+      "macro_f1": 0.7058975430291241,
+      "weighted_precision": 0.9520362984659173,
+      "weighted_recall": 0.9530241632898094,
+      "weighted_f1": 0.9511283043544554
+    },
+    "gender": {
+      "accuracy": 0.8922407324028215,
+      "macro_precision": 0.7736352720481005,
+      "macro_recall": 0.7303985651030281,
+      "macro_f1": 0.7453001369449621,
+      "weighted_precision": 0.8901188949138557,
+      "weighted_recall": 0.8922407324028215,
+      "weighted_f1": 0.8890472139690475
+    },
+    "baseColour": {
+      "accuracy": 0.6159387663214768,
+      "macro_precision": 0.3396355956005084,
+      "macro_recall": 0.24972243795152907,
+      "macro_f1": 0.27068979647687247,
+      "weighted_precision": 0.5901685496568074,
+      "weighted_recall": 0.6159387663214768,
+      "weighted_f1": 0.5922276336996717
+    },
+    "season": {
+      "accuracy": 0.6927810295662614,
+      "macro_precision": 0.7017981127466918,
+      "macro_recall": 0.6433981875587238,
+      "macro_f1": 0.6663021347843824,
+      "weighted_precision": 0.6952991058396603,
+      "weighted_recall": 0.6927810295662614,
+      "weighted_f1": 0.6859800859438135
+    },
+    "usage": {
+      "accuracy": 0.8962929611286208,
+      "macro_precision": 0.48663617516058766,
+      "macro_recall": 0.43958523902209645,
+      "macro_f1": 0.45483017604327897,
+      "weighted_precision": 0.8914784340896403,
+      "weighted_recall": 0.8962929611286208,
+      "weighted_f1": 0.892596389707169
+    },
+    "pattern": {
+      "accuracy": 0.8386965376782077,
+      "macro_precision": 0.4781944559231535,
+      "macro_recall": 0.4869366206719236,
+      "macro_f1": 0.47592483424389875,
+      "weighted_precision": 0.834119521078834,
+      "weighted_recall": 0.8386965376782077,
+      "weighted_f1": 0.8354525493352284
+    },
+    "ageGroup": {
+      "accuracy": 0.8991445294912201,
+      "macro_precision": 0.8037134219091703,
+      "macro_recall": 0.7132355578511205,
+      "macro_f1": 0.7505696695078267,
+      "weighted_precision": 0.8968646728267858,
+      "weighted_recall": 0.8991445294912201,
+      "weighted_f1": 0.8957550616126359
+    }
+  }
+}

@@ -118,7 +118,7 @@ class RecommendationGenerateRequest(BaseModel):
     preferred_colors: Optional[List[str]] = Field(default_factory=list)
     avoided_colors: Optional[List[str]] = Field(default_factory=list)
     specific_clothing_id: Optional[UUID] = None
-    limit: Optional[int] = Field(default=5, ge=1, le=10)
+    limit: Optional[int] = Field(default=1, ge=1, le=10)
 
 
 class RecommendationAcceptRequest(BaseModel):

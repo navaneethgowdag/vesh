@@ -124,21 +124,25 @@ class ClothingPredictionService:
             except Exception:
                 db.rollback()
 
-        # Update clothing default values if they are empty
-        if not clothing.category or clothing.category == "other":
-            clothing.category = predicted_attrs.get("category")
-        if not clothing.color:
-            clothing.color = predicted_attrs.get("primary_color")
-        if not clothing.secondary_color:
-            clothing.secondary_color = predicted_attrs.get("secondary_color")
-        if not clothing.pattern or clothing.pattern == "Solid":
-            clothing.pattern = predicted_attrs.get("pattern")
-        if not clothing.material:
-            clothing.material = predicted_attrs.get("fabric")
-        if not clothing.season:
-            clothing.season = predicted_attrs.get("season")
-        if not clothing.occasion:
-            clothing.occasion = predicted_attrs.get("occasion")
+        # Update clothing default values if they are empty and user hasn't already confirmed attributes
+        is_user_confirmed = fv.get("is_finalized", False) or fv.get("user_confirmed", False) or ("user_corrections" in fv and len(fv["user_corrections"]) > 0)
+        if not is_user_confirmed:
+            if not clothing.category or clothing.category == "other":
+                clothing.category = predicted_attrs.get("category")
+            if not clothing.subcategory:
+                clothing.subcategory = predicted_attrs.get("subcategory")
+            if not clothing.color:
+                clothing.color = predicted_attrs.get("primary_color") or predicted_attrs.get("color")
+            if not clothing.secondary_color:
+                clothing.secondary_color = predicted_attrs.get("secondary_color")
+            if not clothing.pattern or clothing.pattern == "Solid":
+                clothing.pattern = predicted_attrs.get("pattern")
+            if not clothing.material:
+                clothing.material = predicted_attrs.get("fabric")
+            if not clothing.season or clothing.season == "All-Season":
+                clothing.season = predicted_attrs.get("season")
+            if not clothing.occasion or clothing.occasion == "Casual Daily":
+                clothing.occasion = predicted_attrs.get("occasion")
 
         db.commit()
         return pred_payload

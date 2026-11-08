@@ -746,7 +746,13 @@ def get_clothing_predictions(
             img_res = image_service.get_image(clothing.id, current_user.id, "original")
             source = "original"
         if img_res:
-            res = garment_classifier.analyze_garment(img_res[0], image_source=source)
+            try:
+                from app.ai.fashion_model import fashion_model_service
+                m_pred = fashion_model_service.predict(img_res[0])
+                res = fashion_model_service.format_wardrobe_payload(m_pred, image_source=source)
+            except Exception as me:
+                logger.warning(f"Fashion model on-demand prediction fallback: {me}")
+                res = garment_classifier.analyze_garment(img_res[0], image_source=source)
             pred = prediction_service.save_prediction(db, clothing, res, current_user.id)
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No predictions available for this clothing item")

@@ -1546,7 +1546,7 @@ export const api = {
           preferred_colors: params.preferredColors || [],
           avoided_colors: params.avoidedColors || [],
           specific_clothing_id: params.specificClothingId,
-          limit: params.limit || 5,
+          limit: params.limit !== undefined ? params.limit : 1,
         }),
       });
       return (rawList || []).map((rec) => {

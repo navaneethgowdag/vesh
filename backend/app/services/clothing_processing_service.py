@@ -190,14 +190,34 @@ class ClothingProcessingService:
             t_storage = round(time.time() - t_stage, 3)
 
             # 8. Stage: Specialized Fashion Computer Vision Attribute Extraction
-            # Pass transparent_img so color, pattern, and geometry analyze the isolated centered garment with exact alpha mask
             t_stage = time.time()
             self._update_metadata(clothing, status="processing", stage="understanding_garment", commit=True)
             try:
-                prediction_res = garment_classifier.analyze_garment(
-                    image_input=transparent_img,
+                from app.ai.fashion_model import fashion_model_service
+
+                # Predict on catalog image using the trained Multi-task EfficientNet-B0 model
+                model_pred = fashion_model_service.predict(catalog_img)
+                prediction_res = fashion_model_service.format_wardrobe_payload(
+                    prediction_res=model_pred,
                     image_source="processed",
                 )
+
+                # Enrich with fine-grained silhouette geometry & pixel color analysis
+                try:
+                    cv_res = garment_classifier.analyze_garment(
+                        image_input=transparent_img,
+                        image_source="processed",
+                    )
+                    cv_attrs = cv_res.get("predicted_attributes", {})
+                    pred_attrs = prediction_res["predicted_attributes"]
+                    for k in ["sleeve_type", "neckline", "silhouette", "fit", "length", "category_specific"]:
+                        if k in cv_attrs and k not in pred_attrs:
+                            pred_attrs[k] = cv_attrs[k]
+                    if cv_res.get("color_palette"):
+                        prediction_res["color_palette"] = cv_res["color_palette"]
+                except Exception as cve:
+                    logger.debug(f"[Pipeline] Auxiliary CV enrichment notice: {cve}")
+
                 prediction_service.save_prediction(
                     db=self.db,
                     clothing=clothing,
@@ -205,7 +225,20 @@ class ClothingProcessingService:
                     user_id=user_id,
                 )
             except Exception as pe:
-                logger.warning(f"[Pipeline] Specialized CV classification warning for clothing {clothing_id}: {pe}")
+                logger.warning(f"[Pipeline] Specialized model classification warning for clothing {clothing_id}: {pe}")
+                try:
+                    fallback_res = garment_classifier.analyze_garment(
+                        image_input=transparent_img,
+                        image_source="processed",
+                    )
+                    prediction_service.save_prediction(
+                        db=self.db,
+                        clothing=clothing,
+                        prediction_result=fallback_res,
+                        user_id=user_id,
+                    )
+                except Exception as fe:
+                    logger.error(f"[Pipeline] Classification fallback failed: {fe}")
             t_und = round(time.time() - t_stage, 3)
 
             total_duration = round(time.time() - t0, 2)
