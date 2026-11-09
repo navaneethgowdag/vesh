@@ -22,23 +22,9 @@ import { cn } from '../../utils/cn';
 import { api } from '../../services/api';
 
 export const Sidebar: React.FC = () => {
-  const { unreadNotifsCount, wardrobe, logout, showToast } = useApp();
+  const { unreadNotifsCount, unreadMessagesCount, wardrobe, logout, showToast } = useApp();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
-  const [unreadMessages, setUnreadMessages] = React.useState(0);
-
-  React.useEffect(() => {
-    let mounted = true;
-    api.messages
-      .getUnreadCount()
-      .then((res) => {
-        if (mounted) setUnreadMessages(res.unread_count);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const navItems = [
     { name: 'Home', path: '/home', icon: Home },
@@ -46,7 +32,7 @@ export const Sidebar: React.FC = () => {
     { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
     { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
     { name: 'Explore', path: '/explore', icon: Compass },
-    { name: 'Messages', path: '/inbox', icon: MessageSquare, count: unreadMessages },
+    { name: 'Messages', path: '/inbox', icon: MessageSquare, count: unreadMessagesCount },
     { name: 'Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
     { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
     { name: 'Create', path: '/create', icon: PlusCircle, highlight: true },

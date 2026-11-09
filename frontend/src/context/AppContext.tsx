@@ -11,7 +11,7 @@ import {
   Weather,
   CreatePollPayload,
 } from '../types';
-import { api, ApiError } from '../services/api';
+import { api, ApiError, tokenStorage } from '../services/api';
 
 export type WeatherStatus =
   | 'idle'
@@ -99,6 +99,8 @@ interface AppContextType {
   markAllNotificationsAsRead: () => Promise<void>;
   allCreators: User[];
   refreshData: () => Promise<void>;
+  unreadMessagesCount: number;
+  refreshUnreadMessagesCount: () => Promise<void>;
 }
 
 const INITIAL_WEATHER: Weather = {
@@ -189,6 +191,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [liveCoordinates, setLiveCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [dailyFitVariation, setDailyFitVariation] = useState<number>(0);
   const [dailyFit, setDailyFit] = useState<Recommendation | null>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+  const refreshDataPromiseRef = React.useRef<Promise<void> | null>(null);
 
   // Theme state: support 'light' | 'dark' | 'system'
   const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() => {
@@ -503,43 +507,111 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Fetch all persistent state from the backend (Neon via FastAPI).
   const refreshData = useCallback(async () => {
-    try {
-      const user = await api.auth.getMe();
-      setCurrentUserState(user);
-      syncSettingsFromUser(user);
-      setAuthError(null);
-
-      const [items, feedPosts, cols, notifs, followingUsers] = await Promise.all([
-        api.wardrobe.list().catch(() => []),
-        api.posts.listFeed().catch(() => []),
-        api.saved.listCollections().catch(() => []),
-        api.notifications.list().catch(() => []),
-        api.social.getFollowing(user.id).catch(() => []),
-      ]);
-      setWardrobe(items);
-      setPosts(feedPosts);
-      setCollections(cols);
-      setNotifications(notifs);
-      setFollowingIds(followingUsers.map((u) => u.id));
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setCurrentUserState(null);
-        setWardrobe([]);
-        setPosts([]);
-        setCollections([]);
-        setNotifications([]);
-        setDailyFit(null);
-      } else {
-        showToast('Could not reach the TailorBird backend. Check that FastAPI is running.', 'info');
-      }
-    } finally {
-      setIsBootstrapping(false);
+    if (refreshDataPromiseRef.current) {
+      return refreshDataPromiseRef.current;
     }
+    const p = (async () => {
+      try {
+        const user = await api.auth.getMe();
+        setCurrentUserState(user);
+        syncSettingsFromUser(user);
+        setAuthError(null);
+
+        const [items, feedPosts, cols, notifs, followingUsers] = await Promise.all([
+          api.wardrobe.list().catch(() => []),
+          api.posts.listFeed().catch(() => []),
+          api.saved.listCollections().catch(() => []),
+          api.notifications.list().catch(() => []),
+          api.social.getFollowing(user.id).catch(() => []),
+        ]);
+        setWardrobe(items);
+        setPosts(feedPosts);
+        setCollections(cols);
+        setNotifications(notifs);
+        setFollowingIds(followingUsers.map((u) => u.id));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          setCurrentUserState(null);
+          setWardrobe([]);
+          setPosts([]);
+          setCollections([]);
+          setNotifications([]);
+          setDailyFit(null);
+        } else {
+          showToast('Could not reach the TailorBird backend. Check that FastAPI is running.', 'info');
+        }
+      } finally {
+        setIsBootstrapping(false);
+        refreshDataPromiseRef.current = null;
+      }
+    })();
+    refreshDataPromiseRef.current = p;
+    return p;
   }, [showToast, syncSettingsFromUser]);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // Centralized unread messages count retrieval
+  const refreshUnreadMessagesCount = useCallback(async () => {
+    if (!isAuthenticated) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+    try {
+      const res = await api.messages.getUnreadCount();
+      setUnreadMessagesCount(res.unread_count);
+    } catch {
+      // quiet fallback
+    }
+  }, [isAuthenticated]);
+
+  // Centralized, visibility-aware polling for unread messages (45-second interval)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+
+    refreshUnreadMessagesCount();
+
+    let intervalId: any = null;
+
+    const startPolling = () => {
+      if (!intervalId) {
+        intervalId = setInterval(() => {
+          if (!document.hidden) {
+            refreshUnreadMessagesCount();
+          }
+        }, 45000);
+      }
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        refreshUnreadMessagesCount();
+        startPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, refreshUnreadMessagesCount]);
 
   // User-initiated daily fit recommendation generation (no automatic fetch on mount)
   const generateDailyFit = useCallback(
@@ -652,7 +724,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const logout = async () => {
-    await api.auth.logout();
+    try {
+      await api.auth.logout();
+    } catch {
+      // quiet fallback
+    }
+    tokenStorage.clear();
     setCurrentUserState(null);
     setWardrobe([]);
     setPosts([]);
@@ -661,6 +738,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setDailyFit(null);
     setDailyFitHistory([]);
     setFollowingIds([]);
+    setUnreadMessagesCount(0);
   };
 
   // Wardrobe actions (POST/PATCH/DELETE → Neon, no local fallback)
@@ -1058,6 +1136,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         markAllNotificationsAsRead,
         allCreators: [],
         refreshData,
+        unreadMessagesCount,
+        refreshUnreadMessagesCount,
       }}
     >
       {children}

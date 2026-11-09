@@ -27,6 +27,7 @@ import {
 } from '../../types';
 import { SearchableCombobox } from './SearchableCombobox';
 import defaultClassMappings from '../../data/classMappings.json';
+import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface AddClothingModalProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
   onSwitchToBatch,
 }) => {
   const { refreshData, showToast } = useApp();
+  const { execute: runAnalyze, isLocked: isAnalyzing } = useAsyncLock();
+  const { execute: runSave, isLocked: isSaving } = useAsyncLock();
 
   // Class mappings: defaults from static JSON with runtime sync from backend
   const [classOptions, setClassOptions] = useState<Record<string, string[]>>(defaultClassMappings);
@@ -195,44 +198,46 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
       return;
     }
 
-    // Immediate local preview of the original image
-    setSelectedFile(file);
-    const preview = URL.createObjectURL(file);
-    setLocalPreviewUrl(preview);
-    setStep('analyzing');
-    setErrorMessage(null);
+    await runAnalyze(async () => {
+      // Immediate local preview of the original image
+      setSelectedFile(file);
+      const preview = URL.createObjectURL(file);
+      setLocalPreviewUrl(preview);
+      setStep('analyzing');
+      setErrorMessage(null);
 
-    const baseName = file.name
-      ? file.name.substring(0, file.name.lastIndexOf('.')) || file.name
-      : 'Wardrobe Item';
-    const friendlyName = baseName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+      const baseName = file.name
+        ? file.name.substring(0, file.name.lastIndexOf('.')) || file.name
+        : 'Wardrobe Item';
+      const friendlyName = baseName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
 
-    try {
-      // Direct upload: runs EfficientNet-B0 on original photograph immediately
-      const res = await api.clothing.upload(file, {
-        name: friendlyName,
-      });
+      try {
+        // Direct upload: runs EfficientNet-B0 on original photograph immediately
+        const res = await api.clothing.upload(file, {
+          name: friendlyName,
+        });
 
-      setActiveItemId(res.itemId);
+        setActiveItemId(res.itemId);
 
-      if (res.prediction) {
-        populateAttributesFromPrediction(res.prediction, friendlyName);
-      } else {
-        // Fallback fetch if prediction not returned directly
-        const attrData: ClothingAttributesData = await api.clothing.getAttributes(res.itemId);
-        if (attrData.original_prediction) {
-          populateAttributesFromPrediction(attrData.original_prediction, friendlyName);
+        if (res.prediction) {
+          populateAttributesFromPrediction(res.prediction, friendlyName);
+        } else {
+          // Fallback fetch if prediction not returned directly
+          const attrData: ClothingAttributesData = await api.clothing.getAttributes(res.itemId);
+          if (attrData.original_prediction) {
+            populateAttributesFromPrediction(attrData.original_prediction, friendlyName);
+          }
         }
-      }
 
-      setStep('review');
-      showToast('AI analysis complete! Review and adjust your garment attributes below.', 'success');
-    } catch (err: any) {
-      setStep('failed');
-      const msg = err.message || 'Failed to analyze clothing photograph.';
-      setErrorMessage(msg);
-      showToast(msg, 'info');
-    }
+        setStep('review');
+        showToast('AI analysis complete! Review and adjust your garment attributes below.', 'success');
+      } catch (err: any) {
+        setStep('failed');
+        const msg = err.message || 'Failed to analyze clothing photograph.';
+        setErrorMessage(msg);
+        showToast(msg, 'info');
+      }
+    });
   };
 
   // Step 3: Finalize and save confirmed clothing attributes
@@ -242,35 +247,37 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
       return;
     }
 
-    setStep('saving');
-    try {
-      const verifiedAttributes = {
-        name: name.trim() || `${baseColour} ${articleType}`,
-        article_type: articleType,
-        master_category: masterCategory,
-        sub_category: subCategory,
-        base_colour: baseColour,
-        pattern: pattern,
-        gender: gender,
-        season: season,
-        usage: usage,
-        age_group: ageGroup,
-        brand: brand.trim() || null,
-        // Sync primary color and occasion for backwards compatibility
-        primary_color: baseColour,
-        occasion: usage,
-      };
+    await runSave(async () => {
+      setStep('saving');
+      try {
+        const verifiedAttributes = {
+          name: name.trim() || `${baseColour} ${articleType}`,
+          article_type: articleType,
+          master_category: masterCategory,
+          sub_category: subCategory,
+          base_colour: baseColour,
+          pattern: pattern,
+          gender: gender,
+          season: season,
+          usage: usage,
+          age_group: ageGroup,
+          brand: brand.trim() || null,
+          // Sync primary color and occasion for backwards compatibility
+          primary_color: baseColour,
+          occasion: usage,
+        };
 
-      await api.clothing.finalize(activeItemId, verifiedAttributes);
-      await refreshData();
+        await api.clothing.finalize(activeItemId, verifiedAttributes);
+        await refreshData();
 
-      showToast(`"${verifiedAttributes.name}" added to your wardrobe!`, 'success');
-      onClose();
-    } catch (err: any) {
-      setStep('review');
-      const msg = err.message || 'Failed to save item to wardrobe.';
-      showToast(msg, 'info');
-    }
+        showToast(`"${verifiedAttributes.name}" added to your wardrobe!`, 'success');
+        onClose();
+      } catch (err: any) {
+        setStep('review');
+        const msg = err.message || 'Failed to save item to wardrobe.';
+        showToast(msg, 'info');
+      }
+    });
   };
 
   const originalImageUrl = activeItemId ? api.clothing.getOriginalImageUrl(activeItemId) : localPreviewUrl;
@@ -749,7 +756,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                   variant="outline"
                   size="md"
                   onClick={onClose}
-                  disabled={step === 'saving'}
+                  disabled={isSaving || step === 'saving'}
                 >
                   Cancel
                 </Button>
@@ -758,10 +765,12 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                   variant="primary"
                   size="md"
                   onClick={handleSaveToWardrobe}
-                  disabled={step === 'saving' || !activeItemId}
-                  icon={step === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  isLoading={isSaving || step === 'saving'}
+                  loadingText="Saving to Wardrobe..."
+                  disabled={!activeItemId}
+                  icon={<Check className="w-4 h-4" />}
                 >
-                  {step === 'saving' ? 'Saving to Wardrobe...' : 'Save to Wardrobe'}
+                  Save to Wardrobe
                 </Button>
               </div>
             </div>

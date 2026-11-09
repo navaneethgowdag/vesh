@@ -1,5 +1,7 @@
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { isReducedMotion } from '../../utils/animations';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'champagne';
@@ -7,6 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
   icon?: ReactNode;
   isLoading?: boolean;
+  loadingText?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -15,6 +18,7 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   icon,
   isLoading = false,
+  loadingText,
   className,
   disabled,
   ...props
@@ -44,18 +48,27 @@ export const Button: React.FC<ButtonProps> = ({
     icon: 'min-h-[44px] min-w-[44px] p-2.5',
   };
 
+  const isDisabled = disabled || isLoading;
+  const reducedMotion = isReducedMotion();
+
   return (
-    <button
+    <motion.button
+      whileTap={isDisabled || reducedMotion ? undefined : { scale: 0.98 }}
       className={cn(baseClasses, variants[variant], sizes[size], className)}
-      disabled={disabled || isLoading}
-      {...props}
+      disabled={isDisabled}
+      aria-busy={isLoading}
+      {...(props as HTMLMotionProps<'button'>)}
     >
       {isLoading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin flex-shrink-0" />
       ) : (
         icon && <span className="flex-shrink-0">{icon}</span>
       )}
-      {children && <span>{children}</span>}
-    </button>
+      {isLoading && loadingText ? (
+        <span>{loadingText}</span>
+      ) : (
+        children && <span>{children}</span>
+      )}
+    </motion.button>
   );
 };

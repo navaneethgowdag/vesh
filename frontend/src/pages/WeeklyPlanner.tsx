@@ -567,7 +567,6 @@ export const WeeklyPlanner: React.FC = () => {
                 </Button>
               </div>
             </div>
-          </div>
         </Modal>
       </div>
     </AppShell>

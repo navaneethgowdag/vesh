@@ -23,7 +23,7 @@ import { Conversation, Message, UserSearchResult } from '../types';
 
 export const Inbox: React.FC = () => {
   const currentUser = useCurrentUser();
-  const { showToast } = useApp();
+  const { showToast, refreshUnreadMessagesCount } = useApp();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -58,6 +58,7 @@ export const Inbox: React.FC = () => {
       if (data.length > 0 && !activeConversation) {
         setActiveConversation(data[0]);
       }
+      refreshUnreadMessagesCount();
     } catch (err: any) {
       showToast(err?.message || 'Failed to load conversations', 'error');
     } finally {
@@ -78,6 +79,7 @@ export const Inbox: React.FC = () => {
       setConversations((prev) =>
         prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
       );
+      refreshUnreadMessagesCount();
       setTimeout(scrollToBottom, 100);
     } catch (err: any) {
       showToast(err?.message || 'Failed to load messages', 'error');

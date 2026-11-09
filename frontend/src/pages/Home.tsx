@@ -106,15 +106,18 @@ export const Home: React.FC = () => {
     }
   }, []);
 
+  const followingKey = React.useMemo(() => followingIds.join(','), [followingIds]);
+
   // Reload moments and following feed
   useEffect(() => {
-    loadForYouMoments();
-    if (activeTab === 'following') {
+    if (activeTab === 'for_you') {
+      loadForYouMoments();
+    } else if (activeTab === 'following') {
       loadFollowingPosts();
     } else if (activeTab === 'polls') {
       loadPolls();
     }
-  }, [loadForYouMoments, loadFollowingPosts, loadPolls, followingIds, activeTab]);
+  }, [loadForYouMoments, loadFollowingPosts, loadPolls, followingKey, activeTab]);
 
   // Ensure only moments from followed accounts are displayed
   const visibleMoments = forYouMoments.filter(

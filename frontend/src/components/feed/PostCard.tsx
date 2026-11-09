@@ -19,6 +19,9 @@ import { ShareModal } from '../social/ShareModal';
 import { cn } from '../../utils/cn';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 import { PollWidget } from '../social/PollWidget';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface PostCardProps {
   post: Post;
@@ -40,17 +43,35 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showTags, setShowTags] = useState(false);
   const [likeBurst, setLikeBurst] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { execute: runLike, isLocked: isLiking } = useAsyncLock();
+  const { execute: runSave, isLocked: isSaving } = useAsyncLock();
+  const { execute: runFollow, isLocked: isFollowingAction } = useAsyncLock();
+  const { execute: runDelete, isLocked: isDeleting } = useAsyncLock();
 
   const isMe = post.user.id === currentUser.id;
   const isFollowing = isFollowingUser(post.user.id);
 
   const handleLike = () => {
-    if (!post.isLiked) {
-      setLikeBurst(true);
-      setTimeout(() => setLikeBurst(false), 800);
-    }
-    toggleLikePost(post.id);
+    runLike(async () => {
+      if (!post.isLiked) {
+        setLikeBurst(true);
+        setTimeout(() => setLikeBurst(false), 800);
+      }
+      await toggleLikePost(post.id);
+    });
+  };
+
+  const handleSave = () => {
+    runSave(async () => {
+      await toggleSavePost(post.id);
+    });
+  };
+
+  const handleFollow = () => {
+    runFollow(async () => {
+      await toggleFollowUser(post.user.id);
+    });
   };
 
   const handleDoubleTap = () => {
@@ -60,15 +81,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      await deletePost(post.id);
-      setIsDeleteDialogOpen(false);
-    } catch {
-      // Handled via toast in AppContext
-    } finally {
-      setIsDeleting(false);
-    }
+    await runDelete(async () => {
+      try {
+        await deletePost(post.id);
+        setIsDeleteDialogOpen(false);
+      } catch {
+        // Handled via toast in AppContext
+      }
+    });
   };
 
   return (
@@ -130,9 +150,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             </button>
           ) : (
             <button
-              onClick={() => toggleFollowUser(post.user.id)}
+              onClick={handleFollow}
+              disabled={isFollowingAction}
               className={cn(
-                'text-xs font-semibold px-3 py-1.5 min-h-[36px] rounded-md transition-all duration-200 border',
+                'text-xs font-semibold px-3 py-1.5 min-h-[36px] rounded-md transition-all duration-200 border disabled:opacity-60',
                 isFollowing
                   ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent hover:bg-zinc-800 dark:hover:bg-zinc-200'
@@ -258,8 +279,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
             {/* Bookmark / Save */}
             <button
-              onClick={() => toggleSavePost(post.id)}
-              className="min-h-[40px] flex items-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus:outline-none"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="min-h-[40px] flex items-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus:outline-none disabled:opacity-60"
               aria-label={post.isSaved ? 'Remove from saved' : 'Save outfit'}
             >
               <Bookmark
@@ -303,40 +325,46 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </article>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-sm w-full p-6 space-y-4 shadow-xl">
-            <div className="w-10 h-10 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div className="text-center">
-              <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                Delete Lookbook Post?
-              </h4>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                This will permanently remove this post and its comments from the social feed and your profile.
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsDeleteDialogOpen(false)}
-                className="flex-1 py-2.5 min-h-[44px] text-xs font-semibold rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleDeleteConfirm}
-                className="flex-1 py-2.5 min-h-[44px] text-xs font-semibold rounded-md bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
+      <Modal
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        size="small"
+        showCloseButton={false}
+      >
+        <div className="space-y-4">
+          <div className="w-10 h-10 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="text-center">
+            <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              Delete Lookbook Post?
+            </h4>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+              This will permanently remove this post and its comments from the social feed and your profile.
+            </p>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
+              isLoading={isDeleting}
+              loadingText="Deleting..."
+              onClick={handleDeleteConfirm}
+              className="flex-1"
+            >
+              Delete
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Comments Drawer / Modal */}
       <CommentModal

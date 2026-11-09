@@ -123,7 +123,12 @@ class GoogleCalendarService:
     def verify_state(self, state: str) -> Dict[str, Any]:
         """Verify the integrity, signature, and expiration of OAuth state."""
         try:
-            payload = jwt.decode(state, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            payload = jwt.decode(
+                state,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM],
+                options={"leeway": 10},
+            )
             return payload
         except JWTError:
             raise HTTPException(

@@ -119,6 +119,21 @@ interface CacheEntry {
 const inFlightRequests = new Map<string, Promise<any>>();
 const responseCache = new Map<string, CacheEntry>();
 
+const DEFAULT_ENDPOINT_TTLS: Array<{ pattern: RegExp | string; ttlMs: number }> = [
+  { pattern: '/auth/me', ttlMs: 60 * 1000 },
+  { pattern: '/wardrobe/gap-analysis', ttlMs: 120 * 1000 },
+  { pattern: '/planner/weekly', ttlMs: 120 * 1000 },
+  { pattern: '/calendar/events', ttlMs: 60 * 1000 },
+  { pattern: '/calendar/day-agenda', ttlMs: 60 * 1000 },
+  { pattern: '/calendar/google/status', ttlMs: 60 * 1000 },
+  { pattern: '/messages/unread-count', ttlMs: 30 * 1000 },
+  { pattern: '/moments/feed', ttlMs: 45 * 1000 },
+  { pattern: '/wardrobe', ttlMs: 45 * 1000 },
+  { pattern: '/posts', ttlMs: 45 * 1000 },
+  { pattern: '/saved/collections', ttlMs: 60 * 1000 },
+  { pattern: '/notifications', ttlMs: 30 * 1000 },
+];
+
 export const apiCache = {
   get: <T>(key: string, token: string | null): T | null => {
     const entry = responseCache.get(key);
@@ -167,8 +182,21 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   const isGet = method === 'GET';
   const cacheKey = `${endpoint}`;
 
+  // Automatically determine sensible cache TTL if not explicitly set
+  let effectiveTTL = options.cacheTTL;
+  if (effectiveTTL === undefined && isGet && !options.bypassCache) {
+    const matched = DEFAULT_ENDPOINT_TTLS.find((rule) =>
+      typeof rule.pattern === 'string'
+        ? endpoint.includes(rule.pattern)
+        : rule.pattern.test(endpoint)
+    );
+    if (matched) {
+      effectiveTTL = matched.ttlMs;
+    }
+  }
+
   // 1. Response Cache Lookup for GET
-  if (isGet && !options.bypassCache && options.cacheTTL && options.cacheTTL > 0) {
+  if (isGet && !options.bypassCache && effectiveTTL && effectiveTTL > 0) {
     const cached = apiCache.get<T>(cacheKey, token);
     if (cached !== null) {
       return cached;
@@ -176,11 +204,38 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   // 2. In-Flight Request Deduplication for GET
-  const dedupeKey = `${endpoint}:${token || 'anon'}`;
+  const dedupeKey = `${method}:${endpoint}:${token || 'anon'}`;
   if (isGet && options.deduplicate !== false) {
     const existing = inFlightRequests.get(dedupeKey);
     if (existing) {
       return existing as Promise<T>;
+    }
+  }
+
+  // 3. Automatic Targeted Mutation Cache Invalidation
+  if (!isGet) {
+    if (endpoint.startsWith('/clothing') || endpoint.startsWith('/wardrobe')) {
+      apiCache.invalidate('clothing');
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('gap-analysis');
+      apiCache.invalidate('planner');
+    } else if (endpoint.startsWith('/calendar')) {
+      apiCache.invalidate('calendar');
+      apiCache.invalidate('planner');
+    } else if (endpoint.startsWith('/planner')) {
+      apiCache.invalidate('planner');
+    } else if (endpoint.startsWith('/posts')) {
+      apiCache.invalidate('posts');
+      apiCache.invalidate('feed');
+    } else if (endpoint.startsWith('/moments')) {
+      apiCache.invalidate('moments');
+      apiCache.invalidate('feed');
+    } else if (endpoint.startsWith('/messages')) {
+      apiCache.invalidate('messages');
+    } else if (endpoint.startsWith('/notifications')) {
+      apiCache.invalidate('notifications');
+    } else if (endpoint.startsWith('/saved')) {
+      apiCache.invalidate('saved');
     }
   }
 
@@ -246,8 +301,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     const data = await response.json();
 
     // Cache successful GET payload if TTL configured
-    if (isGet && options.cacheTTL && options.cacheTTL > 0) {
-      apiCache.set(cacheKey, data, options.cacheTTL, token);
+    if (isGet && effectiveTTL && effectiveTTL > 0) {
+      apiCache.set(cacheKey, data, effectiveTTL, token);
     }
 
     return data;
@@ -1823,6 +1878,8 @@ export const api = {
       recommendationId: string,
       calendarEventId?: string
     ): Promise<{ recommendation: Recommendation; calendarEvent: any; status: string; message: string }> {
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('planner');
       const res = await request<any>(`/recommendations/${recommendationId}/accept`, {
         method: 'POST',
         body: JSON.stringify({ calendar_event_id: calendarEventId }),
@@ -1957,6 +2014,9 @@ export const api = {
     },
 
     async markWorn(recommendationId: string): Promise<any> {
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('planner');
+      apiCache.invalidate('wardrobe');
       return request<any>(`/recommendations/${recommendationId}/wear`, {
         method: 'POST',
       });
@@ -2404,10 +2464,11 @@ export const api = {
   planner: {
     async getWeeklyPlan(weekStartDate?: string): Promise<WeeklyPlan | null> {
       const q = weekStartDate ? `?week_start_date=${weekStartDate}` : '';
-      return request<WeeklyPlan | null>(`/planner/weekly${q}`);
+      return request<WeeklyPlan | null>(`/planner/weekly${q}`, { cacheTTL: 60000 });
     },
 
     async generateWeeklyPlan(weekStartDate?: string, forceRegenerate: boolean = false): Promise<WeeklyPlan> {
+      apiCache.invalidate('planner');
       return request<WeeklyPlan>('/planner/weekly/generate', {
         method: 'POST',
         body: JSON.stringify({
@@ -2418,6 +2479,7 @@ export const api = {
     },
 
     async regenerateDay(planId: string, dayId: string): Promise<WeeklyPlanDay> {
+      apiCache.invalidate('planner');
       return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/regenerate`, {
         method: 'POST',
       });
@@ -2428,6 +2490,7 @@ export const api = {
       dayId: string,
       data: { outfitId?: string; clothingItemIds?: string[] }
     ): Promise<WeeklyPlanDay> {
+      apiCache.invalidate('planner');
       return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/outfit`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -2438,6 +2501,7 @@ export const api = {
     },
 
     async updateDayStatus(planId: string, dayId: string, status: WeeklyDayStatus): Promise<WeeklyPlanDay> {
+      apiCache.invalidate('planner');
       return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
@@ -2449,7 +2513,20 @@ export const api = {
   wardrobeGap: {
     async getAnalysis(forceRefresh: boolean = false): Promise<WardrobeGapAnalysis> {
       const q = forceRefresh ? '?force_refresh=true' : '';
-      return request<WardrobeGapAnalysis>(`/wardrobe/gap-analysis${q}`);
+      return request<WardrobeGapAnalysis>(`/wardrobe/gap-analysis${q}`, {
+        cacheTTL: forceRefresh ? 0 : 120000,
+        bypassCache: forceRefresh,
+      });
     },
 
-    async refreshAnalysis(
+    async refreshAnalysis(): Promise<WardrobeGapAnalysis> {
+      apiCache.invalidate('gap-analysis');
+      return request<WardrobeGapAnalysis>('/wardrobe/gap-analysis/refresh', {
+        method: 'POST',
+      });
+    },
+  },
+
+  // Cache Subsystem
+  cache: apiCache,
+};

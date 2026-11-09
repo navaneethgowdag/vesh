@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Loader2, MessageSquare } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { api } from '../../services/api';
 
 const getWeatherEmoji = (icon: string) => {
   if (icon === 'sun') return '☀️';
@@ -15,22 +14,8 @@ const getWeatherEmoji = (icon: string) => {
 };
 
 export const TopBar: React.FC = () => {
-  const { unreadNotifsCount, weather, weatherStatus, isWeatherLoading } = useApp();
+  const { unreadNotifsCount, unreadMessagesCount, weather, weatherStatus, isWeatherLoading } = useApp();
   const navigate = useNavigate();
-  const [unreadMessages, setUnreadMessages] = React.useState(0);
-
-  React.useEffect(() => {
-    let mounted = true;
-    api.messages
-      .getUnreadCount()
-      .then((res) => {
-        if (mounted) setUnreadMessages(res.unread_count);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   return (
     <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-4 py-2.5 flex items-center justify-between transition-colors">
@@ -101,7 +86,7 @@ export const TopBar: React.FC = () => {
           aria-label="Messages"
         >
           <MessageSquare className="w-4 h-4" />
-          {unreadMessages > 0 && (
+          {unreadMessagesCount > 0 && (
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#18181B]" />
           )}
         </button>

@@ -23,8 +23,11 @@ export const Signup: React.FC = () => {
     if (formError) setFormError(null);
   };
 
+  const isSubmittingRef = React.useRef(false);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || isSubmittingRef.current) return;
     clearErrors();
 
     const cleanName = name.trim();
@@ -66,6 +69,7 @@ export const Signup: React.FC = () => {
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       await register({
@@ -81,6 +85,7 @@ export const Signup: React.FC = () => {
       setFormError(msg);
       showToast(msg, 'info');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -273,6 +278,7 @@ export const Signup: React.FC = () => {
               variant="primary"
               size="md"
               isLoading={loading}
+              loadingText="Creating Account..."
               className="w-full mt-2 min-h-[44px]"
             >
               Complete Registration

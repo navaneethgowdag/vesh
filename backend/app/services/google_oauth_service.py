@@ -227,7 +227,13 @@ class GoogleOAuthService:
     def verify_state(self, state: str) -> Dict[str, Any]:
         """Verify the integrity, signature, and expiration of the OAuth state parameter."""
         try:
-            payload = jwt.decode(state, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            # 10s clock skew leeway for state token validation
+            payload = jwt.decode(
+                state,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM],
+                options={"leeway": 10},
+            )
             return payload
         except JWTError:
             raise HTTPException(
@@ -283,6 +289,7 @@ class GoogleOAuthService:
         """
         Verify Google's ID token using Google's trusted authentication library.
         Validates signature, issuer, audience, expiry, and email verification.
+        Includes a 10-second clock skew tolerance to prevent premature token rejections.
         """
         try:
             req = google_requests.Request()
@@ -290,6 +297,7 @@ class GoogleOAuthService:
                 id_token_str,
                 req,
                 audience=settings.GOOGLE_CLIENT_ID,
+                clock_skew_in_seconds=10,
             )
         except Exception as e:
             logger.warning(f"[GoogleOAuth] ID token verification failed: {e}")

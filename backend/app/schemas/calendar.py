@@ -1,7 +1,7 @@
 from datetime import date as dt_date, time as dt_time, datetime as dt_datetime
 from typing import Optional, List, Dict, Any
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from app.schemas.outfit import OutfitResponse
 
 
@@ -21,7 +21,7 @@ class CalendarEventBase(BaseModel):
     description: Optional[str] = None
     location: Optional[str] = None
     timezone: Optional[str] = None
-    is_all_day: bool = False
+    is_all_day: bool = Field(default=False, description="True for all-day events, False for timed/standard events")
     google_calendar_id: Optional[str] = None
     google_event_id: Optional[str] = None
     event_source: str = Field(default="tailorbird", description="google or tailorbird")
@@ -32,6 +32,28 @@ class CalendarEventBase(BaseModel):
     inferred_formality: Optional[float] = None
     inferred_dress_code: Optional[str] = None
     inferred_context: Optional[Dict[str, Any]] = None
+
+    @field_validator("is_all_day", mode="before")
+    @classmethod
+    def validate_is_all_day(cls, v: Any, info) -> bool:
+        """
+        Deliberately resolves is_all_day to a concrete boolean.
+        1. If already boolean, preserves exact value (all-day=True, timed=False).
+        2. If string or numeric, coerces safely.
+        3. If legacy NULL, checks presence of start_time/end_time: timed events are always False.
+        """
+        if v is None:
+            data = info.data if hasattr(info, "data") and isinstance(info.data, dict) else {}
+            if data.get("start_time") is not None or data.get("end_time") is not None:
+                return False
+            return False
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "1", "yes", "t")
+        if isinstance(v, (int, float)):
+            return bool(v)
+        return False
 
 
 class CalendarEventCreate(CalendarEventBase):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar as CalendarIcon,
@@ -88,6 +88,9 @@ export const Calendar: React.FC = () => {
   // Day Agenda & Harmonizer State
   const [dayAgenda, setDayAgenda] = useState<DayAgendaSummary | null>(null);
   const [isLoadingAgenda, setIsLoadingAgenda] = useState<boolean>(false);
+  const eventsRef = useRef<CalendarEvent[]>([]);
+  eventsRef.current = events;
+  const hasLoadedEventsRef = useRef<boolean>(false);
 
   // Edit Event Context Modal State
   const [editingContextEvent, setEditingContextEvent] = useState<CalendarEvent | null>(null);
@@ -130,6 +133,26 @@ export const Calendar: React.FC = () => {
 
   // Load Day Agenda for selected date
   const loadDayAgenda = useCallback(async (dateStr: string) => {
+    // If events have loaded and there are no events on this date, synthesize immediately
+    if (hasLoadedEventsRef.current) {
+      const matching = (eventsRef.current || []).filter(
+        (e) => (e.eventDate || (e as any).event_date) === dateStr
+      );
+      if (matching.length === 0) {
+        setDayAgenda({
+          date: dateStr,
+          event_count: 0,
+          events: [],
+          is_outfit_change_recommended: false,
+          reason: 'No scheduled events for this day.',
+          suggested_overall_occasion: 'Casual Daily',
+          suggested_dress_code: 'Smart Casual',
+          formality_range: [0.5, 0.5],
+        });
+        return;
+      }
+    }
+
     setIsLoadingAgenda(true);
     try {
       const summary = await api.calendar.getDayAgenda(dateStr);
@@ -151,6 +174,8 @@ export const Calendar: React.FC = () => {
       const srcParam = sourceFilter === 'all' ? undefined : sourceFilter;
       const data = await api.calendar.listEvents(startStr, endStr, undefined, srcParam);
       setEvents(data);
+      eventsRef.current = data;
+      hasLoadedEventsRef.current = true;
     } catch (err: any) {
       setError(err?.message || 'Could not load calendar events');
     } finally {
@@ -633,7 +658,7 @@ export const Calendar: React.FC = () => {
           {/* Calendar Monthly Matrix (8 cols) */}
           <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-5">
             {/* Day of Week Header */}
-            <div className="grid grid-cols-7 gap-1 text-center mb-2 pb-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center mb-2 pb-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               <span>Sun</span>
               <span>Mon</span>
               <span>Tue</span>
@@ -1072,69 +1097,69 @@ export const Calendar: React.FC = () => {
           subtitle="Choose which Google Calendars should be included in your TailorBird wardrobe schedule."
           maxWidth="md"
         >
-
-              {isLoadingCalendars ? (
-                <div className="py-8 text-center text-xs text-zinc-500">Loading calendars...</div>
-              ) : googleCalendars.length === 0 ? (
-                <div className="py-6 text-center text-xs text-zinc-500">
-                  No calendars found. Try refreshing or re-connecting.
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {googleCalendars.map((cal) => {
-                    const isChecked = selectedCalendarIds.includes(cal.id);
-                    return (
-                      <label
-                        key={cal.id}
-                        className={cn(
-                          'flex items-center justify-between p-3 rounded border cursor-pointer transition-colors',
-                          isChecked
-                            ? 'bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600'
-                            : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
-                        )}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleCalendarSelection(cal.id)}
-                            className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 focus:ring-0 cursor-pointer"
-                          />
-                          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                            {cal.summary}
-                          </span>
-                        </div>
-                        {cal.primary && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex-shrink-0">
-                            Primary
-                          </span>
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsManageCalendarsOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  isLoading={isSavingCalendars}
-                  onClick={handleSaveCalendars}
-                >
-                  Save Selection
-                </Button>
+          <div className="space-y-4">
+            {isLoadingCalendars ? (
+              <div className="py-8 text-center text-xs text-zinc-500">Loading calendars...</div>
+            ) : googleCalendars.length === 0 ? (
+              <div className="py-6 text-center text-xs text-zinc-500">
+                No calendars found. Try refreshing or re-connecting.
               </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {googleCalendars.map((cal) => {
+                  const isChecked = selectedCalendarIds.includes(cal.id);
+                  return (
+                    <label
+                      key={cal.id}
+                      className={cn(
+                        'flex items-center justify-between p-3 rounded border cursor-pointer transition-colors',
+                        isChecked
+                          ? 'bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600'
+                          : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCalendarSelection(cal.id)}
+                          className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 focus:ring-0 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                          {cal.summary}
+                        </span>
+                      </div>
+                      {cal.primary && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex-shrink-0">
+                          Primary
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsManageCalendarsOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                isLoading={isSavingCalendars}
+                onClick={handleSaveCalendars}
+              >
+                Save Selection
+              </Button>
             </div>
+          </div>
         </Modal>
 
         {/* Edit Event Context & Dress Code Modal */}
@@ -1234,6 +1259,7 @@ export const Calendar: React.FC = () => {
           subtitle="Schedule an outfit for a specific upcoming calendar day."
           maxWidth="md"
         >
+
           <form onSubmit={handleCreatePlan} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
@@ -1310,7 +1336,7 @@ export const Calendar: React.FC = () => {
                     Schedule Outfit
                   </Button>
                 </div>
-              </form>
+          </form>
         </Modal>
       </PullToRefresh>
     </AppShell>

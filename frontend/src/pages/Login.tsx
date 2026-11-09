@@ -37,10 +37,14 @@ export const Login: React.FC = () => {
     }
   }, [oauthError, oauthEmail]);
 
+  const isSubmittingRef = React.useRef(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || isSubmittingRef.current) return;
     if (!usernameOrEmail.trim() || !password) return;
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       await login(usernameOrEmail.trim(), password);
@@ -49,6 +53,7 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       showToast(err?.message || 'Invalid credentials', 'info');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -183,6 +188,7 @@ export const Login: React.FC = () => {
               variant="primary"
               size="md"
               isLoading={loading}
+              loadingText="Signing In..."
               className="w-full mt-2 min-h-[44px]"
             >
               Sign In

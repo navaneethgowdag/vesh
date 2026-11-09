@@ -198,6 +198,7 @@ class CalendarService:
         event_data = {
             "event_date": req.date,
             "start_time": req.time,
+            "is_all_day": False,
             "event_type": "planned_outfit",
             "event_source": "tailorbird",
             "outfit_id": rec.outfit_id,

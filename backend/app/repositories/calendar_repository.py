@@ -30,6 +30,13 @@ def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
     elif wh.season:
         event_type = wh.season
 
+    is_all_day = False
+    if "all_day:1:" in notes:
+        is_all_day = True
+        notes = notes.replace("all_day:1:", "")
+    elif wh.season and "all_day:1" in wh.season:
+        is_all_day = True
+
     ev_date = wh.worn_at.date() if wh.worn_at else date.today()
     ev_time = (
         wh.worn_at.time()
@@ -43,6 +50,7 @@ def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
         event_date=ev_date,
         start_time=ev_time,
         end_time=None,
+        is_all_day=is_all_day,
         status=wh.weather_condition or "scheduled",
         event_type=event_type,
         event_source="tailorbird",
@@ -96,7 +104,7 @@ class CalendarRepository:
             description=d.get("description"),
             location=d.get("location"),
             timezone=d.get("timezone"),
-            is_all_day=d.get("is_all_day", False),
+            is_all_day=bool(d["is_all_day"]) if d.get("is_all_day") is not None else False,
             google_calendar_id=d.get("google_calendar_id"),
             google_event_id=d.get("google_event_id"),
             event_source=d.get("event_source", "google"),
@@ -395,7 +403,8 @@ class CalendarRepository:
             event_type = kwargs.get("event_type", "planned_outfit")
             notes = kwargs.get("notes") or ""
             rec_id_str = str(kwargs.get("recommendation_id") or "")
-            season = f"{event_type}:{rec_id_str}:{notes}"[:100]
+            is_all_day_prefix = "all_day:1:" if kwargs.get("is_all_day") else ""
+            season = f"{event_type}:{rec_id_str}:{is_all_day_prefix}{notes}"[:100]
 
             wh = WearHistory(
                 user_id=user_id,
@@ -408,7 +417,15 @@ class CalendarRepository:
             self.db.add(wh)
             self.db.commit()
             self.db.refresh(wh)
-            return self.get_by_id(wh.id, user_id) or _wh_to_calendar_event(wh)
+            ev = self.get_by_id(wh.id, user_id) or _wh_to_calendar_event(wh)
+            if kwargs.get("is_all_day") is not None:
+                ev.is_all_day = bool(kwargs["is_all_day"])
+            return ev
+
+        if "is_all_day" not in kwargs or kwargs["is_all_day"] is None:
+            kwargs["is_all_day"] = False
+        else:
+            kwargs["is_all_day"] = bool(kwargs["is_all_day"])
 
         event = CalendarEvent(user_id=user_id, **kwargs)
         self.db.add(event)

@@ -58,6 +58,20 @@ class CalendarEvent(Base):
         nullable=False,
     )
 
+    def __init__(self, **kwargs):
+        # Ensure is_all_day is always a concrete boolean, never None
+        if "is_all_day" not in kwargs or kwargs["is_all_day"] is None:
+            # Timed events (with explicit start_time/end_time) are not all-day
+            st = kwargs.get("start_time")
+            et = kwargs.get("end_time")
+            if st is not None or et is not None:
+                kwargs["is_all_day"] = False
+            else:
+                kwargs["is_all_day"] = False
+        else:
+            kwargs["is_all_day"] = bool(kwargs["is_all_day"])
+        super().__init__(**kwargs)
+
     # Virtual property for UI display title
     @property
     def display_title(self) -> str:

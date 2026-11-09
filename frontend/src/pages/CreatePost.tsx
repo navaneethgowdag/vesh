@@ -55,6 +55,7 @@ export const CreatePost: React.FC = () => {
   const [taggedItemIds, setTaggedItemIds] = useState<string[]>([]);
   const [showWardrobePicker, setShowWardrobePicker] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const isPublishingRef = useRef(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isCompressingImage, setIsCompressingImage] = useState(false);
   const [compressionStats, setCompressionStats] = useState<{
@@ -210,10 +211,12 @@ export const CreatePost: React.FC = () => {
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPublishing || isPublishingRef.current) return;
 
     // Standalone poll submission
     if (publishType === 'poll') {
       try {
+        isPublishingRef.current = true;
         setIsPublishing(true);
         const pollPayload = buildPollPayload('standalone');
         await api.polls.create(pollPayload);
@@ -222,6 +225,7 @@ export const CreatePost: React.FC = () => {
       } catch (err: any) {
         showToast(err?.message || 'Failed to publish poll', 'info');
       } finally {
+        isPublishingRef.current = false;
         setIsPublishing(false);
       }
       return;
@@ -238,6 +242,7 @@ export const CreatePost: React.FC = () => {
       return;
     }
 
+    isPublishingRef.current = true;
     setIsPublishing(true);
 
     try {
@@ -277,6 +282,7 @@ export const CreatePost: React.FC = () => {
     } catch (err: any) {
       showToast(err?.message || 'Failed to publish', 'info');
     } finally {
+      isPublishingRef.current = false;
       setIsPublishing(false);
     }
   };
@@ -774,6 +780,7 @@ export const CreatePost: React.FC = () => {
                   variant="primary"
                   size="lg"
                   isLoading={isPublishing}
+                  loadingText="Publishing..."
                   className="w-full min-h-[44px]"
                 >
                   {publishType === 'poll'

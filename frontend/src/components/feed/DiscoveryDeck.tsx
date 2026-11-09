@@ -9,6 +9,8 @@ import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 import { PollWidget } from '../social/PollWidget';
 import { MomentViewerModal } from './MomentViewerModal';
 import { OptimizedImage } from '../ui/OptimizedImage';
+import { momentImageCache } from '../../utils/momentImageCache';
+import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface DiscoveryDeckProps {
   moments: OutfitMoment[];
@@ -39,6 +41,9 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   const nextMoment1 = eligibleMoments[1] || null;
   const nextMoment2 = eligibleMoments[2] || null;
 
+  // Async lock to prevent rapid button multi-submissions
+  const { isLoading: isSwipeActionPending, execute: executeSwipeAction } = useAsyncLock();
+
   // Drag physics values
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-250, 0, 250], [-18, 0, 18]);
@@ -46,17 +51,16 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
   const likeBadgeOpacity = useTransform(x, [40, 120], [0, 1]);
   const skipBadgeOpacity = useTransform(x, [-40, -120], [0, 1]);
 
-  // Bounded prefetch of next 1-2 images
+  // Dynamic underneath card expansion during top card drag
+  const nextCardScale = useTransform(x, [-250, 0, 250], [1, 0.96, 1]);
+  const nextCardTranslateY = useTransform(x, [-250, 0, 250], [0, 12, 0]);
+  const nextCardOpacity = useTransform(x, [-250, 0, 250], [1, 0.8, 1]);
+
+  // Sequence preloading into memory/browser cache
   useEffect(() => {
-    if (nextMoment1?.imageUrl) {
-      const img1 = new window.Image();
-      img1.src = nextMoment1.imageUrl;
-    }
-    if (nextMoment2?.imageUrl) {
-      const img2 = new window.Image();
-      img2.src = nextMoment2.imageUrl;
-    }
-  }, [nextMoment1, nextMoment2]);
+    const urls = eligibleMoments.map((m) => resolveImageUrl(m.imageUrl) || FALLBACK_POST_IMAGE);
+    momentImageCache.preloadSequence(urls, 0, 3);
+  }, [eligibleMoments]);
 
   // Format time remaining for 24-hour expiration
   const formatTimeRemaining = (seconds: number) => {
@@ -69,41 +73,43 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
 
   // Action handlers
   const handleSwipeAction = useCallback(
-    async (direction: 'left' | 'right') => {
+    (direction: 'left' | 'right') => {
       if (!currentMoment) return;
 
-      const swiped = currentMoment;
-      setExitDirection(direction);
+      executeSwipeAction(async () => {
+        const swiped = currentMoment;
+        setExitDirection(direction);
 
-      // Add to session swiped IDs immediately for snappy responsive feel
-      setSessionSwipedIds((prev) => new Set(prev).add(swiped.id));
+        // Add to session swiped IDs immediately for snappy responsive feel
+        setSessionSwipedIds((prev) => new Set(prev).add(swiped.id));
 
-      if (direction === 'right') {
-        try {
-          await onLike(swiped);
-        } catch {
-          // If error occurs, roll back swipe
-          setSessionSwipedIds((prev) => {
-            const next = new Set(prev);
-            next.delete(swiped.id);
-            return next;
-          });
+        if (direction === 'right') {
+          try {
+            await onLike(swiped);
+          } catch {
+            // If error occurs, roll back swipe
+            setSessionSwipedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(swiped.id);
+              return next;
+            });
+          }
+        } else {
+          try {
+            await onSkip?.(swiped);
+          } catch {
+            // Skip silently ignores or logs
+          }
         }
-      } else {
-        try {
-          await onSkip?.(swiped);
-        } catch {
-          // Skip silently ignores or logs
-        }
-      }
 
-      // Reset motion state
-      setTimeout(() => {
-        x.set(0);
-        setExitDirection(null);
-      }, 300);
+        // Reset motion state
+        setTimeout(() => {
+          x.set(0);
+          setExitDirection(null);
+        }, 250);
+      });
     },
-    [currentMoment, onLike, onSkip, x]
+    [currentMoment, onLike, onSkip, x, executeSwipeAction]
   );
 
   const handleDragEnd = (_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
@@ -220,12 +226,14 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
           </div>
         )}
 
-        {/* Background Card 1 (Middle layer) */}
+        {/* Background Card 1 (Middle layer with real-time drag expansion) */}
         {nextMoment1 && (
-          <div
-            className="absolute inset-0 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden transition-all duration-300"
+          <motion.div
+            className="absolute inset-0 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden"
             style={{
-              transform: 'scale(0.96) translateY(12px)',
+              scale: nextCardScale,
+              y: nextCardTranslateY,
+              opacity: nextCardOpacity,
               zIndex: 2,
             }}
           >
@@ -237,14 +245,14 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
                   e.currentTarget.src = FALLBACK_POST_IMAGE;
                 }
               }}
-              className="w-full h-full object-cover opacity-80"
-              loading="lazy"
+              className="w-full h-full object-cover"
+              loading="eager"
             />
-          </div>
+          </motion.div>
         )}
 
         {/* Top Active Interactive Card */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={currentMoment.id}
             style={{ x, rotate, opacity }}
@@ -368,14 +376,15 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Manual Action Buttons (Pass & Like) */}
+      {/* Manual Action Buttons (Pass & Like with request lock) */}
       <div className="flex items-center justify-center gap-6 mt-6">
         <button
           type="button"
           onClick={() => handleSwipeAction('left')}
+          disabled={isSwipeActionPending}
           title="Pass moment"
           aria-label="Pass moment"
-          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 transition-all flex items-center justify-center active:scale-95"
+          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 transition-all flex items-center justify-center active:scale-95 disabled:opacity-40"
         >
           <X className="w-6 h-6" />
         </button>
@@ -383,9 +392,10 @@ export const DiscoveryDeck: React.FC<DiscoveryDeckProps> = ({
         <button
           type="button"
           onClick={() => handleSwipeAction('right')}
+          disabled={isSwipeActionPending}
           title="Love moment"
           aria-label="Love moment"
-          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all flex items-center justify-center active:scale-95"
+          className="w-14 h-14 min-w-[44px] min-h-[44px] rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all flex items-center justify-center active:scale-95 disabled:opacity-40"
         >
           <Heart className="w-6 h-6 fill-current" />
         </button>

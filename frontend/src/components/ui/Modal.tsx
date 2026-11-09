@@ -11,6 +11,7 @@ interface ModalProps {
   subtitle?: string;
   children: ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'small' | 'default' | 'large';
   showCloseButton?: boolean;
 }
 
@@ -28,18 +29,29 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   subtitle,
   children,
-  maxWidth = 'lg',
+  maxWidth,
+  size,
   showCloseButton = true,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const reducedMotion = isReducedMotion();
 
+  // Normalize size or maxWidth
+  const resolvedSize: 'sm' | 'md' | 'lg' | 'xl' | '2xl' =
+    size === 'small'
+      ? 'sm'
+      : size === 'default'
+      ? 'md'
+      : size === 'large'
+      ? 'lg'
+      : (size as any) || maxWidth || 'lg';
+
   // Select variant set based on modal size
   const variantSet =
-    maxWidth === 'sm'
+    resolvedSize === 'sm'
       ? modalVariants.small
-      : maxWidth === 'xl' || maxWidth === '2xl'
+      : resolvedSize === 'xl' || resolvedSize === '2xl'
       ? modalVariants.large
       : modalVariants.default;
 
@@ -119,7 +131,7 @@ export const Modal: React.FC<ModalProps> = ({
             exit="exit"
             className={cn(
               'relative w-full bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 z-10 overflow-hidden my-auto max-h-[92vh] flex flex-col shadow-xl focus:outline-none',
-              widthMap[maxWidth]
+              widthMap[resolvedSize]
             )}
             onClick={(e) => e.stopPropagation()}
           >

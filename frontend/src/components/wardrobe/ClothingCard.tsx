@@ -4,6 +4,7 @@ import { Trash2, Edit3, Sparkles } from 'lucide-react';
 import { ClothingItem } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
+import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -13,11 +14,14 @@ interface ClothingCardProps {
 export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
   const navigate = useNavigate();
   const { deleteClothingItem } = useApp();
+  const { execute: runDelete, isLocked: isDeleting } = useAsyncLock();
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm(`Remove "${item.name}" from your wardrobe?`)) {
-      deleteClothingItem(item.id);
+      runDelete(async () => {
+        await deleteClothingItem(item.id);
+      });
     }
   };
 
@@ -95,7 +99,8 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
             )}
             <button
               onClick={handleDelete}
-              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center bg-rose-600 text-white rounded hover:bg-rose-700 transition-colors shadow"
+              disabled={isDeleting}
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center bg-rose-600 text-white rounded hover:bg-rose-700 transition-colors shadow disabled:opacity-50"
               title="Delete item"
             >
               <Trash2 className="w-3.5 h-3.5" />

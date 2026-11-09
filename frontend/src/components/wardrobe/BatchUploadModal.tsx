@@ -16,6 +16,7 @@ import { Button } from '../ui/Button';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { optimizeImage, formatBytes } from '../../utils/imageOptimizer';
+import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface BatchUploadModalProps {
   isOpen: boolean;
@@ -94,6 +95,11 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   } | null>(null);
   const [items, setItems] = useState<BatchItemProgress[]>([]);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const { execute: runBatchStart, isLocked: isStartingBatch } = useAsyncLock();
+  const { execute: runRetry, isLocked: isRetryingBatch } = useAsyncLock();
+  const { execute: runCancel, isLocked: isCancellingBatch } = useAsyncLock();
 
   // Clean up object URLs on unmount or file removal
   const cleanupPreviews = useCallback((previews: LocalFilePreview[]) => {
@@ -185,31 +191,33 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   const handleStartBatch = async () => {
     if (selectedFiles.length === 0) return;
 
-    setIsUploading(true);
-    setBatchStatus('uploading');
+    await runBatchStart(async () => {
+      setIsUploading(true);
+      setBatchStatus('uploading');
 
-    try {
-      const filesToUpload = selectedFiles.map((s) => s.file);
-      const res = await api.clothing.batchUpload(filesToUpload, {
-        category: defaultCategory,
-        occasion: defaultOccasion,
-      });
-
-      setBatchId(res.batchId);
       try {
-        sessionStorage.setItem(ACTIVE_BATCH_KEY, res.batchId);
-      } catch {}
+        const filesToUpload = selectedFiles.map((s) => s.file);
+        const res = await api.clothing.batchUpload(filesToUpload, {
+          category: defaultCategory,
+          occasion: defaultOccasion,
+        });
 
-      setBatchStatus('queued');
-      setTotalItems(res.totalItems);
-      setProgressPercentage(0);
-      showToast(`Batch queued: ${res.totalItems} images submitted for processing.`, 'success');
-    } catch (err: any) {
-      setBatchStatus('idle');
-      showToast(err.message || 'Failed to submit batch upload.', 'info');
-    } finally {
-      setIsUploading(false);
-    }
+        setBatchId(res.batchId);
+        try {
+          sessionStorage.setItem(ACTIVE_BATCH_KEY, res.batchId);
+        } catch {}
+
+        setBatchStatus('queued');
+        setTotalItems(res.totalItems);
+        setProgressPercentage(0);
+        showToast(`Batch queued: ${res.totalItems} images submitted for processing.`, 'success');
+      } catch (err: any) {
+        setBatchStatus('idle');
+        showToast(err.message || 'Failed to submit batch upload.', 'info');
+      } finally {
+        setIsUploading(false);
+      }
+    });
   };
 
   // Poll batch status from single consolidated endpoint
@@ -267,33 +275,36 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   // Retry failed images
   const handleRetryFailed = async () => {
     if (!batchId) return;
-    setIsRetrying(true);
-    try {
-      const res = await api.clothing.retryBatchFailed(batchId);
-      setBatchStatus(res.status || 'processing');
-      showToast('Retrying failed items in sequence...', 'info');
-    } catch (err: any) {
-      showToast(err.message || 'Retry failed.', 'info');
-    } finally {
-      setIsRetrying(false);
-    }
+    await runRetry(async () => {
+      setIsRetrying(true);
+      try {
+        const res = await api.clothing.retryBatchFailed(batchId);
+        setBatchStatus(res.status || 'processing');
+        showToast('Retrying failed items in sequence...', 'info');
+      } catch (err: any) {
+        showToast(err.message || 'Retry failed.', 'info');
+      } finally {
+        setIsRetrying(false);
+      }
+    });
   };
 
   // Cancel remaining items in active batch
-  const [isCancelling, setIsCancelling] = useState(false);
   const handleCancelBatch = async () => {
     if (!batchId) return;
-    setIsCancelling(true);
-    try {
-      const res = await api.clothing.cancelBatch(batchId);
-      setBatchStatus(res.status || 'cancelled');
-      showToast('Batch processing cancelled.', 'info');
-      refreshData();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to cancel batch.', 'error');
-    } finally {
-      setIsCancelling(false);
-    }
+    await runCancel(async () => {
+      setIsCancelling(true);
+      try {
+        const res = await api.clothing.cancelBatch(batchId);
+        setBatchStatus(res.status || 'cancelled');
+        showToast('Batch processing cancelled.', 'info');
+        refreshData();
+      } catch (err: any) {
+        showToast(err.message || 'Failed to cancel batch.', 'error');
+      } finally {
+        setIsCancelling(false);
+      }
+    });
   };
 
   // Reset modal state
@@ -485,18 +496,12 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     variant="primary"
                     size="sm"
                     onClick={handleStartBatch}
-                    disabled={isUploading || selectedFiles.length === 0}
-                    icon={
-                      isUploading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="w-4 h-4" />
-                      )
-                    }
+                    isLoading={isStartingBatch || isUploading}
+                    loadingText="Submitting Batch..."
+                    disabled={selectedFiles.length === 0}
+                    icon={<ArrowRight className="w-4 h-4" />}
                   >
-                    {isUploading
-                      ? 'Submitting Batch...'
-                      : `Start Batch Upload (${selectedFiles.length} Pieces)`}
+                    Start Batch Upload ({selectedFiles.length} Pieces)
                   </Button>
                 </div>
               </div>
@@ -679,14 +684,11 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={handleRetryFailed}
-                      disabled={isRetrying}
-                      icon={
-                        <RefreshCw
-                          className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`}
-                        />
-                      }
+                      isLoading={isRetryingBatch || isRetrying}
+                      loadingText="Retrying..."
+                      icon={<RefreshCw className="w-3.5 h-3.5" />}
                     >
-                      {isRetrying ? 'Retrying...' : 'Retry Failed'}
+                      Retry Failed
                     </Button>
                   )}
                   <Button

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -70,6 +70,9 @@ export const DailyFit: React.FC = () => {
   const [isWorn, setIsWorn] = useState<boolean>(false);
   const [isLoved, setIsLoved] = useState<boolean>(false);
   const [isAccepting, setIsAccepting] = useState<boolean>(false);
+  const [isRecordingWear, setIsRecordingWear] = useState<boolean>(false);
+  const isGeneratingRef = useRef(false);
+  const isRecordingWearRef = useRef(false);
 
   // Modals
   const [whyModalOpen, setWhyModalOpen] = useState<boolean>(false);
@@ -120,6 +123,7 @@ export const DailyFit: React.FC = () => {
 
   // Generate or Regenerate the ONE outfit
   const handleCurateOutfit = async (targetOccasion?: string) => {
+    if (isGeneratingRef.current) return;
     if (wardrobe.length === 0) {
       showToast('Your wardrobe is empty. Add clothing items to receive AI recommendations.', 'info');
       navigate('/wardrobe');
@@ -127,6 +131,7 @@ export const DailyFit: React.FC = () => {
     }
 
     const occ = targetOccasion || activeOccasion;
+    isGeneratingRef.current = true;
     setIsGenerating(true);
     setGenerationError(null);
     setIsWorn(false);
@@ -158,20 +163,24 @@ export const DailyFit: React.FC = () => {
       setGenerationError(msg);
       showToast(msg, 'info');
     } finally {
+      isGeneratingRef.current = false;
       setIsGenerating(false);
     }
   };
 
   // Initial generation on first visit if none loaded yet
   useEffect(() => {
-    if (!recommendation && wardrobe.length > 0 && !isGenerating) {
+    if (!recommendation && wardrobe.length > 0 && !isGenerating && !isGeneratingRef.current) {
       handleCurateOutfit();
     }
   }, [wardrobe.length]);
 
-  // Action: Wear this outfit
+  // Action: Wear this outfit with duplicate lock
   const handleWearToday = async () => {
-    if (!recommendation) return;
+    if (!recommendation || isRecordingWearRef.current || isWorn) return;
+
+    isRecordingWearRef.current = true;
+    setIsRecordingWear(true);
 
     try {
       if (wearDailyFit) {
@@ -193,6 +202,9 @@ export const DailyFit: React.FC = () => {
       showToast("Look recorded! Marked as today's worn outfit.", 'success');
     } catch (err: any) {
       showToast(err.message || 'Failed to record wear', 'info');
+    } finally {
+      isRecordingWearRef.current = false;
+      setIsRecordingWear(false);
     }
   };
 
@@ -500,6 +512,9 @@ export const DailyFit: React.FC = () => {
                       variant="primary"
                       size="lg"
                       onClick={handleWearToday}
+                      disabled={isRecordingWear || isWorn}
+                      isLoading={isRecordingWear}
+                      loadingText="Recording Wear..."
                       className={isWorn ? '!bg-emerald-700 !text-white' : ''}
                       icon={isWorn ? <Check className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                     >
@@ -511,7 +526,9 @@ export const DailyFit: React.FC = () => {
                       variant="outline"
                       size="lg"
                       onClick={() => handleCurateOutfit()}
-                      disabled={isGenerating}
+                      disabled={isGenerating || isRecordingWear}
+                      isLoading={isGenerating}
+                      loadingText="Curating..."
                       icon={<RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />}
                     >
                       Try Another Look
