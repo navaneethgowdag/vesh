@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, User, MapPin, FileText, Loader2 } from 'lucide-react';
+import { User, MapPin, FileText, Loader2 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { ProfilePhotoUploader } from './ProfilePhotoUploader';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -19,10 +20,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!name.trim()) {
       setError('Please provide a display name.');
       return;
@@ -46,114 +47,99 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden p-6 sm:p-8 animate-in fade-in duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 mb-6">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Edit Profile
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Update your public persona, avatar, and style location.
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Profile"
+      subtitle="Update your public persona, avatar, and style location."
+      maxWidth="lg"
+    >
+      {error && (
+        <div className="p-3 mb-4 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Direct Profile Photo Upload Component (BYTEA Storage) */}
+        <ProfilePhotoUploader size="xl" />
+
+        {/* Full Name / Display Name */}
+        <div>
+          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+            Display Name <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Alice Vane"
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+            />
+            <User className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        {error && (
-          <div className="p-3 mb-4 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
-            {error}
+        {/* Location */}
+        <div>
+          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+            Location / City
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. New York, NY"
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+            />
+            <MapPin className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Direct Profile Photo Upload Component (BYTEA Storage) */}
-          <ProfilePhotoUploader size="xl" />
-
-          {/* Full Name / Display Name */}
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Display Name <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alice Vane"
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-              />
-              <User className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
-            </div>
+        {/* Bio */}
+        <div>
+          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+            Style Bio
+          </label>
+          <div className="relative">
+            <textarea
+              rows={3}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Share your personal style philosophy or favorite aesthetic..."
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
+            />
+            <FileText className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
           </div>
+        </div>
 
-          {/* Location */}
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Location / City
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. New York, NY"
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-              />
-              <MapPin className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
-            </div>
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Style Bio
-            </label>
-            <div className="relative">
-              <textarea
-                rows={3}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Share your personal style philosophy or favorite aesthetic..."
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md pl-9 pr-3 py-2.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 resize-none"
-              />
-              <FileText className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="min-h-[44px]"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={isSubmitting}
-              icon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
-              className="min-h-[44px]"
-            >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="min-h-[44px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+            className="min-h-[44px]"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 interface UserListModalProps {
   isOpen: boolean;
@@ -108,27 +109,14 @@ export const UserListModal: React.FC<UserListModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-zinc-800">
-          <div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              @{username}
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Community styling network
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            aria-label="Close dialog"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`@${username}`}
+      subtitle="Community styling network"
+      maxWidth="md"
+    >
+      <div className="-m-6 flex flex-col max-h-[75vh]">
         {/* Tab Navigation */}
         <div className="grid grid-cols-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40">
           <button
@@ -275,6 +263,6 @@ export const UserListModal: React.FC<UserListModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

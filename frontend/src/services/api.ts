@@ -84,6 +84,7 @@ export const tokenStorage = {
   },
   clear: () => {
     memoryToken = null;
+    apiCache.clear();
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -103,66 +104,163 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const apiBase = getApiBaseUrl();
-  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
-  const headers: Record<string, string> = {
-    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(options.headers as Record<string, string> | undefined),
-  };
+export interface RequestOptions extends RequestInit {
+  cacheTTL?: number; // Cache duration in milliseconds (0 or undefined = no response cache)
+  bypassCache?: boolean; // Force fresh request bypass
+  deduplicate?: boolean; // Default: true for GET requests
+}
 
+interface CacheEntry {
+  data: any;
+  expiresAt: number;
+  token: string | null;
+}
+
+const inFlightRequests = new Map<string, Promise<any>>();
+const responseCache = new Map<string, CacheEntry>();
+
+export const apiCache = {
+  get: <T>(key: string, token: string | null): T | null => {
+    const entry = responseCache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      responseCache.delete(key);
+      return null;
+    }
+    // Strict isolation: Never share cached user data across different sessions
+    if (entry.token !== token) {
+      responseCache.delete(key);
+      return null;
+    }
+    return entry.data as T;
+  },
+  set: (key: string, data: any, ttlMs: number, token: string | null) => {
+    if (ttlMs <= 0) return;
+    responseCache.set(key, {
+      data,
+      expiresAt: Date.now() + ttlMs,
+      token,
+    });
+  },
+  invalidate: (pattern?: string | RegExp) => {
+    if (!pattern) {
+      responseCache.clear();
+      return;
+    }
+    for (const key of Array.from(responseCache.keys())) {
+      if (typeof pattern === 'string') {
+        if (key.includes(pattern)) responseCache.delete(key);
+      } else if (pattern.test(key)) {
+        responseCache.delete(key);
+      }
+    }
+  },
+  clear: () => {
+    responseCache.clear();
+    inFlightRequests.clear();
+  },
+};
+
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
   const token = tokenStorage.get();
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const isGet = method === 'GET';
+  const cacheKey = `${endpoint}`;
+
+  // 1. Response Cache Lookup for GET
+  if (isGet && !options.bypassCache && options.cacheTTL && options.cacheTTL > 0) {
+    const cached = apiCache.get<T>(cacheKey, token);
+    if (cached !== null) {
+      return cached;
+    }
   }
 
-  let response: Response;
-  try {
-    response = await fetch(`${apiBase}${endpoint}`, {
-      ...options,
-      credentials: 'include', // send the HttpOnly session cookie
-      headers,
-    });
-  } catch (err: any) {
-    if (err instanceof TypeError || err?.name === 'TypeError') {
-      const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
-      const isHttpTarget = apiBase.startsWith('http://');
-      if (isHttps && isHttpTarget) {
+  // 2. In-Flight Request Deduplication for GET
+  const dedupeKey = `${endpoint}:${token || 'anon'}`;
+  if (isGet && options.deduplicate !== false) {
+    const existing = inFlightRequests.get(dedupeKey);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+  }
+
+  const exec = (async (): Promise<T> => {
+    const apiBase = getApiBaseUrl();
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers: Record<string, string> = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(options.headers as Record<string, string> | undefined),
+    };
+
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(`${apiBase}${endpoint}`, {
+        ...options,
+        credentials: 'include', // send the HttpOnly session cookie
+        headers,
+      });
+    } catch (err: any) {
+      if (err instanceof TypeError || err?.name === 'TypeError') {
+        const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+        const isHttpTarget = apiBase.startsWith('http://');
+        if (isHttps && isHttpTarget) {
+          throw new ApiError(
+            0,
+            `Connection blocked (Mixed Content): Secure app cannot send requests to non-secure backend (${apiBase}).`
+          );
+        }
         throw new ApiError(
           0,
-          `Connection blocked (Mixed Content): Secure app cannot send requests to non-secure backend (${apiBase}).`
+          `Unable to reach TailorBird API server (${apiBase}). Please verify your network or check backend status.`
         );
       }
-      throw new ApiError(
-        0,
-        `Unable to reach TailorBird API server (${apiBase}). Please verify your network or check backend status.`
-      );
+      throw err;
     }
-    throw err;
-  }
 
-  if (!response.ok) {
-    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
-      tokenStorage.clear();
-    }
-    let errorDetail = `${response.status} ${response.statusText}`;
-    try {
-      const errorJson = await response.json();
-      errorDetail = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
-      if (Array.isArray(errorDetail)) {
-        errorDetail = errorDetail.map((e: any) => e.msg || JSON.stringify(e)).join('; ');
+    if (!response.ok) {
+      if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
+        tokenStorage.clear();
+        apiCache.clear();
       }
-    } catch {
-      // keep the status text fallback
+      let errorDetail = `${response.status} ${response.statusText}`;
+      try {
+        const errorJson = await response.json();
+        errorDetail = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
+        if (Array.isArray(errorDetail)) {
+          errorDetail = errorDetail.map((e: any) => e.msg || JSON.stringify(e)).join('; ');
+        }
+      } catch {
+        // keep the status text fallback
+      }
+      throw new ApiError(response.status, String(errorDetail));
     }
-    throw new ApiError(response.status, String(errorDetail));
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    const data = await response.json();
+
+    // Cache successful GET payload if TTL configured
+    if (isGet && options.cacheTTL && options.cacheTTL > 0) {
+      apiCache.set(cacheKey, data, options.cacheTTL, token);
+    }
+
+    return data;
+  })();
+
+  if (isGet && options.deduplicate !== false) {
+    inFlightRequests.set(dedupeKey, exec);
+    exec.finally(() => {
+      inFlightRequests.delete(dedupeKey);
+    });
   }
 
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  return response.json();
+  return exec;
 }
 
 function formatCalendarEvent(e: any): CalendarEvent {
@@ -411,7 +509,7 @@ export const api = {
         const qs = p.toString();
         if (qs) endpoint += '?' + qs;
       }
-      const items = await request<any[]>(endpoint);
+      const items = await request<any[]>(endpoint, { cacheTTL: 30000 });
       return items.map((item) => ({
         id: String(item.id),
         name: item.name,
@@ -467,6 +565,9 @@ export const api = {
         image_url: item.image,
         description: item.notes,
       };
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('planner');
+      apiCache.invalidate('gap-analysis');
       const res = await request<any>('/wardrobe', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -499,6 +600,9 @@ export const api = {
       if (updates.isFavorite !== undefined) payload.is_favorite = updates.isFavorite;
       if (updates.timesWorn !== undefined) payload.wear_count = updates.timesWorn;
 
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('planner');
+      apiCache.invalidate('gap-analysis');
       const res = await request<any>(`/wardrobe/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
@@ -523,6 +627,9 @@ export const api = {
     },
 
     async delete(id: string): Promise<void> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('planner');
+      apiCache.invalidate('gap-analysis');
       await request<void>(`/wardrobe/${id}`, { method: 'DELETE' });
     },
 
@@ -883,7 +990,7 @@ export const api = {
   posts: {
     async listFeed(feedType: 'for_you' | 'following' = 'for_you'): Promise<Post[]> {
       const query = feedType === 'following' ? '?feed_type=following' : '';
-      const posts = await request<any[]>(`/posts${query}`);
+      const posts = await request<any[]>(`/posts${query}`, { cacheTTL: 15000 });
       return posts.map((p) => ({
         id: String(p.id),
         user: {
@@ -973,18 +1080,25 @@ export const api = {
     },
 
     async toggleLike(postId: string): Promise<{ liked: boolean }> {
+      apiCache.invalidate('post');
+      apiCache.invalidate('feed');
       return request<{ liked: boolean }>(`/posts/${postId}/like`, { method: 'POST' });
     },
 
     async unlike(postId: string): Promise<{ liked: boolean }> {
+      apiCache.invalidate('post');
+      apiCache.invalidate('feed');
       return request<{ liked: boolean }>(`/posts/${postId}/like`, { method: 'DELETE' });
     },
 
     async delete(postId: string): Promise<void> {
+      apiCache.invalidate('post');
+      apiCache.invalidate('feed');
       await request<void>(`/posts/${postId}`, { method: 'DELETE' });
     },
 
     async addComment(postId: string, text: string): Promise<any> {
+      apiCache.invalidate('post');
       return request<any>(`/posts/${postId}/comments`, {
         method: 'POST',
         body: JSON.stringify({ text }),
@@ -995,7 +1109,7 @@ export const api = {
   // --- 24-HOUR OUTFIT MOMENTS ---
   moments: {
     async listFeed(limit: number = 30, offset: number = 0): Promise<OutfitMoment[]> {
-      const items = await request<any[]>(`/moments/feed?limit=${limit}&offset=${offset}`);
+      const items = await request<any[]>(`/moments/feed?limit=${limit}&offset=${offset}`, { cacheTTL: 15000 });
       return items.map((m) => ({
         id: String(m.id),
         user: {
@@ -1019,7 +1133,31 @@ export const api = {
     },
 
     async listMine(): Promise<OutfitMoment[]> {
-      const items = await request<any[]>('/moments/me');
+      const items = await request<any[]>('/moments/me', { cacheTTL: 15000 });
+      return items.map((m) => ({
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: resolveImageUrl(m.image_url),
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+        poll: m.poll ? mapPoll(m.poll) : undefined,
+      }));
+    },
+
+    async listByUser(userId: string): Promise<OutfitMoment[]> {
+      const items = await request<any[]>(`/moments/user/${userId}`, { cacheTTL: 15000 });
       return items.map((m) => ({
         id: String(m.id),
         user: {
@@ -1049,6 +1187,7 @@ export const api = {
       tags?: string[];
       poll?: CreatePollPayload;
     }): Promise<OutfitMoment> {
+      apiCache.invalidate('moment');
       const m = await request<any>('/moments', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1076,7 +1215,7 @@ export const api = {
     },
 
     async get(id: string): Promise<OutfitMoment> {
-      const m = await request<any>(`/moments/${id}`);
+      const m = await request<any>(`/moments/${id}`, { cacheTTL: 30000 });
       return {
         id: String(m.id),
         user: {
@@ -1099,10 +1238,12 @@ export const api = {
     },
 
     async delete(id: string): Promise<void> {
+      apiCache.invalidate('moment');
       await request<void>(`/moments/${id}`, { method: 'DELETE' });
     },
 
     async like(id: string): Promise<{ momentId: string; action: string; success: boolean }> {
+      apiCache.invalidate('moment');
       const res = await request<any>(`/moments/${id}/like`, { method: 'POST' });
       return {
         momentId: String(res.moment_id),
@@ -1112,6 +1253,7 @@ export const api = {
     },
 
     async skip(id: string): Promise<{ momentId: string; action: string; success: boolean }> {
+      apiCache.invalidate('moment');
       const res = await request<any>(`/moments/${id}/skip`, { method: 'POST' });
       return {
         momentId: String(res.moment_id),
@@ -2310,10 +2452,4 @@ export const api = {
       return request<WardrobeGapAnalysis>(`/wardrobe/gap-analysis${q}`);
     },
 
-    async refreshAnalysis(): Promise<WardrobeGapAnalysis> {
-      return request<WardrobeGapAnalysis>('/wardrobe/gap-analysis/refresh', {
-        method: 'POST',
-      });
-    },
-  },
-};
+    async refreshAnalysis(

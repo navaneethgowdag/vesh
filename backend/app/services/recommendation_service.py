@@ -617,13 +617,16 @@ class RecommendationService:
         scored_candidates: List[Tuple[List[Clothing], Dict[str, Any]]] = []
 
         for items in filtered_candidates:
+            # 1. Compatibility score (0.35 weight): Category balance, Color harmony, Style consistency, Formality delta
             # 1. Garment Compatibility score (0.30 weight): Category balance, Style consistency, Formality delta
             score_category = self._compute_category_balance_score(items)
+            score_color, color_explanation = self._compute_color_harmony_score(items)
             score_style = self._compute_style_compatibility_score(items)
             formalities = [get_garment_formality(i) for i in items]
             delta_formality = max(formalities) - min(formalities) if formalities else 0.0
             score_formality = max(0.5, 1.0 - delta_formality)
             compat_score = round(
+                0.35 * score_color + 0.30 * score_category + 0.20 * score_style + 0.15 * score_formality,
                 0.40 * score_category + 0.35 * score_style + 0.25 * score_formality,
                 3,
             )
@@ -636,6 +639,7 @@ class RecommendationService:
                 target_formality=target_event_formality,
             )
 
+            # 3. Weather Suitability score (0.20 weight): Target season & climate conditions
             # 3. Weather Suitability score (0.15 weight): Target season & climate conditions
             score_weather = self._compute_season_score(
                 items=items,
@@ -660,6 +664,8 @@ class RecommendationService:
             else:
                 s_pref, s_div, p_breakdown, p_rationales = 0.50, 0.50, {}, []
 
+            # 5-Part Weighted Aggregation Formula:
+            # 0.35 * compatibility + 0.25 * event_suitability + 0.20 * weather_suitability + 0.15 * personalization + 0.05 * diversity
             # 5. Colour Coordination (0.10 weight): Perceptual CIELAB/HSV harmony & balance
             color_analysis = ColorCoordinationService.analyze_palette(items)
             score_color = color_analysis["score"]
@@ -668,8 +674,10 @@ class RecommendationService:
             # 6-Factor Weighted Aggregation Formula:
             # 0.30 * garment_compatibility + 0.25 * event_suitability + 0.15 * weather_suitability + 0.15 * personalization + 0.10 * color_coordination + 0.05 * diversity
             base_score = round(
+                0.35 * compat_score +
                 0.30 * compat_score +
                 0.25 * score_event +
+                0.20 * score_weather +
                 0.15 * score_weather +
                 0.15 * s_pref +
                 0.10 * score_color +

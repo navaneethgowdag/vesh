@@ -38,6 +38,26 @@ def get_my_active_moments(
     return service.get_user_moments(user_id=current_user.id)
 
 
+@router.get("/user/{user_id}", response_model=List[MomentResponse])
+def get_user_active_moments(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """
+    Get all active 24-hour outfit moments for a specific creator.
+    Enforces following-only audience rule (or viewer is creator).
+    """
+    service = MomentService(db)
+    viewer_id = current_user.id if current_user else None
+    if not service.is_viewer_eligible(user_id, viewer_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view moments from this creator.",
+        )
+    return service.get_user_moments_for_viewer(creator_id=user_id, viewer_id=viewer_id)
+
+
 @router.post("", response_model=MomentResponse, status_code=status.HTTP_201_CREATED)
 def publish_moment(
     moment_in: MomentCreate,

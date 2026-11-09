@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
 import {
@@ -1064,30 +1065,13 @@ export const Calendar: React.FC = () => {
         </div>
 
         {/* Manage Google Calendars Modal */}
-        {isManageCalendarsOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded">
-                    <SlidersHorizontal className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-                    Synchronized Calendars
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsManageCalendarsOpen(false)}
-                  className="p-2 min-h-[44px] min-w-[44px] rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4">
-                Choose which Google Calendars should be included in your TailorBird wardrobe schedule.
-              </p>
+        <Modal
+          isOpen={isManageCalendarsOpen}
+          onClose={() => setIsManageCalendarsOpen(false)}
+          title="Synchronized Calendars"
+          subtitle="Choose which Google Calendars should be included in your TailorBird wardrobe schedule."
+          maxWidth="md"
+        >
 
               {isLoadingCalendars ? (
                 <div className="py-8 text-center text-xs text-zinc-500">Loading calendars...</div>
@@ -1151,32 +1135,17 @@ export const Calendar: React.FC = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        )}
+        </Modal>
 
         {/* Edit Event Context & Dress Code Modal */}
-        {editingContextEvent && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded">
-                    <SlidersHorizontal className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-                    Adjust Event Styling Context
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditingContextEvent(null)}
-                  className="p-2 min-h-[44px] min-w-[44px] rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveContext} className="space-y-4">
+        <Modal
+          isOpen={Boolean(editingContextEvent)}
+          onClose={() => setEditingContextEvent(null)}
+          title="Adjust Event Styling Context"
+          subtitle={editingContextEvent?.title}
+          maxWidth="md"
+        >
+          <form onSubmit={handleSaveContext} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
                     Occasion Category
@@ -1255,33 +1224,17 @@ export const Calendar: React.FC = () => {
                   </Button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
+        </Modal>
 
         {/* Plan Outfit Modal */}
-        {isPlanModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded">
-                    <CalendarIcon className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-                    Plan Outfit Look
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPlanModalOpen(false)}
-                  className="p-2 min-h-[44px] min-w-[44px] rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreatePlan} className="space-y-4">
+        <Modal
+          isOpen={isPlanModalOpen}
+          onClose={() => setIsPlanModalOpen(false)}
+          title="Plan Outfit Look"
+          subtitle="Schedule an outfit for a specific upcoming calendar day."
+          maxWidth="md"
+        >
+          <form onSubmit={handleCreatePlan} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
                     Scheduled Date *
@@ -1358,9 +1311,7 @@ export const Calendar: React.FC = () => {
                   </Button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
+        </Modal>
       </PullToRefresh>
     </AppShell>
   );

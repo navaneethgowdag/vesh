@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { WeeklyPlan, WeeklyPlanDay, WeeklyDayStatus, Outfit, ClothingItem } from '../types';
@@ -475,25 +476,14 @@ export const WeeklyPlanner: React.FC = () => {
         )}
 
         {/* Manual Outfit Selection Modal */}
-        {manualModalDay && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl max-h-[85vh] flex flex-col">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
-                <div>
-                  <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                    Select Outfit for {formatDayName(manualModalDay.plan_date).dateFormatted}
-                  </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Choose garments from your wardrobe to build this day's look.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setManualModalDay(null)}
-                  className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        <Modal
+          isOpen={Boolean(manualModalDay)}
+          onClose={() => setManualModalDay(null)}
+          title={manualModalDay ? `Select Outfit for ${formatDayName(manualModalDay.plan_date).dateFormatted}` : ''}
+          subtitle="Choose garments from your wardrobe to build this day's look."
+          maxWidth="lg"
+        >
+          <div className="space-y-4">
 
               <div className="overflow-y-auto flex-1 pr-1 space-y-4">
                 {/* Select Top */}
@@ -578,7 +568,7 @@ export const WeeklyPlanner: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        </Modal>
       </div>
     </AppShell>
   );

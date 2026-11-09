@@ -264,19 +264,23 @@ class MomentService:
 
     def get_user_moments(self, user_id: UUID) -> List[Dict[str, Any]]:
         """Returns the authenticated creator's active (unexpired) 24-hour moments."""
+        return self.get_user_moments_for_viewer(creator_id=user_id, viewer_id=user_id)
+
+    def get_user_moments_for_viewer(self, creator_id: UUID, viewer_id: Optional[UUID]) -> List[Dict[str, Any]]:
+        """Returns active (unexpired) 24-hour moments for a creator, formatted for the viewer."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
         moments = (
             self.db.query(Post)
             .options(joinedload(Post.user), joinedload(Post.likes))
             .filter(
-                Post.user_id == user_id,
+                Post.user_id == creator_id,
                 Post.caption.like(f"{self.MOMENT_PREFIX}%"),
                 Post.created_at >= cutoff,
             )
             .order_by(Post.created_at.desc())
             .all()
         )
-        return [self._format_moment(m, user_id) for m in moments]
+        return [self._format_moment(m, viewer_id) for m in moments]
 
     def like_moment(self, moment_id: UUID, user_id: UUID) -> Dict[str, Any]:
         cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
