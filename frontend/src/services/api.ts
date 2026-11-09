@@ -549,6 +549,7 @@ export const api = {
       fabric?: string;
       occasion?: string;
       isFavorite?: boolean;
+      reviewStatus?: 'all' | 'pending' | 'accepted';
     }): Promise<ClothingItem[]> {
       let endpoint = '/wardrobe';
       if (filters) {
@@ -561,6 +562,7 @@ export const api = {
         if (filters.fabric) p.append('fabric', filters.fabric);
         if (filters.occasion) p.append('occasion', filters.occasion);
         if (filters.isFavorite !== undefined) p.append('is_favorite', String(filters.isFavorite));
+        if (filters.reviewStatus) p.append('review_status', filters.reviewStatus);
         const qs = p.toString();
         if (qs) endpoint += '?' + qs;
       }
@@ -1034,6 +1036,58 @@ export const api = {
 
     async getAttributeOptions(): Promise<Record<string, string[]>> {
       return request<Record<string, string[]>>('/clothing/attribute-options');
+    },
+
+    async getPendingReview(): Promise<ClothingItem[]> {
+      const items = await request<any[]>('/clothing/pending-review', { cacheTTL: 5000 });
+      return items.map((item) => ({
+        id: String(item.id),
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        secondaryColor: item.secondary_color,
+        pattern: item.pattern,
+        style: item.occasion || 'Casual',
+        season: item.season || 'All-Season',
+        brand: item.brand,
+        image: resolveImageUrl(
+          (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
+            ? `/api/v1/clothing/${item.id}/image/processed`
+            : (item.image_url || `/api/v1/clothing/${item.id}/image/original`)
+        ),
+        material: item.material,
+        createdAt: item.created_at || new Date().toISOString(),
+        timesWorn: item.wear_count || 0,
+        lastWorn: item.last_worn,
+        tags: item.style_tags || [],
+        isFavorite: item.is_favorite || false,
+        processingStatus: item.processing_status,
+        processingStage: item.processing_stage,
+        reviewRequired: item.review_required,
+        isProcessedAvailable: item.is_processed_available,
+        isFinalized: item.is_finalized,
+        formality: item.formality,
+        verifiedAttributes: item.verified_attributes,
+        preferredImageUrl: (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
+          ? `/api/v1/clothing/${item.id}/image/processed`
+          : (item.image_url || `/api/v1/clothing/${item.id}/image/original`),
+        sleeveType: item.sleeve_type,
+        neckline: item.neckline,
+        categoryGroup: item.category_group,
+        originalImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/original` : undefined,
+        processedImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/processed` : undefined,
+      }));
+    },
+
+    async bulkFinalize(itemIds: string[]): Promise<{ finalizedCount: number; message: string }> {
+      const res = await request<any>('/clothing/bulk-finalize', {
+        method: 'POST',
+        body: JSON.stringify({ item_ids: itemIds }),
+      });
+      return {
+        finalizedCount: res.finalized_count,
+        message: res.message,
+      };
     },
 
     async getAvatarAttributes(itemId: string): Promise<any> {

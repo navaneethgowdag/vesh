@@ -20,6 +20,7 @@ def get_wardrobe(
     fabric: Optional[str] = Query(None),
     occasion: Optional[str] = Query(None),
     is_favorite: Optional[bool] = Query(None),
+    review_status: Optional[str] = Query(None, description="'all', 'pending', or 'accepted'"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -36,6 +37,7 @@ def get_wardrobe(
         fabric=fabric,
         occasion=occasion,
         is_favorite=is_favorite,
+        review_status=review_status,
         limit=limit,
         offset=offset,
     )

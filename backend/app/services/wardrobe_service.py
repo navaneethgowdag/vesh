@@ -22,6 +22,7 @@ class WardrobeService:
         fabric: Optional[str] = None,
         occasion: Optional[str] = None,
         is_favorite: Optional[bool] = None,
+        review_status: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Clothing]:
@@ -35,6 +36,7 @@ class WardrobeService:
             fabric=fabric,
             occasion=occasion,
             is_favorite=is_favorite,
+            review_status=review_status,
             limit=limit,
             offset=offset,
         )

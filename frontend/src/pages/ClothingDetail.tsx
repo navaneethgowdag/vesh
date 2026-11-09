@@ -239,14 +239,35 @@ export const ClothingDetail: React.FC = () => {
               </div>
 
               {!isEditing ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                  icon={<Sliders className="w-3.5 h-3.5" />}
-                >
-                  Edit Attributes
-                </Button>
+                <div className="flex items-center gap-2">
+                  {!isFinalized && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await api.clothing.finalize(id!);
+                          await loadItemDetails(id!);
+                          if (refreshData) await refreshData();
+                          showToast?.('Garment confirmed and accepted into wardrobe!', 'success');
+                        } catch (err: any) {
+                          showToast?.(err.message || 'Failed to accept garment', 'info');
+                        }
+                      }}
+                      icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                    >
+                      Accept & Confirm
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    icon={<Sliders className="w-3.5 h-3.5" />}
+                  >
+                    Edit Attributes
+                  </Button>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <Button

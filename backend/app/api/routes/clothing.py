@@ -17,13 +17,14 @@ from fastapi import (
     Response,
     status,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
 from app.models.clothing import Clothing
 from app.models.clothing_analysis import ClothingAnalysis
 from app.schemas.wardrobe import (
+    ClothingResponse,
     ClothingUploadResponse,
     ClothingProcessingStatusResponse,
     ClothingImageActionResponse,
@@ -31,6 +32,8 @@ from app.schemas.wardrobe import (
     ClothingAttributesUpdateRequest,
     ClothingAttributesResponse,
     ClothingFinalizeRequest,
+    BulkFinalizeRequest,
+    BulkFinalizeResponse,
     ClothingReanalyzeResponse,
     ClothingAvatarAttributesResponse,
     BatchUploadResponse,
@@ -416,6 +419,66 @@ def cancel_batch_upload(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this batch.")
 
     return BatchStatusResponse(**status_res)
+
+
+@router.get(
+    "/pending-review",
+    response_model=List[ClothingResponse],
+)
+def get_pending_review_clothing(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Retrieve all garments belonging to the authenticated user that require AI review,
+    are actively being processed, or have failed analysis.
+    """
+    items = (
+        db.query(Clothing)
+        .options(joinedload(Clothing.analysis))
+        .filter(Clothing.user_id == current_user.id)
+        .order_by(Clothing.created_at.desc())
+        .all()
+    )
+    # Filter to items requiring review, in progress, or failed (not yet finalized)
+    pending_items = [
+        item for item in items
+        if not item.is_finalized or item.review_required or item.processing_status in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+    ]
+    return pending_items
+
+
+@router.post(
+    "/bulk-finalize",
+    response_model=BulkFinalizeResponse,
+)
+def bulk_finalize_clothing(
+    req: BulkFinalizeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Bulk accept and finalize multiple garments whose AI predictions have completed.
+    Enforces strict user ownership verification per item.
+    """
+    if not req.item_ids:
+        return BulkFinalizeResponse(finalized_count=0, message="No item IDs provided.")
+
+    count = 0
+    for item_id in req.item_ids:
+        clothing = db.query(Clothing).filter(Clothing.id == item_id).first()
+        if not clothing or clothing.user_id != current_user.id:
+            continue
+        try:
+            prediction_service.finalize_clothing(db, clothing, current_user.id)
+            count += 1
+        except Exception as e:
+            logger.warning(f"[BulkFinalize] Failed to finalize clothing {item_id}: {e}")
+
+    return BulkFinalizeResponse(
+        finalized_count=count,
+        message=f"Successfully accepted {count} garment(s) into your wardrobe."
+    )
 
 
 @router.get(
@@ -894,7 +957,14 @@ def finalize_clothing_item(
     if clothing.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this clothing item")
 
-    v_attrs = finalize_req.verified_attributes if finalize_req else None
+    v_attrs = None
+    if finalize_req:
+        if finalize_req.verified_attributes:
+            v_attrs = dict(finalize_req.verified_attributes)
+        else:
+            extras = finalize_req.model_extra or {}
+            if extras:
+                v_attrs = dict(extras)
     return prediction_service.finalize_clothing(db, clothing, current_user.id, v_attrs)
 
 

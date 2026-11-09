@@ -84,8 +84,11 @@ def classify_garment(item: Clothing) -> str:
         return "outerwear"
 
     # 3. Western Dress
-    if any(k in cat or k in sub or k in name for k in ["dress", "western_dress", "dresses", "gown", "frock"]):
-        return "western_dress"
+    is_dress_shirt = "dress shirt" in name or ("shirt" in name and "dress" in name)
+    is_explicit_top = any(k in cat or k in sub for k in ["shirt", "top", "tops", "t_shirt", "t-shirt", "tee"])
+    if not is_dress_shirt and not is_explicit_top:
+        if any(k in cat or k in sub or k in name for k in ["dress", "western_dress", "dresses", "gown", "frock"]):
+            return "western_dress"
 
     # 4. Western Bottom
     if any(k in cat or k in sub or k in name for k in ["jeans", "pants", "trousers", "skirt", "shorts", "bottoms", "slacks", "chinos"]):
@@ -143,6 +146,7 @@ def get_garment_formality(item: Clothing) -> float:
     name = (item.name or "").lower()
     cat = (item.category or "").lower()
     sub = (item.subcategory or "").lower()
+    occ = (item.occasion or "").lower()
 
     base = 0.50
     if c_type in ("indian_sherwani", "indian_lehenga", "indian_saree"):
@@ -168,9 +172,9 @@ def get_garment_formality(item: Clothing) -> float:
     elif c_type == "footwear" and ("sneakers" in name or "sandals" in name):
         base = 0.35
 
-    if "formal" in style or "black tie" in style:
+    if "formal" in style or "black tie" in style or "formal" in name or "work" in occ or "office" in occ:
         base = min(1.0, base + 0.15)
-    elif "casual" in style or "relaxed" in style:
+    elif "casual" in style or "relaxed" in style or "casual" in occ:
         base = max(0.1, base - 0.10)
 
     return round(base, 2)
@@ -534,11 +538,13 @@ class RecommendationService:
 
             # E. Dress Code / Target Formality Filter
             avg_formality = sum(formalities) / len(formalities) if formalities else 0.5
-            if formality is not None:
-                if abs(avg_formality - formality) > 0.45:
+            effective_formality = formality if formality is not None else target_event_formality
+            if effective_formality is not None:
+                if abs(avg_formality - effective_formality) > 0.45:
                     continue
-            if dress_code:
-                dc_lower = dress_code.lower()
+            effective_dc = dress_code or target_event_dress_code
+            if effective_dc:
+                dc_lower = effective_dc.lower()
                 if any(k in dc_lower for k in ["formal", "black tie", "black-tie"]):
                     if avg_formality < 0.60:
                         continue
@@ -627,7 +633,6 @@ class RecommendationService:
             score_formality = max(0.5, 1.0 - delta_formality)
             compat_score = round(
                 0.35 * score_color + 0.30 * score_category + 0.20 * score_style + 0.15 * score_formality,
-                0.40 * score_category + 0.35 * score_style + 0.25 * score_formality,
                 3,
             )
 

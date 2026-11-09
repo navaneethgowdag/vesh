@@ -1,19 +1,28 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Shirt,
   Search,
   ArrowUpDown,
   Layers,
+  Sparkles,
+  CheckCircle2,
+  Check,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
+import { PendingReviewCard } from '../components/wardrobe/PendingReviewCard';
+import { ClothingReviewModal } from '../components/wardrobe/ClothingReviewModal';
 import { AddClothingModal } from '../components/wardrobe/AddClothingModal';
 import { BatchUploadModal } from '../components/wardrobe/BatchUploadModal';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp } from '../context/AppContext';
+import { ClothingItem } from '../types';
+import { api } from '../services/api';
 
 const CATEGORIES = [
   'All',
@@ -27,10 +36,16 @@ const CATEGORIES = [
 ] as const;
 
 type CategoryFilter = typeof CATEGORIES[number];
+type WardrobeSection = 'accepted' | 'pending' | 'all';
 
 export const Wardrobe: React.FC = () => {
-  const { wardrobe, refreshData } = useApp();
+  const { wardrobe, refreshData, showToast } = useApp();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Section Tab: default to URL param or 'accepted' (or 'pending' if items exist and param set)
+  const initialSection = (searchParams.get('tab') as WardrobeSection) || 'accepted';
+  const [wardrobeSection, setWardrobeSection] = useState<WardrobeSection>(initialSection);
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,27 +53,94 @@ export const Wardrobe: React.FC = () => {
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'wears' | 'name'>('recent');
 
+  // Review Modal State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewModalIndex, setReviewModalIndex] = useState(0);
+  const [isBulkAccepting, setIsBulkAccepting] = useState(false);
+
+  // Sync tab state with URL search param
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as WardrobeSection;
+    if (tabParam && ['accepted', 'pending', 'all'].includes(tabParam) && tabParam !== wardrobeSection) {
+      setWardrobeSection(tabParam);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (sec: WardrobeSection) => {
+    setWardrobeSection(sec);
+    setSearchParams({ tab: sec });
+  };
+
+  // Segregate items by lifecycle: Pending Review vs Accepted Clothing
+  const pendingItems = useMemo(() => {
+    return wardrobe.filter((item) => {
+      const isFailed = item.processingStatus === 'failed' || item.processingStage === 'failed';
+      const isProcessing =
+        item.processingStatus === 'queued' ||
+        item.processingStatus === 'processing' ||
+        item.processingStage === 'queued' ||
+        item.processingStage === 'analyzing_clothing';
+      const isReadyForReview =
+        item.reviewRequired ||
+        item.processingStatus === 'ready_for_review' ||
+        item.processingStatus === 'predictions_ready';
+      const isNotFinalized = item.isFinalized === false;
+
+      return isFailed || isProcessing || isReadyForReview || isNotFinalized;
+    });
+  }, [wardrobe]);
+
+  const acceptedItems = useMemo(() => {
+    return wardrobe.filter((item) => {
+      const isPending =
+        item.reviewRequired ||
+        item.isFinalized === false ||
+        ['predictions_ready', 'ready_for_review', 'queued', 'processing', 'failed'].includes(
+          item.processingStatus || ''
+        );
+      return !isPending;
+    });
+  }, [wardrobe]);
+
+  const readyToReviewItems = useMemo(() => {
+    return pendingItems.filter(
+      (item) =>
+        item.processingStatus !== 'failed' &&
+        item.processingStage !== 'failed' &&
+        item.processingStatus !== 'queued' &&
+        item.processingStatus !== 'processing'
+    );
+  }, [pendingItems]);
+
   const totalItems = wardrobe.length;
-  const topsCount = wardrobe.filter((i) =>
+  const topsCount = acceptedItems.filter((i) =>
     ['tops', 'shirt', 't_shirt', 't-shirt'].includes((i.category || '').toLowerCase())
   ).length;
-  const bottomsCount = wardrobe.filter((i) =>
+  const bottomsCount = acceptedItems.filter((i) =>
     ['bottoms', 'jeans', 'pants', 'salwar', 'churidar'].includes((i.category || '').toLowerCase())
   ).length;
-  const ethnicCount = wardrobe.filter((i) =>
+  const ethnicCount = acceptedItems.filter((i) =>
     ['saree', 'blouse', 'kurta', 'kurti', 'lehenga', 'sherwani', 'dupatta'].includes(
       (i.category || '').toLowerCase()
     )
   ).length;
-  const othersCount = totalItems - (topsCount + bottomsCount + ethnicCount);
+  const othersCount = acceptedItems.length - (topsCount + bottomsCount + ethnicCount);
 
-  const filteredItems = useMemo(() => {
-    return wardrobe
+  // Filter items based on current section, category, search, and sort
+  const displayItems = useMemo(() => {
+    const baseList =
+      wardrobeSection === 'pending'
+        ? pendingItems
+        : wardrobeSection === 'accepted'
+          ? acceptedItems
+          : wardrobe;
+
+    return baseList
       .filter((item) => {
         const cat = (item.category || '').toLowerCase();
 
-        // Category filter matching
-        if (activeCategory !== 'All') {
+        // Category filter matching (applies to accepted and all tabs)
+        if (wardrobeSection !== 'pending' && activeCategory !== 'All') {
           if (
             activeCategory === 'Tops & Shirts' &&
             !['tops', 'shirt', 't_shirt', 't-shirt'].includes(cat)
@@ -140,7 +222,49 @@ export const Wardrobe: React.FC = () => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
-  }, [wardrobe, activeCategory, searchQuery, sortBy]);
+  }, [wardrobeSection, pendingItems, acceptedItems, wardrobe, activeCategory, searchQuery, sortBy]);
+
+  // Handle opening review modal for an item
+  const handleOpenReview = (item: ClothingItem) => {
+    const idx = pendingItems.findIndex((p) => p.id === item.id);
+    setReviewModalIndex(idx >= 0 ? idx : 0);
+    setReviewModalOpen(true);
+  };
+
+  // Handle reviewing all pending items sequentially
+  const handleReviewAllPending = () => {
+    if (readyToReviewItems.length === 0) return;
+    const firstReadyIdx = pendingItems.findIndex(
+      (p) => p.id === readyToReviewItems[0].id
+    );
+    setReviewModalIndex(firstReadyIdx >= 0 ? firstReadyIdx : 0);
+    setReviewModalOpen(true);
+  };
+
+  // Bulk accept all items whose AI predictions are completed
+  const handleBulkAcceptAll = async () => {
+    if (readyToReviewItems.length === 0) return;
+    const count = readyToReviewItems.length;
+    if (
+      !confirm(
+        `Accept all ${count} AI-analyzed garments with their predicted attributes and add them to your closet?`
+      )
+    ) {
+      return;
+    }
+
+    setIsBulkAccepting(true);
+    try {
+      const itemIds = readyToReviewItems.map((i) => i.id);
+      const res = await api.clothing.bulkFinalize(itemIds);
+      showToast(res.message || `Successfully accepted ${res.finalizedCount} garments!`, 'success');
+      await refreshData();
+    } catch (err: any) {
+      showToast(err.message || 'Bulk acceptance failed.', 'info');
+    } finally {
+      setIsBulkAccepting(false);
+    }
+  };
 
   return (
     <AppShell>
@@ -155,7 +279,8 @@ export const Wardrobe: React.FC = () => {
               Capsule Wardrobe
             </h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              {totalItems} garments digitized, analyzed & categorized in your wardrobe.
+              {acceptedItems.length} active garments in closet
+              {pendingItems.length > 0 && ` · ${pendingItems.length} pending AI review`}.
             </p>
           </div>
 
@@ -187,29 +312,140 @@ export const Wardrobe: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Metrics Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[
-            { label: 'Tops & Shirts', count: topsCount },
-            { label: 'Bottoms & Jeans', count: bottomsCount },
-            { label: 'Indian Ethnic', count: ethnicCount },
-            { label: 'Other Pieces', count: othersCount },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-white dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center sm:text-left"
+        {/* Section Navigation Tabs: Accepted Closet | Pending AI Review | All Clothing */}
+        <div className="flex items-center gap-2 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-3 overflow-x-auto hide-scrollbar">
+          <button
+            onClick={() => handleTabChange('accepted')}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              wardrobeSection === 'accepted'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Accepted Closet</span>
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                wardrobeSection === 'accepted'
+                  ? 'bg-white/20 text-white dark:bg-black/10 dark:text-zinc-900'
+                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+              }`}
             >
-              <p className="text-xs uppercase font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
-                {stat.label}
-              </p>
-              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
-                {stat.count}
-              </p>
-            </div>
-          ))}
+              {acceptedItems.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleTabChange('pending')}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              wardrobeSection === 'pending'
+                ? 'bg-amber-600 text-white shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Pending AI Review</span>
+            {pendingItems.length > 0 && (
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  wardrobeSection === 'pending'
+                    ? 'bg-white text-amber-700'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                }`}
+              >
+                {pendingItems.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('all')}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              wardrobeSection === 'all'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <span>All Clothing</span>
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                wardrobeSection === 'all'
+                  ? 'bg-white/20 text-white dark:bg-black/10 dark:text-zinc-900'
+                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+              }`}
+            >
+              {totalItems}
+            </span>
+          </button>
         </div>
 
-        {/* Search, Sort, Filter Bar */}
+        {/* Quick Metrics Bar (Shown for Accepted & All Views) */}
+        {wardrobeSection !== 'pending' && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            {[
+              { label: 'Tops & Shirts', count: topsCount },
+              { label: 'Bottoms & Jeans', count: bottomsCount },
+              { label: 'Indian Ethnic', count: ethnicCount },
+              { label: 'Other Pieces', count: othersCount },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center sm:text-left"
+              >
+                <p className="text-xs uppercase font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
+                  {stat.label}
+                </p>
+                <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                  {stat.count}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pending Review Action Banner (Only in Pending Review Tab) */}
+        {wardrobeSection === 'pending' && pendingItems.length > 0 && (
+          <div className="mb-6 p-4 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  {readyToReviewItems.length} Garment(s) Ready for Your Verification
+                </h3>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                Our EfficientNet-B0 fashion model analyzed your garments. Review and confirm predictions so they appear in your Daily Fits.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {readyToReviewItems.length > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkAcceptAll}
+                    isLoading={isBulkAccepting}
+                    loadingText="Accepting All..."
+                    icon={<Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  >
+                    Accept All ({readyToReviewItems.length})
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleReviewAllPending}
+                    icon={<Sparkles className="w-3.5 h-3.5" />}
+                  >
+                    Review Next
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Search, Sort & Category Filter Bar */}
         <div className="space-y-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
@@ -237,27 +473,71 @@ export const Wardrobe: React.FC = () => {
             </div>
           </div>
 
-          {/* Categories Pill Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`text-xs px-3.5 py-2 min-h-[40px] rounded-md border whitespace-nowrap transition-all font-medium ${
-                  activeCategory === cat
-                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
-                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          {/* Categories Pill Bar (Hidden in Pending Review tab to keep review focused) */}
+          {wardrobeSection !== 'pending' && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`text-xs px-3.5 py-2 min-h-[40px] rounded-md border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                    activeCategory === cat
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Garment Grid */}
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        {/* Empty States and Garment Grids */}
+        {wardrobeSection === 'pending' ? (
+          displayItems.length === 0 ? (
+            <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <p className="font-bold text-zinc-900 dark:text-zinc-100 text-base">
+                All Uploaded Garments Reviewed
+              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+                There are no pending garments requiring review. All AI-analyzed pieces have been accepted into your capsule closet.
+              </p>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleTabChange('accepted')}
+                >
+                  View Active Closet
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBatchModalOpen(true)}
+                  icon={<Layers className="w-4 h-4" />}
+                >
+                  Batch Upload More
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {displayItems.map((item) => (
+                <PendingReviewCard
+                  key={item.id}
+                  item={item}
+                  onReview={handleOpenReview}
+                  onAccepted={refreshData}
+                />
+              ))}
+            </div>
+          )
+        ) : displayItems.length === 0 ? (
+          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
             <Shirt className="w-8 h-8 text-zinc-400 mx-auto mb-2 opacity-60" />
             <p className="font-bold text-zinc-900 dark:text-zinc-100">
               {searchQuery ? `No garments matching "${searchQuery}"` : 'Your Capsule Closet is Empty'}
@@ -286,13 +566,14 @@ export const Wardrobe: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredItems.map((item) => (
+            {displayItems.map((item) => (
               <ClothingCard key={item.id} item={item} />
             ))}
           </div>
         )}
       </PullToRefresh>
 
+      {/* Add Single Clothing Modal */}
       <AddClothingModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -302,11 +583,26 @@ export const Wardrobe: React.FC = () => {
         }}
       />
 
+      {/* Batch Upload Modal */}
       <BatchUploadModal
         isOpen={batchModalOpen}
         onClose={() => setBatchModalOpen(false)}
-        onCompleted={refreshData}
+        onCompleted={() => {
+          refreshData();
+          handleTabChange('pending');
+        }}
       />
+
+      {/* Dedicated Clothing Review & Acceptance Modal */}
+      {pendingItems.length > 0 && (
+        <ClothingReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          items={pendingItems}
+          initialIndex={reviewModalIndex}
+          onItemAccepted={refreshData}
+        />
+      )}
     </AppShell>
   );
 };

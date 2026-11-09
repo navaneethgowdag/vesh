@@ -82,8 +82,12 @@ class Clothing(Base):
     @property
     def is_finalized(self) -> bool:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
-            return bool(self.analysis.feature_vector.get("is_finalized", False))
-        return False
+            fv = self.analysis.feature_vector
+            if "is_finalized" in fv:
+                return bool(fv["is_finalized"])
+            if fv.get("review_required") or fv.get("processing_status") in ("predictions_ready", "ready_for_review", "queued", "processing", "failed"):
+                return False
+        return True
 
     @property
     def style(self) -> str:
@@ -92,10 +96,12 @@ class Clothing(Base):
         return self.occasion or "Casual"
 
     @property
-    def formality(self) -> float:
+    def formality(self) -> Optional[float]:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
-            return float(self.analysis.feature_vector.get("formality", 0.5))
-        return 0.5
+            val = self.analysis.feature_vector.get("formality")
+            if val is not None:
+                return float(val)
+        return None
 
     @property
     def verified_attributes(self) -> dict:

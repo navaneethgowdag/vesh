@@ -153,6 +153,16 @@ class ClothingAttributesResponse(BaseModel):
 
 class ClothingFinalizeRequest(BaseModel):
     verified_attributes: Optional[dict] = None
+    model_config = {"extra": "allow"}
+
+
+class BulkFinalizeRequest(BaseModel):
+    item_ids: List[UUID]
+
+
+class BulkFinalizeResponse(BaseModel):
+    finalized_count: int
+    message: str
 
 
 class ClothingReanalyzeResponse(BaseModel):

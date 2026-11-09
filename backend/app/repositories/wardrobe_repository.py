@@ -30,6 +30,7 @@ class WardrobeRepository:
         fabric: Optional[str] = None,
         occasion: Optional[str] = None,
         is_favorite: Optional[bool] = None,
+        review_status: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Clothing]:
@@ -56,7 +57,20 @@ class WardrobeRepository:
         if is_favorite is not None:
             query = query.filter(Clothing.is_favorite == is_favorite)
 
-        return query.order_by(Clothing.created_at.desc()).offset(offset).limit(limit).all()
+        items = query.order_by(Clothing.created_at.desc()).all()
+
+        if review_status == "pending":
+            items = [
+                i for i in items
+                if not i.is_finalized or i.review_required or i.processing_status in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+            ]
+        elif review_status == "accepted":
+            items = [
+                i for i in items
+                if i.is_finalized and not i.review_required and i.processing_status not in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+            ]
+
+        return items[offset:offset + limit]
 
     def create(self, user_id: UUID, **kwargs) -> Clothing:
         valid_fields = {
