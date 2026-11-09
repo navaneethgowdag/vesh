@@ -163,6 +163,28 @@ export const Onboarding: React.FC = () => {
     else setAvatarStyle('neutral');
   };
 
+  const handleSkip = async () => {
+    setIsSubmitting(true);
+    try {
+      await api.users.completeOnboarding({
+        display_name: displayName.trim() || undefined,
+        gender: gender || 'prefer-not-to-say',
+        avatar_style: avatarStyle || 'neutral',
+        preferred_styles: [],
+        preferred_categories: [],
+        preferred_colors: [],
+        preferred_occasions: [],
+      });
+      showToast('Welcome to TailorBird! You can customize your style profile anytime in Settings.', 'info');
+      await refreshData();
+      navigate('/home', { replace: true });
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to complete setup.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleFinish = async () => {
     setIsSubmitting(true);
     try {
@@ -212,24 +234,34 @@ export const Onboarding: React.FC = () => {
           </span>
         </div>
 
-        {/* 7-Step Progress Indicator */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {[1, 2, 3, 4, 5, 6, 7].map((s) => (
-            <div
-              key={s}
-              onClick={() => s < step && setStep(s)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                s === step
-                  ? 'w-7 bg-zinc-900 dark:bg-zinc-100'
-                  : s < step
-                  ? 'w-3.5 bg-zinc-600 dark:bg-zinc-400 cursor-pointer'
-                  : 'w-3.5 bg-zinc-200 dark:bg-zinc-800'
-              }`}
-            />
-          ))}
-          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 ml-2">
-            Step {step} of 7
-          </span>
+        {/* 7-Step Progress Indicator & Skip */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {[1, 2, 3, 4, 5, 6, 7].map((s) => (
+              <div
+                key={s}
+                onClick={() => s < step && setStep(s)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  s === step
+                    ? 'w-7 bg-zinc-900 dark:bg-zinc-100'
+                    : s < step
+                    ? 'w-3.5 bg-zinc-600 dark:bg-zinc-400 cursor-pointer'
+                    : 'w-3.5 bg-zinc-200 dark:bg-zinc-800'
+                }`}
+              />
+            ))}
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 ml-2">
+              Step {step} of 7
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isSubmitting}
+            className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            Skip for now
+          </button>
         </div>
       </div>
 

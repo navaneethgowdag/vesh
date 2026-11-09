@@ -219,8 +219,10 @@ export interface OutfitPieceReference {
 export interface Outfit {
   id: string;
   title: string;
+  name?: string;
   description?: string;
   pieces: ClothingItem[];
+  clothing_items?: any[];
   occasion: Occasion;
   style: StyleVibe;
   season: Season;
@@ -706,3 +708,106 @@ export interface RecommendedPerson {
   mutual_followers_count: number;
   common_styles: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Weekly Outfit Planner Types
+// ---------------------------------------------------------------------------
+export type WeeklyDayStatus = 'planned' | 'accepted' | 'rejected' | 'worn' | 'needs_manual_selection';
+
+export interface WeeklyPlanDay {
+  id: string;
+  weekly_plan_id: string;
+  plan_date: string;
+  outfit_id?: string;
+  outfit?: Outfit;
+  calendar_event_id?: string;
+  status: WeeklyDayStatus;
+  recommendation_explanation?: string;
+  explanation_data?: {
+    summary?: string;
+    reasons?: string[];
+    score?: number;
+    reasoning?: Record<string, any>;
+    context?: {
+      weather?: string;
+      temperature?: number;
+      occasion?: string;
+      season?: string;
+      event_category?: string;
+      dress_code?: string;
+      color_harmony?: string;
+      color_explanation?: string;
+      color_swatches?: ColorSwatch[];
+      contrast_balance?: string;
+      reasons?: string[];
+    };
+    needs_items?: boolean;
+    manual?: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeeklyPlan {
+  id: string;
+  user_id: string;
+  week_start_date: string;
+  week_end_date: string;
+  status: string;
+  days: WeeklyPlanDay[];
+  created_at: string;
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Wardrobe Gap Analysis Types
+// ---------------------------------------------------------------------------
+export interface WardrobeGapItem {
+  category: string;
+  title: string;
+  priority: 'High' | 'Medium' | 'Low';
+  reason: string;
+  evidence: string;
+  occasions: string[];
+  suggested_garments: string[];
+  confidence: number;
+}
+
+export interface WardrobeGapAnalysis {
+  total_items: number;
+  category_distribution: Record<string, number>;
+  formality_distribution: {
+    casual: number;
+    smart_casual: number;
+    formal: number;
+  };
+  color_distribution: {
+    neutrals: number;
+    accents: number;
+    breakdown?: Record<string, number>;
+  };
+  occasions_distribution?: Record<string, number>;
+  wear_stats: {
+    recently_worn_30_days?: number;
+    unworn_garments?: number;
+    recently_worn?: number;
+    never_or_rarely_worn?: number;
+  };
+  gaps: WardrobeGapItem[];
+  last_analyzed_at: string;
+  is_balanced: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Colour Coordination Types
+// ---------------------------------------------------------------------------
+export interface ColorSwatch {
+  garment_id?: string;
+  garment_name?: string;
+  color_name: string;
+  normalized?: string;
+  hex: string;
+  is_neutral: boolean;
+  category: string;
+}
+

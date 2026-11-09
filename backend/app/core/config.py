@@ -159,7 +159,7 @@ class Settings(BaseSettings):
     _cached_resolved_url: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=("backend/.env", ".env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )

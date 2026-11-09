@@ -446,7 +446,20 @@ export const DailyFit: React.FC = () => {
                     <div className="flex items-start gap-2 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200/60 dark:border-zinc-800">
                       <Palette className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 block">Color Harmony</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100 block">Color Harmony</span>
+                          <div className="flex items-center gap-1">
+                            {pieces.map((p) => (
+                              <span
+                                key={p.id}
+                                className="w-2.5 h-2.5 rounded-full border border-black/15 dark:border-white/15"
+                                title={`${p.name}: ${p.color}`}
+                                aria-label={`${p.name}: ${p.color}`}
+                                style={{ backgroundColor: p.color ? p.color.toLowerCase() : '#71717A' }}
+                              />
+                            ))}
+                          </div>
+                        </div>
                         <span className="text-[11px]">{recommendation.reasons[0] || 'Complementary contrast with balanced undertones.'}</span>
                       </div>
                     </div>

@@ -228,19 +228,16 @@ def process_garment_image_job(
         except Exception as lock_err:
             logger.warning(f"[Worker] Redis concurrency lock check encountered error ({lock_err}). Proceeding with DB guards.")
 
-        # 2. Idempotency check: if garment is already ready_for_review and processed image exists in Neon BYTEA
+        # 2. Idempotency check: if garment is already ready_for_review
         clothing = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
-        if clothing:
-            img_svc = ClothingImageService(db)
-            existing_proc_img = img_svc.get_image(clothing_uuid, user_uuid, "processed")
-            if existing_proc_img and clothing.processing_status in ("ready_for_review", "completed"):
-                logger.info(f"[Worker:Idempotent] Garment {clothing_id} already successfully processed and verified in Neon. Returning cached state.")
-                return {
-                    "status": clothing.processing_status,
-                    "stage": clothing.processing_stage,
-                    "cached": True,
-                    "duration_seconds": clothing.processing_duration,
-                }
+        if clothing and clothing.processing_status in ("ready_for_review", "completed"):
+            logger.info(f"[Worker:Idempotent] Garment {clothing_id} already successfully processed. Returning cached state.")
+            return {
+                "status": clothing.processing_status,
+                "stage": clothing.processing_stage,
+                "cached": True,
+                "duration_seconds": clothing.processing_duration,
+            }
 
         # 3. Handle BackgroundJob status if table exists
         job = None
@@ -286,6 +283,35 @@ def process_garment_image_job(
             except Exception as jup_err:
                 logger.warning(f"Could not update BackgroundJob status: {jup_err}")
 
+        # Batch Advancement Hook: advance sequential processing to next queued item in batch
+        try:
+            clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
+            batch_id_str = None
+            if clothing_item and clothing_item.analysis and clothing_item.analysis.feature_vector:
+                batch_id_str = clothing_item.analysis.feature_vector.get("batch_id")
+            elif job and job.payload_ref:
+                batch_id_str = job.payload_ref.get("batch_id")
+
+            if batch_id_str:
+                from app.services.batch_upload_service import BatchUploadService
+                from app.services.job_service import JobService
+                batch_svc = BatchUploadService(db)
+                batch_uuid = UUID(batch_id_str)
+                next_cid = batch_svc.get_next_queued_item(batch_id=batch_uuid, user_id=user_uuid)
+                if next_cid:
+                    logger.info(f"[Worker:BatchAdvance] Advancing batch {batch_uuid} to next item: {next_cid}")
+                    job_svc = JobService(db)
+                    job_svc.enqueue_garment_processing(
+                        user_id=user_uuid,
+                        clothing_id=next_cid,
+                        batch_id=batch_uuid,
+                    )
+                else:
+                    logger.info(f"[Worker:BatchComplete] Batch {batch_uuid} processing cycle finished.")
+                    batch_svc.get_batch_status(batch_uuid, user_uuid)
+        except Exception as b_adv_err:
+            logger.warning(f"[Worker:BatchAdvance] Error attempting to advance batch: {b_adv_err}")
+
         logger.info(f"[Worker:Completed] Garment job_id={job_id}, clothing_id={clothing_id} finished in {dur}s with status '{result.get('status')}'.")
         return result
 
@@ -302,8 +328,33 @@ def process_garment_image_job(
                         job.status = "failed"
                         job.error_message = str(e)
                         db.commit()
-        except Exception:
-            pass
+
+            # Advance batch even on failure so remaining queue does not stall
+            batch_id_str = None
+            clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
+            if clothing_item and clothing_item.analysis and clothing_item.analysis.feature_vector:
+                batch_id_str = clothing_item.analysis.feature_vector.get("batch_id")
+            elif job and job.payload_ref:
+                batch_id_str = job.payload_ref.get("batch_id")
+
+            if batch_id_str and user_uuid:
+                from app.services.batch_upload_service import BatchUploadService
+                from app.services.job_service import JobService
+                batch_svc = BatchUploadService(db)
+                batch_uuid = UUID(batch_id_str)
+                next_cid = batch_svc.get_next_queued_item(batch_id=batch_uuid, user_id=user_uuid)
+                if next_cid:
+                    logger.info(f"[Worker:BatchAdvanceOnError] Advancing batch {batch_uuid} to next item after error: {next_cid}")
+                    job_svc = JobService(db)
+                    job_svc.enqueue_garment_processing(
+                        user_id=user_uuid,
+                        clothing_id=next_cid,
+                        batch_id=batch_uuid,
+                    )
+                else:
+                    batch_svc.get_batch_status(batch_uuid, user_uuid)
+        except Exception as b_adv_fail_err:
+            logger.warning(f"[Worker:BatchAdvanceOnError] Could not advance batch after error: {b_adv_fail_err}")
         raise
     finally:
         # Release concurrency lock

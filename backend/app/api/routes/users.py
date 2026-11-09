@@ -151,26 +151,42 @@ def complete_onboarding(
         service.update_profile(current_user, display_name=data.display_name.strip())
 
     # 2. Update preferences
-    colors = data.preferred_colors or data.favorite_colors
-    occasions = data.preferred_occasions or data.lifestyle_occasions
-    categories = data.preferred_categories or data.wardrobe_staples
-    fits = data.preferred_fits if data.preferred_fits else ([data.preferred_fit] if data.preferred_fit else ["Regular"])
+    gender_input = data.gender_preference or data.gender or "prefer-not-to-say"
+    gender_clean = gender_input.strip() if isinstance(gender_input, str) else "prefer-not-to-say"
+    
+    # Map avatar_style based on gender if avatar_style not explicitly provided
+    resolved_avatar = data.avatar_style
+    if not resolved_avatar:
+        g_low = gender_clean.lower()
+        if "male" in g_low and "female" not in g_low:
+            resolved_avatar = "masculine"
+        elif "female" in g_low:
+            resolved_avatar = "feminine"
+        elif "non-binary" in g_low or "androgynous" in g_low:
+            resolved_avatar = "androgynous"
+        else:
+            resolved_avatar = "neutral"
+
+    colors = data.preferred_colors or data.favorite_colors or []
+    occasions = data.preferred_occasions or data.lifestyle_occasions or []
+    categories = data.preferred_categories or data.wardrobe_staples or []
+    fits = data.preferred_fits if data.preferred_fits else ([data.preferred_fit] if data.preferred_fit else [])
 
     pref_kwargs = {
-        "preferred_styles": data.preferred_styles,
-        "styles": data.preferred_styles,
+        "preferred_styles": data.preferred_styles or [],
+        "styles": data.preferred_styles or [],
         "preferred_categories": categories,
         "preferred_colors": colors,
         "favorite_colors": colors,
         "preferred_occasions": occasions,
         "favorite_occasions": occasions,
         "preferred_fits": fits,
-        "gender": data.gender,
-        "avatar_style": data.avatar_style or "neutral",
+        "gender": gender_clean,
+        "avatar_style": resolved_avatar,
         "styling_preference": data.styling_preference,
         "budget_preference": data.budget_preference,
         "country": data.country,
-        "preferred_language": data.preferred_language,
+        "preferred_language": data.preferred_language or "English",
         "date_of_birth": data.date_of_birth,
         "onboarding_completed": True,
     }

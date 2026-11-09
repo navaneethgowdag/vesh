@@ -26,6 +26,7 @@ from app.models.google_calendar_connection import GoogleCalendarConnection
 from app.models.poll import Poll, PollOption, PollVote
 from app.models.community import Community, CommunityMember, CommunityPost
 from app.models.conversation import Conversation, ConversationParticipant, Message, UserBlock
+from app.models.weekly_plan import WeeklyPlan, WeeklyPlanDay
 
 __all__ = [
     "Base",
@@ -42,6 +43,8 @@ __all__ = [
     "ConversationParticipant",
     "Message",
     "UserBlock",
+    "WeeklyPlan",
+    "WeeklyPlanDay",
     "UploadBatch",
     "UserPreference",
     "LearnedPreference",

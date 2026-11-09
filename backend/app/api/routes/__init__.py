@@ -20,12 +20,15 @@ from app.api.routes import (
     communities,
     messages,
     explore,
+    planner,
+    wardrobe_gap,
 )
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
+api_router.include_router(wardrobe_gap.router)
 api_router.include_router(wardrobe.router)
 api_router.include_router(clothing.router)
 api_router.include_router(clothing_ai.router)
@@ -44,5 +47,6 @@ api_router.include_router(polls.router)
 api_router.include_router(communities.router)
 api_router.include_router(messages.router)
 api_router.include_router(explore.router)
+api_router.include_router(planner.router)
 
 __all__ = ["api_router"]

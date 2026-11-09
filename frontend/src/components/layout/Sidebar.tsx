@@ -4,6 +4,7 @@ import {
   Home,
   Sparkles,
   Calendar as CalendarIcon,
+  CalendarDays,
   Compass,
   MessageSquare,
   Shirt,
@@ -12,6 +13,7 @@ import {
   Bell,
   User as UserIcon,
   Settings,
+  Layers,
   LogOut,
 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
@@ -42,9 +44,11 @@ export const Sidebar: React.FC = () => {
     { name: 'Home', path: '/home', icon: Home },
     { name: 'Daily Fit', path: '/daily-fit', icon: Sparkles, badge: 'AI' },
     { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
+    { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
     { name: 'Explore', path: '/explore', icon: Compass },
     { name: 'Messages', path: '/inbox', icon: MessageSquare, count: unreadMessages },
     { name: 'Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
+    { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
     { name: 'Create', path: '/create', icon: PlusCircle, highlight: true },
     { name: 'Saved', path: '/saved', icon: Bookmark },
     { name: 'Notifications', path: '/notifications', icon: Bell, count: unreadNotifsCount },

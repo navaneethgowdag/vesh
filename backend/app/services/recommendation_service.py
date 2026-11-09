@@ -16,6 +16,7 @@ from app.repositories.recommendation_repository import RecommendationRepository
 from app.repositories.calendar_repository import CalendarRepository
 from app.services.weather_service import weather_service
 from app.services.personalization_service import PersonalizationService
+from app.services.color_coordination_service import ColorCoordinationService
 
 
 # -------------------------------------------------------------------------
@@ -216,6 +217,7 @@ class RecommendationService:
         city: str = "New York",
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
+        item_ids_worn_yesterday: Optional[Set[UUID]] = None,
     ) -> List[Recommendation]:
         """
         Wardrobe-Based AI Outfit Recommendation Engine.
@@ -230,10 +232,16 @@ class RecommendationService:
         - Weather is optional and gracefully handles offline/ignored mode.
         - Strict user isolation.
         """
-        # 1. MODE & CONTEXT RESOLUTION (Calendar is OPTIONAL)
+        # 1. MODE & CONTEXT RESOLUTION (Calendar is OPTIONAL, Event Awareness Enforced)
+        from app.services.event_classifier_service import EventClassifierService
+        from app.models.wear_history import WearHistory
+        from datetime import timedelta
+
         event: Optional[CalendarEvent] = None
         event_notes = ""
+        target_date = target_date or date.today()
 
+        day_events: List[Any] = []
         if calendar_event_id:
             event = self.calendar_repo.get_by_id(calendar_event_id, user_id=user_id)
             if not event or event.user_id != user_id:
@@ -241,33 +249,83 @@ class RecommendationService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Specified calendar event was not found or does not belong to you.",
                 )
-            # Path A: Calendar-assisted recommendations
-            # Crucial: User's explicitly supplied occasion overrides the inferred occasion!
-            target_occasion = occasion or event.occasion or "Casual Daily"
-            target_date = target_date or event.event_date or date.today()
+            target_date = event.event_date or target_date
             location_context = location_context or getattr(event, "location", None)
             event_notes = event.notes or ""
-            if not dress_code and event_notes:
-                for dc in ["formal", "smart casual", "business casual", "black tie", "casual"]:
-                    if dc in event_notes.lower():
-                        dress_code = dc.title()
-                        break
+            day_events = [event]
         elif recommendation_mode == "calendar":
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Calendar event ID is required when recommendation_mode is 'calendar'.",
             )
-        elif occasion:
-            # Path B: Manual occasion-based recommendations
+        else:
+            # Query any scheduled calendar events for target_date to provide event awareness
+            try:
+                day_events = self.calendar_repo.list_for_user(
+                    user_id=user_id,
+                    start_date=target_date,
+                    end_date=target_date,
+                    limit=10,
+                )
+            except Exception:
+                day_events = []
+
+        # Multi-event resolution & Event classification (14 categories, 5 tones, 5 dress codes)
+        day_event_context = EventClassifierService.resolve_day_events(day_events)
+        target_event_category = day_event_context["category"]
+        target_event_tone = day_event_context["tone"]
+        target_event_dress_code = dress_code or day_event_context["dress_code"]
+        target_event_formality = formality if formality is not None else day_event_context["formality"]
+        event_rationale = day_event_context["rationale"]
+
+        if occasion and occasion not in ("Casual Daily", ""):
             if occasion in ("Custom occasion", "Custom") or custom_occasion:
                 target_occasion = custom_occasion or "Custom occasion"
             else:
                 target_occasion = occasion
-            target_date = target_date or date.today()
+        elif event and event.occasion:
+            target_occasion = event.occasion
+        elif day_events and target_event_category != "other":
+            target_occasion = target_event_category.replace("_", " ").title()
         else:
-            # Path C: General outfit recommendations ("Suggest an outfit for me")
             target_occasion = "Casual Daily"
-            target_date = target_date or date.today()
+
+        # Query wear history in the past 14 days for repetition avoidance
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
+        recent_wears = []
+        try:
+            recent_wears = (
+                self.db.query(WearHistory)
+                .filter(
+                    WearHistory.user_id == user_id,
+                    WearHistory.worn_at >= cutoff_date,
+                )
+                .all()
+            )
+        except Exception as we_err:
+            logger.warning(f"Could not load wear history: {we_err}")
+
+        yesterday_date = target_date - timedelta(days=1)
+        outfit_ids_worn_yesterday = set()
+        outfit_ids_worn_2_3_days = set()
+        item_ids_worn_yesterday_set = set(item_ids_worn_yesterday) if item_ids_worn_yesterday else set()
+
+        for w in recent_wears:
+            if not w.worn_at:
+                continue
+            w_date = w.worn_at.date()
+            days_ago = (target_date - w_date).days
+            if days_ago == 1:
+                if w.outfit_id:
+                    outfit_ids_worn_yesterday.add(w.outfit_id)
+                if w.outfit and w.outfit.clothing_items:
+                    for ci in w.outfit.clothing_items:
+                        item_ids_worn_yesterday_set.add(ci.id)
+            elif 2 <= days_ago <= 3:
+                if w.outfit_id:
+                    outfit_ids_worn_2_3_days.add(w.outfit_id)
+
+        item_ids_worn_yesterday = item_ids_worn_yesterday_set
 
         # 2. WARDROBE RETRIEVAL & SUFFICIENCY AUDIT
         raw_wardrobe = self.wardrobe_repo.list_for_user(user_id, limit=300)
@@ -554,35 +612,43 @@ class RecommendationService:
                     detail="Wardrobe items violate style, color, or formality constraints. Please add compatible items to receive recommendations.",
                 )
 
-        # 6. DETERMINISTIC SCORING & PERSONALIZED RANKING
+        # 6. DETERMINISTIC SCORING & EVENT-AWARE PERSONALIZED RANKING
         personalization_enabled = getattr(user_pref, "personalization_enabled", True) if user_pref else True
         scored_candidates: List[Tuple[List[Clothing], Dict[str, Any]]] = []
 
         for items in filtered_candidates:
-            score_data = self._score_candidate_deterministic(
+            # 1. Garment Compatibility score (0.30 weight): Category balance, Style consistency, Formality delta
+            score_category = self._compute_category_balance_score(items)
+            score_style = self._compute_style_compatibility_score(items)
+            formalities = [get_garment_formality(i) for i in items]
+            delta_formality = max(formalities) - min(formalities) if formalities else 0.0
+            score_formality = max(0.5, 1.0 - delta_formality)
+            compat_score = round(
+                0.40 * score_category + 0.35 * score_style + 0.25 * score_formality,
+                3,
+            )
+
+            # 2. Event Suitability score (0.25 weight): Target event category & dress code alignment
+            score_event = EventClassifierService.compute_event_suitability(
                 items=items,
-                target_occasion=target_occasion,
+                target_category=target_event_category,
+                target_dress_code=target_event_dress_code,
+                target_formality=target_event_formality,
+            )
+
+            # 3. Weather Suitability score (0.15 weight): Target season & climate conditions
+            score_weather = self._compute_season_score(
+                items=items,
                 target_season=target_season,
                 temp=temp,
-                rain_prob=rain_prob,
-                condition=condition,
                 feels_like=feels_like,
                 humidity=humidity,
                 wind_speed=wind_speed,
-                user_pref=user_pref,
-                learned_pref=learned_pref,
-                preferred_colors=preferred_colors or [],
-                recent_outfit_ids=recent_outfit_ids,
+                rain_prob=rain_prob,
+                condition=condition,
             )
-            compat_score = score_data["total_score"]
 
-            # Boost preferred items
-            if preferred_set and any(i.id in preferred_set for i in items):
-                compat_score = min(0.99, round(compat_score + 0.10, 3))
-                score_data["total_score"] = compat_score
-                score_data["reasoning"]["preferred_items_boost"] = 0.10
-                score_data["reasons"].insert(0, "Features your requested wardrobe favorite piece.")
-
+            # 4. Personalization (0.15 weight) & 5. Diversity (0.05 weight)
             if personalization_enabled:
                 s_pref, s_div, p_breakdown, p_rationales = self.personalization_service.score_candidate_personalization(
                     items=items,
@@ -591,39 +657,103 @@ class RecommendationService:
                     user_pref=user_pref,
                     recent_outfit_ids=recent_outfit_ids,
                 )
-                conf = float(getattr(learned_pref, "confidence_score", 0.05) or 0.05)
-                # Explicit onboarding preferences take immediate priority even at cold start
-                has_explicit = bool(
-                    user_pref and (
-                        getattr(user_pref, "preferred_styles", None) or
-                        getattr(user_pref, "preferred_colors", None) or
-                        getattr(user_pref, "onboarding_completed", False)
-                    )
-                )
-                effective_conf = max(conf, 0.45 if has_explicit else 0.05)
-
-                # Dynamic weighting for cold-start adaptation:
-                # As confidence increases, personalization weight scales up to 30%
-                w_pref = 0.30 * effective_conf
-                w_div = 0.10
-                w_compat = 1.0 - w_pref - w_div
-                final_score = round(w_compat * compat_score + w_pref * s_pref + w_div * s_div, 3)
-
-                score_data["total_score"] = final_score
-                score_data["reasoning"]["compatibility"] = compat_score
-                score_data["reasoning"]["personalization"] = s_pref
-                score_data["reasoning"]["diversity"] = s_div
-                score_data["reasoning"]["confidence"] = conf
-                score_data["reasoning"]["is_personalized"] = True
-                score_data.setdefault("score_breakdown", {})["personalization"] = p_breakdown
-
-                # If personalized rationales exist, prioritize them
-                if p_rationales:
-                    combined_reasons = p_rationales + [r for r in score_data["reasons"] if r not in p_rationales]
-                    score_data["reasons"] = combined_reasons[:4]
             else:
-                score_data["reasoning"]["compatibility"] = compat_score
-                score_data["reasoning"]["is_personalized"] = False
+                s_pref, s_div, p_breakdown, p_rationales = 0.50, 0.50, {}, []
+
+            # 5. Colour Coordination (0.10 weight): Perceptual CIELAB/HSV harmony & balance
+            color_analysis = ColorCoordinationService.analyze_palette(items)
+            score_color = color_analysis["score"]
+            color_explanation = color_analysis["explanation"]
+
+            # 6-Factor Weighted Aggregation Formula:
+            # 0.30 * garment_compatibility + 0.25 * event_suitability + 0.15 * weather_suitability + 0.15 * personalization + 0.10 * color_coordination + 0.05 * diversity
+            base_score = round(
+                0.30 * compat_score +
+                0.25 * score_event +
+                0.15 * score_weather +
+                0.15 * s_pref +
+                0.10 * score_color +
+                0.05 * s_div,
+                3,
+            )
+
+            # Boost preferred items
+            if preferred_set and any(i.id in preferred_set for i in items):
+                base_score = min(0.99, round(base_score + 0.10, 3))
+
+            # Repetition Avoidance & Recency Penalty (Feature 4)
+            recency_penalty = 0.0
+            items_worn_yesterday_count = sum(1 for i in items if i.id in item_ids_worn_yesterday)
+            if items_worn_yesterday_count > 0:
+                recency_penalty += min(0.20, items_worn_yesterday_count * 0.08)
+
+            max_wear = max((getattr(i, "wear_count", 0) or 0) for i in items) if items else 0
+            if max_wear >= 6:
+                recency_penalty += 0.05
+
+            final_score = max(0.25, min(0.99, round(base_score - recency_penalty, 3)))
+
+            explanations = self._generate_deterministic_explanations(
+                items=items,
+                target_occasion=target_occasion,
+                temp=temp,
+                condition=condition,
+                delta_formality=delta_formality,
+                color_explanation=color_explanation,
+                score_occasion=score_event,
+            )
+
+            reasons_list = [event_rationale]
+            if p_rationales:
+                reasons_list.extend(p_rationales[:2])
+            if color_explanation and color_explanation not in reasons_list:
+                reasons_list.append(color_explanation)
+            reasons_list.extend([r for r in explanations.get("reasons", []) if r not in reasons_list])
+            if recency_penalty == 0.0:
+                reasons_list.append("Fresh look not worn in recent days.")
+
+            context_data = {
+                "weather": condition,
+                "temperature": temp,
+                "occasion": target_occasion,
+                "season": target_season,
+                "event_category": target_event_category,
+                "dress_code": target_event_dress_code,
+                "delta_formality": round(delta_formality, 2),
+                "color_harmony": color_analysis["harmony_type"],
+                "color_explanation": color_explanation,
+                "color_swatches": color_analysis["swatches"],
+                "contrast_balance": color_analysis.get("contrast_balance"),
+                "reasons": reasons_list[:4],
+            }
+
+            score_data = {
+                "total_score": final_score,
+                "reasons": reasons_list[:4],
+                "explanations": explanations,
+                "context": context_data,
+                "reasoning": {
+                    "compatibility": round(compat_score, 2),
+                    "event_suitability": round(score_event, 2),
+                    "weather_suitability": round(score_weather, 2),
+                    "personalization": round(s_pref, 2),
+                    "color_coordination": round(score_color, 2),
+                    "diversity": round(s_div, 2),
+                    "recency_penalty": round(recency_penalty, 2),
+                    "event_category": target_event_category,
+                    "event_dress_code": target_event_dress_code,
+                    "event_tone": target_event_tone,
+                    "is_personalized": personalization_enabled,
+                },
+                "score_breakdown": {
+                    "compatibility": compat_score,
+                    "event_suitability": score_event,
+                    "weather_suitability": score_weather,
+                    "personalization": p_breakdown,
+                    "color_coordination": score_color,
+                    "recency_penalty": recency_penalty,
+                },
+            }
 
             scored_candidates.append((items, score_data))
 
@@ -653,7 +783,7 @@ class RecommendationService:
                 user_id=user_id,
                 clothing_item_ids=clothing_ids,
                 name=outfit_name,
-                description=s_data["explanations"]["overall_rationale"],
+                description=s_data.get("explanations", {}).get("overall_rationale", f"{target_occasion} Look"),
                 occasion=target_occasion,
                 season=target_season,
             )

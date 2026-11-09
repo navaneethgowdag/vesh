@@ -31,6 +31,10 @@ class Recommendation(Base):
         return self.recommendation_score if self.recommendation_score is not None else 0.9
 
     @property
+    def total_score(self) -> float:
+        return self.score
+
+    @property
     def reasoning(self):
         if hasattr(self, "_custom_reasoning") and self._custom_reasoning:
             return self._custom_reasoning

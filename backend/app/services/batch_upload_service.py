@@ -289,3 +289,38 @@ class BatchUploadService:
             "first_clothing_id": first_retry_id,
             "batch_status": self.get_batch_status(batch_id, user_id),
         }
+
+    def cancel_batch(self, batch_id: UUID, user_id: UUID) -> Dict[str, Any]:
+        """
+        Cancel remaining queued items in a batch.
+        """
+        analyses = (
+            self.db.query(ClothingAnalysis)
+            .filter(
+                ClothingAnalysis.feature_vector["batch_id"].astext == str(batch_id),
+                ClothingAnalysis.feature_vector["processing_status"].astext == "queued",
+            )
+            .all()
+        )
+
+        cancelled_count = 0
+        for a in analyses:
+            fv = dict(a.feature_vector) if isinstance(a.feature_vector, dict) else {}
+            fv["processing_status"] = "failed"
+            fv["processing_stage"] = "cancelled"
+            fv["error_message"] = "Cancelled by user"
+            a.feature_vector = fv
+            cancelled_count += 1
+
+        if self._has_batch_table:
+            try:
+                b_rec = self.db.query(UploadBatch).filter(UploadBatch.id == batch_id).first()
+                if b_rec:
+                    b_rec.status = "cancelled"
+                    b_rec.completed_at = datetime.now(timezone.utc)
+            except Exception:
+                pass
+
+        self.db.commit()
+        logger.info(f"[BatchUploadService] Cancelled {cancelled_count} queued items in batch {batch_id}.")
+        return self.get_batch_status(batch_id, user_id)

@@ -35,6 +35,10 @@ import {
   ExplorePostItem,
   TrendingPostItem,
   RecommendedPerson,
+  WeeklyPlan,
+  WeeklyPlanDay,
+  WeeklyDayStatus,
+  WardrobeGapAnalysis,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
@@ -763,6 +767,12 @@ export const api = {
 
     async retryBatchFailed(batchId: string): Promise<any> {
       return request<any>(`/clothing/batches/${batchId}/retry-failed`, {
+        method: 'POST',
+      });
+    },
+
+    async cancelBatch(batchId: string): Promise<any> {
+      return request<any>(`/clothing/batches/${batchId}/cancel`, {
         method: 'POST',
       });
     },
@@ -2245,6 +2255,65 @@ export const api = {
 
     async getPeople(limit: number = 20): Promise<{ people: RecommendedPerson[] }> {
       return request<{ people: RecommendedPerson[] }>(`/explore/people?limit=${limit}`);
+    },
+  },
+
+  // --- WEEKLY OUTFIT PLANNER ---
+  planner: {
+    async getWeeklyPlan(weekStartDate?: string): Promise<WeeklyPlan | null> {
+      const q = weekStartDate ? `?week_start_date=${weekStartDate}` : '';
+      return request<WeeklyPlan | null>(`/planner/weekly${q}`);
+    },
+
+    async generateWeeklyPlan(weekStartDate?: string, forceRegenerate: boolean = false): Promise<WeeklyPlan> {
+      return request<WeeklyPlan>('/planner/weekly/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          week_start_date: weekStartDate || null,
+          force_regenerate: forceRegenerate,
+        }),
+      });
+    },
+
+    async regenerateDay(planId: string, dayId: string): Promise<WeeklyPlanDay> {
+      return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/regenerate`, {
+        method: 'POST',
+      });
+    },
+
+    async updateDayOutfit(
+      planId: string,
+      dayId: string,
+      data: { outfitId?: string; clothingItemIds?: string[] }
+    ): Promise<WeeklyPlanDay> {
+      return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/outfit`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          outfit_id: data.outfitId || null,
+          clothing_item_ids: data.clothingItemIds || null,
+        }),
+      });
+    },
+
+    async updateDayStatus(planId: string, dayId: string, status: WeeklyDayStatus): Promise<WeeklyPlanDay> {
+      return request<WeeklyPlanDay>(`/planner/weekly/${planId}/days/${dayId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    },
+  },
+
+  // --- WARDROBE GAP ANALYSIS ---
+  wardrobeGap: {
+    async getAnalysis(forceRefresh: boolean = false): Promise<WardrobeGapAnalysis> {
+      const q = forceRefresh ? '?force_refresh=true' : '';
+      return request<WardrobeGapAnalysis>(`/wardrobe/gap-analysis${q}`);
+    },
+
+    async refreshAnalysis(): Promise<WardrobeGapAnalysis> {
+      return request<WardrobeGapAnalysis>('/wardrobe/gap-analysis/refresh', {
+        method: 'POST',
+      });
     },
   },
 };

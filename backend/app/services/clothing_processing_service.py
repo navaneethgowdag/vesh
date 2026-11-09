@@ -346,10 +346,9 @@ class ClothingProcessingService:
         user_id: UUID,
     ) -> Dict[str, Any]:
         """
-        Full garment pipeline coordinator (for batch upload and queue workers).
-        ENFORCED ORDER:
-        1. Predict on ORIGINAL uploaded image FIRST.
-        2. Remove background and compose catalog image SECOND.
+        Garment pipeline coordinator for batch upload and queue workers:
+        Runs AI attribute extraction using EfficientNet-B0 on ORIGINAL image.
+        Background removal is NOT executed during clothing upload.
         """
         t0 = time.time()
         clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
@@ -367,23 +366,25 @@ class ClothingProcessingService:
             commit=True,
         )
 
-        # Step 1: Predict on ORIGINAL image first
+        # AI Prediction directly on the ORIGINAL uploaded photo
         pred_res = self.predict_original_garment(clothing_id=clothing_id, user_id=user_id)
 
-        # Step 2: Remove background second
-        bg_res = self.remove_garment_background(clothing_id=clothing_id, user_id=user_id)
+        # Set image_url to original image
+        clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
 
         total_dur = round(time.time() - t0, 2)
-        final_status = "ready_for_review" if bg_res.get("status") != "failed" else "predictions_ready"
-        final_stage = "ready_for_review" if bg_res.get("status") != "failed" else "failed"
+        is_success = pred_res.get("status") not in ("failed", "error")
+        final_status = "ready_for_review" if is_success else "failed"
+        final_stage = "ready_for_review" if is_success else "failed"
 
         self._update_metadata(
             clothing=clothing,
             status=final_status,
             stage=final_stage,
             review_required=True,
-            has_processed=bg_res.get("has_processed", False),
+            has_processed=False,
             duration=total_dur,
+            error_message=pred_res.get("error") if not is_success else None,
             commit=True,
         )
 
@@ -392,5 +393,4 @@ class ClothingProcessingService:
             "stage": final_stage,
             "duration_seconds": total_dur,
             "prediction": pred_res,
-            "background_removal": bg_res,
         }

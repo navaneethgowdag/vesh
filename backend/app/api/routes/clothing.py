@@ -203,6 +203,7 @@ async def batch_upload_clothing_images(
     image_service = ClothingImageService(db)
 
     first_valid_clothing_id = None
+    seen_hashes_in_batch = set()
 
     for idx, file in enumerate(files):
         # 1. Format and readability check
@@ -217,8 +218,17 @@ async def batch_upload_clothing_images(
         image_bytes = await file.read()
         is_valid_size = 0 < len(image_bytes) <= MAX_IMAGE_BYTES
 
+        import hashlib
+        img_hash = hashlib.sha256(image_bytes).hexdigest() if image_bytes else None
+        is_duplicate = False
+        if img_hash:
+            if img_hash in seen_hashes_in_batch:
+                is_duplicate = True
+            else:
+                seen_hashes_in_batch.add(img_hash)
+
         is_readable = False
-        if is_valid_format and is_valid_size:
+        if is_valid_format and is_valid_size and not is_duplicate:
             try:
                 with Image.open(io.BytesIO(image_bytes)) as pil_img:
                     pil_img.verify()
@@ -268,6 +278,7 @@ async def batch_upload_clothing_images(
                 "batch_id": str(batch_id),
                 "sequence_order": idx,
                 "filename": raw_fn,
+                "image_hash": img_hash,
                 "processing_status": "queued",
                 "processing_stage": "queued",
                 "review_required": False,
@@ -278,7 +289,13 @@ async def batch_upload_clothing_images(
             if first_valid_clothing_id is None:
                 first_valid_clothing_id = clothing.id
         else:
-            error_reason = "Corrupt or unreadable image file" if not is_readable else "Image exceeds 10MB limit"
+            if is_duplicate:
+                error_reason = "Duplicate image detected in upload batch"
+            elif not is_readable and is_valid_size:
+                error_reason = "Corrupt or unreadable image file"
+            else:
+                error_reason = "Image exceeds 10MB limit"
+
             analysis = db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing.id).first()
             if not analysis:
                 analysis = ClothingAnalysis(
@@ -293,6 +310,7 @@ async def batch_upload_clothing_images(
                 "batch_id": str(batch_id),
                 "sequence_order": idx,
                 "filename": raw_fn,
+                "image_hash": img_hash,
                 "processing_status": "failed",
                 "processing_stage": "failed",
                 "error_message": error_reason,
@@ -377,6 +395,27 @@ def retry_failed_batch_items(
         logger.info(f"[BatchUpload] Retrying batch {batch_id}: enqueued item {first_clothing_id}.")
 
     return BatchStatusResponse(**retry_res["batch_status"])
+
+
+@router.post(
+    "/batches/{batch_id}/cancel",
+    response_model=BatchStatusResponse,
+)
+def cancel_batch_upload(
+    batch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Cancel remaining queued items in a batch.
+    """
+    batch_svc = BatchUploadService(db)
+    try:
+        status_res = batch_svc.cancel_batch(batch_id=batch_id, user_id=current_user.id)
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this batch.")
+
+    return BatchStatusResponse(**status_res)
 
 
 @router.get(

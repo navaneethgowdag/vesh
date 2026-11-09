@@ -159,7 +159,15 @@ export const Wardrobe: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/wardrobe-gap')}
+              icon={<Layers className="w-4 h-4 text-primary-500" />}
+            >
+              Gap Analysis
+            </Button>
             <Button
               variant="outline"
               size="sm"

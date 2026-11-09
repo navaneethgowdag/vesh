@@ -208,6 +208,14 @@ class CalendarRepository:
             .first()
         )
 
+    def list_by_user_and_date_range(
+        self,
+        user_id: UUID,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> List[CalendarEvent]:
+        return self.list_for_user(user_id=user_id, start_date=start_date, end_date=end_date)
+
     def list_for_user(
         self,
         user_id: UUID,

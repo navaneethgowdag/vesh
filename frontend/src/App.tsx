@@ -28,6 +28,8 @@ const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m
 const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
 const Inbox = lazy(() => import('./pages/Inbox').then((m) => ({ default: m.Inbox })));
 const CommunityDetail = lazy(() => import('./pages/CommunityDetail').then((m) => ({ default: m.CommunityDetail })));
+const WeeklyPlanner = lazy(() => import('./pages/WeeklyPlanner').then((m) => ({ default: m.WeeklyPlanner })));
+const WardrobeGap = lazy(() => import('./pages/WardrobeGap').then((m) => ({ default: m.WardrobeGap })));
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -167,6 +169,30 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <Calendar />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/planner"
+                  element={
+                    <ProtectedRoute>
+                      <WeeklyPlanner />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wardrobe/gap-analysis"
+                  element={
+                    <ProtectedRoute>
+                      <WardrobeGap />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wardrobe-gap"
+                  element={
+                    <ProtectedRoute>
+                      <WardrobeGap />
                     </ProtectedRoute>
                   }
                 />

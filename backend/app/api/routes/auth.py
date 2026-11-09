@@ -367,7 +367,7 @@ async def google_oauth_callback(
         )
 
     # 7. Generate single-use exchange ticket (60s TTL)
-    target_dest = "/onboarding" if is_new else destination
+    target_dest = "/onboarding" if (is_new or not getattr(user, "onboarding_completed", True)) else destination
     ticket = store_exchange_ticket(
         user_id=str(user.id),
         username=user.username,

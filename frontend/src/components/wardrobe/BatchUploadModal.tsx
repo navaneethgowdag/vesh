@@ -50,16 +50,15 @@ interface BatchItemProgress {
 const STAGE_LABELS: Record<string, string> = {
   queued: 'In Queue',
   claimed_by_worker: 'Worker Claimed',
-  analyzing_clothing: 'Analyzing Garment',
-  removing_background: 'Removing Background',
-  preparing_catalog_image: 'Composing Catalog Image',
-  understanding_garment: 'Extracting Attributes',
+  analyzing_clothing: 'Extracting Attributes',
+  predictions_ready: 'Attributes Ready',
   ready_for_review: 'Ready for Review',
   completed: 'Completed',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
-const ACTIVE_BATCH_KEY = 'stylesphere_active_batch_id';
+const ACTIVE_BATCH_KEY = 'tailorbird_active_batch_id';
 
 export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   isOpen,
@@ -280,6 +279,23 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     }
   };
 
+  // Cancel remaining items in active batch
+  const [isCancelling, setIsCancelling] = useState(false);
+  const handleCancelBatch = async () => {
+    if (!batchId) return;
+    setIsCancelling(true);
+    try {
+      const res = await api.clothing.cancelBatch(batchId);
+      setBatchStatus(res.status || 'cancelled');
+      showToast('Batch processing cancelled.', 'info');
+      refreshData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to cancel batch.', 'error');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   // Reset modal state
   const handleResetModal = () => {
     cleanupPreviews(selectedFiles);
@@ -303,7 +319,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     if (onCompleted) onCompleted();
   };
 
-  const isTerminal = ['completed', 'partially_completed', 'failed'].includes(batchStatus);
+  const isTerminal = ['completed', 'partially_completed', 'failed', 'cancelled'].includes(batchStatus);
   const isProcessing = ['queued', 'processing'].includes(batchStatus);
 
   return (
@@ -316,7 +332,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         onClose();
       }}
       title="Batch Wardrobe Upload"
-      subtitle="Upload multiple clothing photographs for sequential background removal & classification"
+      subtitle="Upload multiple clothing photographs for batch AI attribute prediction"
       maxWidth="2xl"
     >
       <div className="space-y-6">
@@ -530,14 +546,28 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 />
               </div>
 
-              {/* Current Sub-stage callout */}
-              {!isTerminal && currentProcessingItem && (
-                <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400 pt-1">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-900 dark:text-zinc-100" />
-                  <span>
-                    Current Stage:{' '}
-                    <strong>{STAGE_LABELS[currentProcessingItem.stage] || currentProcessingItem.stage}</strong>
-                  </span>
+              {/* Current Sub-stage callout and Cancel action */}
+              {!isTerminal && (
+                <div className="flex items-center justify-between pt-1">
+                  {currentProcessingItem ? (
+                    <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-900 dark:text-zinc-100" />
+                      <span>
+                        Current Stage:{' '}
+                        <strong>{STAGE_LABELS[currentProcessingItem.stage] || currentProcessingItem.stage}</strong>
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-zinc-500">Processing queue...</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCancelBatch}
+                    disabled={isCancelling}
+                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 font-medium underline"
+                  >
+                    {isCancelling ? 'Cancelling...' : 'Cancel Batch'}
+                  </button>
                 </div>
               )}
             </div>

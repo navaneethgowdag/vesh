@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isBootstrapping } = useApp();
+  const { isAuthenticated, isBootstrapping, currentUser } = useApp();
   const location = useLocation();
 
   if (isBootstrapping) {
@@ -19,18 +19,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // First-time onboarding redirect check
+  if (currentUser && currentUser.onboarding_completed === false && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return children ? <>{children}</> : <Outlet />;
 };
 
 export const PublicOnlyRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isBootstrapping } = useApp();
+  const { isAuthenticated, isBootstrapping, currentUser } = useApp();
 
   if (isBootstrapping) {
     return <LuxuryPageLoader />;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/home" replace />;
+    const dest = currentUser?.onboarding_completed === false ? '/onboarding' : '/home';
+    return <Navigate to={dest} replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

@@ -173,6 +173,7 @@ class UserSearchResponse(BaseModel):
 class OnboardingRequest(BaseModel):
     display_name: Optional[str] = None
     gender: Optional[str] = None
+    gender_preference: Optional[str] = None
     avatar_style: Optional[str] = None
     preferred_styles: List[str] = Field(default_factory=list)
     disliked_styles: List[str] = Field(default_factory=list)
