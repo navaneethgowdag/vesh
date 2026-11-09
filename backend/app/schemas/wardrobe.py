@@ -78,6 +78,7 @@ class ClothingUploadResponse(BaseModel):
     stage: str
     original_image_url: str
     status_url: str
+    prediction: Optional[dict] = None
 
 
 class ClothingProcessingStatusResponse(BaseModel):
@@ -117,8 +118,16 @@ class ClothingPredictionResponse(BaseModel):
 
 
 class ClothingAttributesUpdateRequest(BaseModel):
+    name: Optional[str] = None
     category: Optional[str] = None
     category_group: Optional[str] = None
+    article_type: Optional[str] = None
+    master_category: Optional[str] = None
+    sub_category: Optional[str] = None
+    base_colour: Optional[str] = None
+    gender: Optional[str] = None
+    usage: Optional[str] = None
+    age_group: Optional[str] = None
     primary_color: Optional[str] = None
     primary_hex: Optional[str] = None
     secondary_color: Optional[str] = None

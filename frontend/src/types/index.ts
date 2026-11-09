@@ -117,9 +117,11 @@ export type ProcessingStage =
   | 'queued'
   | 'claimed_by_worker'
   | 'analyzing_clothing'
+  | 'predictions_ready'
   | 'removing_background'
   | 'preparing_catalog_image'
   | 'understanding_garment'
+  | 'image_processing_completed'
   | 'ready_for_review'
   | 'completed'
   | 'failed';
@@ -180,6 +182,14 @@ export interface ClothingAttributesData {
   clothing_id: string;
   is_finalized: boolean;
   current_attributes: {
+    name?: string;
+    article_type?: string;
+    master_category?: string;
+    sub_category?: string;
+    gender?: string;
+    base_colour?: string;
+    usage?: string;
+    age_group?: string;
     category: string;
     category_group?: string;
     category_display?: string;

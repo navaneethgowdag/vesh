@@ -1,65 +1,24 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Sparkles,
-  RefreshCw,
-  Check,
-  Image as ImageIcon,
-  Layers,
-  Bot,
-  Tag,
-  Sliders,
-  Eye,
   CheckCircle2,
   AlertCircle,
-  HelpCircle,
-  ChevronDown,
+  Sliders,
+  Tag,
+  Palette,
+  Compass,
+  Shirt,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
-
-const TAILORBIRD_COLORS = [
-  'Black', 'Charcoal', 'Gray', 'White', 'Cream', 'Beige',
-  'Navy', 'Blue', 'Light Blue', 'Red', 'Maroon', 'Pink',
-  'Green', 'Olive', 'Yellow', 'Orange', 'Brown', 'Purple', 'Multicolor'
-];
-
-const CATEGORIES = [
-  // Western Tops
-  { id: 'shirt', label: 'Shirt', group: 'western' },
-  { id: 't_shirt', label: 'T-Shirt', group: 'western' },
-  { id: 'blouse', label: 'Blouse', group: 'western' },
-  { id: 'sweater', label: 'Sweater / Knitwear', group: 'western' },
-  { id: 'jacket', label: 'Jacket / Blazer', group: 'western' },
-  // Western Bottoms
-  { id: 'jeans', label: 'Jeans', group: 'western' },
-  { id: 'trousers', label: 'Trousers / Pants', group: 'western' },
-  { id: 'skirt', label: 'Skirt', group: 'western' },
-  { id: 'shorts', label: 'Shorts', group: 'western' },
-  // Western Dresses
-  { id: 'western_dress', label: 'Dress', group: 'western' },
-  // Indian Clothing
-  { id: 'kurta', label: 'Kurta / Kurti', group: 'indian' },
-  { id: 'saree', label: 'Saree', group: 'indian' },
-  { id: 'lehenga', label: 'Lehenga', group: 'indian' },
-  { id: 'sherwani', label: 'Sherwani', group: 'indian' },
-];
-
-const PATTERNS = [
-  'solid', 'striped', 'checked', 'plaid', 'floral', 'geometric',
-  'printed', 'abstract', 'embroidered', 'textured', 'multicolor', 'unknown'
-];
-
-const SLEEVE_TYPES = [
-  'sleeveless', 'cap_sleeve', 'short_sleeve', 'three_quarter', 'full_sleeve', 'unknown'
-];
-
-const NECKLINES = [
-  'crew_neck', 'v_neck', 'round_neck', 'mandarin_collar', 'classic_collar', 'scoop_neck', 'boat_neck', 'off_shoulder', 'unknown'
-];
+import { SearchableCombobox } from '../components/wardrobe/SearchableCombobox';
+import defaultClassMappings from '../data/classMappings.json';
 
 export const ClothingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,55 +27,64 @@ export const ClothingDetail: React.FC = () => {
 
   const item = wardrobe.find((i) => i.id === id);
 
-  // State for AI predictions and review editing
-  const [activeTab, setActiveTab] = useState<'catalog' | 'original'>('catalog');
+  // Class options
+  const [classOptions, setClassOptions] = useState<Record<string, string[]>>(defaultClassMappings);
+
+  // Editing state
   const [isEditing, setIsEditing] = useState(false);
   const [loadingAttributes, setLoadingAttributes] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [attributesData, setAttributesData] = useState<any>(null);
-  const [avatarData, setAvatarData] = useState<any>(null);
 
-  // Form edit state
-  const [editCategory, setEditCategory] = useState('');
-  const [editColor, setEditColor] = useState('');
-  const [editSecondaryColor, setEditSecondaryColor] = useState('');
-  const [editPattern, setEditPattern] = useState('');
-  const [editSleeveType, setEditSleeveType] = useState('');
-  const [editNeckline, setEditNeckline] = useState('');
-  const [editStyle, setEditStyle] = useState('');
-  const [editSeason, setEditSeason] = useState('');
-  const [editOccasion, setEditOccasion] = useState('');
+  // 9 Model Attributes Form State
+  const [editName, setEditName] = useState('');
+  const [editBrand, setEditBrand] = useState('');
+  const [editArticleType, setEditArticleType] = useState('Shirts');
+  const [editMasterCategory, setEditMasterCategory] = useState('Apparel');
+  const [editSubCategory, setEditSubCategory] = useState('Topwear');
+  const [editBaseColour, setEditBaseColour] = useState('Black');
+  const [editPattern, setEditPattern] = useState('Solid');
+  const [editGender, setEditGender] = useState('Unisex');
+  const [editSeason, setEditSeason] = useState('Summer');
+  const [editUsage, setEditUsage] = useState('Casual');
+  const [editAgeGroup, setEditAgeGroup] = useState('Adults-Unisex');
 
-  // Fetch verified attributes, AI predictions, and avatar readiness
+  // Load class options and item details
+  useEffect(() => {
+    api.clothing
+      .getAttributeOptions()
+      .then((opts) => {
+        if (opts && Object.keys(opts).length > 0) {
+          setClassOptions(opts);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const loadItemDetails = async (clothingId: string) => {
     try {
       setLoadingAttributes(true);
-      const [attrs, avatar] = await Promise.all([
-        api.clothing.getAttributes(clothingId).catch(() => null),
-        api.clothing.getAvatarAttributes(clothingId).catch(() => null),
-      ]);
+      const attrs = await api.clothing.getAttributes(clothingId).catch(() => null);
 
       if (attrs) {
         setAttributesData(attrs);
         const cur = attrs.current_attributes || {};
-        const cs = cur.category_specific || {};
-        setEditCategory(cur.category || item?.category || 'shirt');
-        setEditColor(cur.primary_color || item?.color || 'Black');
-        setEditSecondaryColor(cur.secondary_color || item?.secondaryColor || '');
-        setEditPattern(cur.pattern || item?.pattern || 'solid');
-        setEditSleeveType(cs.sleeve_type || cs.sleeve_length || 'short_sleeve');
-        setEditNeckline(cs.neckline || cs.collar_style || 'crew_neck');
-        setEditStyle(cur.style || item?.style || 'casual');
-        setEditSeason(cur.season || item?.season || 'all_season');
-        setEditOccasion(cur.occasion || (item as any)?.occasion || 'everyday');
-      }
+        const pred = attrs.original_prediction?.predicted_attributes || {};
 
-      if (avatar) {
-        setAvatarData(avatar);
+        setEditName(cur.name || item?.name || '');
+        setEditBrand(cur.brand || item?.brand || '');
+        setEditArticleType(cur.article_type || pred.article_type || item?.category || 'Shirts');
+        setEditMasterCategory(cur.master_category || pred.master_category || 'Apparel');
+        setEditSubCategory(cur.sub_category || pred.sub_category || 'Topwear');
+        setEditBaseColour(cur.base_colour || cur.primary_color || item?.color || 'Black');
+        setEditPattern(cur.pattern || item?.pattern || 'Solid');
+        setEditGender(cur.gender || pred.gender || 'Unisex');
+        setEditSeason(cur.season || item?.season || 'Summer');
+        setEditUsage(cur.usage || cur.occasion || (item as any)?.occasion || 'Casual');
+        setEditAgeGroup(cur.age_group || pred.age_group || 'Adults-Unisex');
       }
     } catch (err) {
-      console.warn('Failed to fetch detailed attributes:', err);
+      console.warn('Failed to load item attributes:', err);
     } finally {
       setLoadingAttributes(false);
     }
@@ -134,17 +102,21 @@ export const ClothingDetail: React.FC = () => {
     try {
       setIsSaving(true);
       const updates = {
-        category: editCategory,
-        primary_color: editColor,
-        secondary_color: editSecondaryColor || null,
+        name: editName.trim() || undefined,
+        brand: editBrand.trim() || undefined,
+        article_type: editArticleType,
+        master_category: editMasterCategory,
+        sub_category: editSubCategory,
+        base_colour: editBaseColour,
         pattern: editPattern,
-        style: editStyle,
+        gender: editGender,
         season: editSeason,
-        occasion: editOccasion,
-        category_specific: {
-          sleeve_type: editSleeveType,
-          neckline: editNeckline,
-        },
+        usage: editUsage,
+        age_group: editAgeGroup,
+        // Backward compatibility
+        category: editArticleType,
+        primary_color: editBaseColour,
+        occasion: editUsage,
       };
 
       await api.clothing.updateAttributes(id, updates);
@@ -153,83 +125,16 @@ export const ClothingDetail: React.FC = () => {
       setIsEditing(false);
       showToast?.('Garment attributes updated successfully!', 'success');
     } catch (err: any) {
-      showToast?.(err.message || 'Failed to update attributes', 'error');
+      showToast?.(err.message || 'Failed to update attributes', 'info');
     } finally {
       setIsSaving(false);
     }
   };
-
-  // Handle finalization
-  const handleFinalize = async () => {
-    if (!id) return;
-    try {
-      setIsSaving(true);
-      const verifiedAttrs = {
-        category: editCategory,
-        primary_color: editColor,
-        secondary_color: editSecondaryColor || null,
-        pattern: editPattern,
-        style: editStyle,
-        season: editSeason,
-        occasion: editOccasion,
-        category_specific: {
-          sleeve_type: editSleeveType,
-          neckline: editNeckline,
-        },
-      };
-
-      await api.clothing.finalize(id, verifiedAttrs);
-      await loadItemDetails(id);
-      if (refreshData) await refreshData();
-      showToast?.('Garment finalized & confirmed in your wardrobe!', 'success');
-    } catch (err: any) {
-      showToast?.(err.message || 'Failed to finalize garment', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Handle re-running CV pipeline
-  const handleRetryProcessing = async () => {
-    if (!id) return;
-    try {
-      setIsRetrying(true);
-      await api.clothing.retryProcessing(id);
-      showToast?.('Garment re-queued for computer-vision processing.', 'info');
-      setTimeout(() => loadItemDetails(id), 2500);
-    } catch (err: any) {
-      showToast?.(err.message || 'Retry failed', 'error');
-    } finally {
-      setIsRetrying(false);
-    }
-  };
-
-  // Generate outfit combinations that incorporate this item
-  const relatedOutfits = useMemo(() => {
-    if (!item) return [];
-
-    const otherCategories = wardrobe.filter((i) => i.id !== item.id && i.category !== item.category);
-
-    return [
-      {
-        id: 'combo_1',
-        title: `${item.style || 'Signature'} Daily Fit`,
-        occasion: (item as any)?.occasion || 'Casual Daily',
-        pieces: [item, ...otherCategories.slice(0, 3)],
-      },
-      {
-        id: 'combo_2',
-        title: `Harmonious ${item.color || 'Editorial'} Contrast`,
-        occasion: 'Work & Office',
-        pieces: [item, ...otherCategories.slice(3, 6)],
-      },
-    ];
-  }, [item, wardrobe]);
 
   if (!item) {
     return (
       <AppShell>
-        <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
           <p className="font-bold text-lg text-zinc-900 dark:text-zinc-100">Clothing item not found</p>
           <Button
             variant="outline"
@@ -245,20 +150,20 @@ export const ClothingDetail: React.FC = () => {
     );
   }
 
-  const catalogImgUrl = api.clothing.getProcessedImageUrl(item.id);
   const originalImgUrl = api.clothing.getOriginalImageUrl(item.id);
-  const displayImgUrl = activeTab === 'catalog' ? catalogImgUrl : originalImgUrl;
+  const displayImgUrl = originalImgUrl || item.image;
   const isFinalized = attributesData?.is_finalized || false;
   const pred = attributesData?.original_prediction;
-  const predAttrs = pred?.predicted_attributes || {};
+  const predScores = pred?.prediction_scores || {};
+  const currentAttrs = attributesData?.current_attributes || {};
 
   return (
     <AppShell>
-      {/* Back button */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate('/wardrobe')}
-          className="inline-flex items-center gap-2 h-11 px-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors group cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors group cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span>Back to My Wardrobe</span>
@@ -268,113 +173,68 @@ export const ClothingDetail: React.FC = () => {
           {isFinalized ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Finalized & Confirmed
+              Confirmed Attributes
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
               <AlertCircle className="w-3.5 h-3.5" />
-              Ready for Review
+              Review Pending
             </span>
           )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRetryProcessing}
-            disabled={isRetrying}
-            icon={<RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />}
-          >
-            Re-run CV
-          </Button>
         </div>
       </div>
 
-      {/* Main Item Detail Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden p-6 sm:p-8 mb-8">
+      {/* Main Item Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden p-6 sm:p-8 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Image Column with Catalog vs Original Toggle */}
+          {/* Left: Original Photograph Showcase */}
           <div className="md:col-span-5 space-y-3">
-            <div className="rounded-md overflow-hidden aspect-[3/4] bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 relative group flex items-center justify-center">
+            <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 relative group flex items-center justify-center">
               <img
                 src={displayImgUrl}
                 alt={item.name}
                 onError={(e) => {
-                  // Fallback to item.image if processed URL fails
                   (e.target as HTMLImageElement).src = item.image;
                 }}
-                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              {item.isFavorite && (
-                <span className="absolute top-4 left-4 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 px-3 py-1 rounded-md text-xs font-semibold shadow-sm flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
-                  Capsule Favorite
+              <div className="absolute top-3 left-3">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-black/75 backdrop-blur-md text-white border border-white/20">
+                  Wardrobe Piece
                 </span>
-              )}
-            </div>
-
-            {/* Catalog vs Original Switcher */}
-            <div className="grid grid-cols-2 gap-2 bg-zinc-100 dark:bg-zinc-800/60 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
-              <button
-                onClick={() => setActiveTab('catalog')}
-                className={`py-1.5 px-3 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'catalog'
-                    ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs border border-zinc-200 dark:border-zinc-700'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Clean Catalog</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('original')}
-                className={`py-1.5 px-3 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'original'
-                    ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs border border-zinc-200 dark:border-zinc-700'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-                }`}
-              >
-                <ImageIcon className="w-3.5 h-3.5" />
-                <span>Original Photo</span>
-              </button>
-            </div>
-
-            {/* Avatar Readiness Pill */}
-            {avatarData && (
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-md border border-zinc-200 dark:border-zinc-800 text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                    <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    2D Avatar Ready
-                  </span>
-                  <span className="text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded font-mono">
-                    {avatarData.avatar_sprite_key}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-[11px]">
-                  <span>Tint:</span>
-                  <span
-                    className="w-3 h-3 rounded-full border border-zinc-300 dark:border-zinc-600"
-                    style={{ backgroundColor: avatarData.avatar_color_tint }}
-                  />
-                  <span>{avatarData.dominant_color}</span>
-                </div>
               </div>
-            )}
+            </div>
+
+            {/* AI Architecture Pill */}
+            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-xs space-y-1.5">
+              <div className="flex items-center justify-between font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                  EfficientNet-B0 Classification
+                </span>
+                <span className="text-[10px] font-mono text-zinc-500">v1.0.0</span>
+              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                Extracted directly from the original uploaded photo across 9 multi-task prediction heads.
+              </p>
+            </div>
           </div>
 
-          {/* Item Attributes & Review Column */}
+          {/* Right: Attributes Display / Form */}
           <div className="md:col-span-7 space-y-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
-                  <span>{item.category}</span>
+                  <span>{currentAttrs.master_category || 'Apparel'}</span>
+                  <span>·</span>
+                  <span>{currentAttrs.sub_category || 'Topwear'}</span>
                   {item.brand && <span>· {item.brand}</span>}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                  {item.name}
+                  {currentAttrs.name || item.name}
                 </h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Cataloged · {item.timesWorn || 0} times worn
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Cataloged · Worn {item.timesWorn || 0} times
                 </p>
               </div>
 
@@ -393,6 +253,7 @@ export const ClothingDetail: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsEditing(false)}
+                    disabled={isSaving}
                   >
                     Cancel
                   </Button>
@@ -402,300 +263,235 @@ export const ClothingDetail: React.FC = () => {
                     onClick={handleSaveAttributes}
                     disabled={isSaving}
                   >
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               )}
             </div>
 
-            {/* Attribute Grid or Editable Review Form */}
+            {/* VIEW MODE: 3 Sensible Groups with Confidence Badges */}
             {!isEditing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Primary Color</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block flex items-center gap-1.5">
-                      <span
-                        className="w-3 h-3 rounded-full border border-zinc-300 dark:border-zinc-700 shrink-0"
-                        style={{ backgroundColor: predAttrs.primary_hex || '#121212' }}
-                      />
-                      {item.color}
+              <div className="space-y-6">
+                {/* 1. Garment identification */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <Tag className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                      Garment Identification
                     </span>
                   </div>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Pattern</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block capitalize">
-                      {item.pattern || 'Solid'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Category</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block capitalize">
-                      {item.category}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Sleeve Type</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block capitalize">
-                      {editSleeveType.replace('_', ' ') || 'Regular'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Neckline / Collar</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block capitalize">
-                      {editNeckline.replace('_', ' ') || 'Regular'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Formality</span>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
-                      {predAttrs.formality ? `${Math.round(predAttrs.formality * 100)}%` : 'Everyday'}
-                    </span>
-                  </div>
-                </div>
 
-                {/* AI Evidence & Classification Method Card */}
-                {pred && (
-                  <div className="p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-md border border-zinc-200 dark:border-zinc-800 text-xs space-y-2">
-                    <div className="flex items-center justify-between font-semibold text-zinc-800 dark:text-zinc-200">
-                      <span className="flex items-center gap-1.5">
-                        <Bot className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                        CV Model Extraction Evidence
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Article Type
                       </span>
-                      <span className="text-[11px] font-mono text-zinc-500">
-                        {pred.model_name} v{pred.model_version}
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block truncate">
+                        {currentAttrs.article_type || item.category}
+                      </span>
+                      {predScores.article_type?.confidence && (
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 block">
+                          {Math.round(predScores.article_type.confidence * 100)}% match
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Master Category
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block truncate">
+                        {currentAttrs.master_category || 'Apparel'}
                       </span>
                     </div>
-                    <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                      Deterministic pixel-level CIELAB color clustering & spatial frequency gradient analysis executed entirely on-device without generative extrapolation.
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* EDITABLE ATTRIBUTE FORM */
-              <div className="space-y-4 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-md border border-zinc-200 dark:border-zinc-800">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Category Picker */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Garment Category
-                    </label>
-                    <select
-                      value={editCategory}
-                      onChange={(e) => setEditCategory(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.label} ({c.group})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Primary Color Picker */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Primary Color
-                    </label>
-                    <select
-                      value={editColor}
-                      onChange={(e) => setEditColor(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      {TAILORBIRD_COLORS.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Pattern Picker */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Pattern
-                    </label>
-                    <select
-                      value={editPattern}
-                      onChange={(e) => setEditPattern(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      {PATTERNS.map((p) => (
-                        <option key={p} value={p}>
-                          {p.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Sleeve Type */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Sleeve Type
-                    </label>
-                    <select
-                      value={editSleeveType}
-                      onChange={(e) => setEditSleeveType(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      {SLEEVE_TYPES.map((s) => (
-                        <option key={s} value={s}>
-                          {s.replace('_', ' ').toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Neckline */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Neckline / Collar
-                    </label>
-                    <select
-                      value={editNeckline}
-                      onChange={(e) => setEditNeckline(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      {NECKLINES.map((n) => (
-                        <option key={n} value={n}>
-                          {n.replace('_', ' ').toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Secondary Color */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Secondary Color (Optional)
-                    </label>
-                    <select
-                      value={editSecondaryColor}
-                      onChange={(e) => setEditSecondaryColor(e.target.value)}
-                      className="w-full text-xs py-2 px-3 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    >
-                      <option value="">None / Solid</option>
-                      {TAILORBIRD_COLORS.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Subcategory
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block truncate">
+                        {currentAttrs.sub_category || 'Topwear'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSaveAttributes}
-                    disabled={isSaving}
-                  >
-                    Save & Confirm Attributes
-                  </Button>
+                {/* 2. Appearance */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <Palette className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                      Appearance
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Base Colour
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-zinc-900 dark:bg-zinc-100 border border-zinc-300 dark:border-zinc-700" />
+                        {currentAttrs.base_colour || item.color}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Pattern
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
+                        {currentAttrs.pattern || item.pattern || 'Solid'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Catalog Context */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800">
+                    <Compass className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                      Catalog Context
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Gender
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
+                        {currentAttrs.gender || 'Unisex'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Season
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
+                        {currentAttrs.season || item.season || 'Summer'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Usage / Occasion
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
+                        {currentAttrs.usage || currentAttrs.occasion || 'Casual'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                      <span className="block text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">
+                        Age Group
+                      </span>
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block truncate">
+                        {currentAttrs.age_group || 'Adults-Unisex'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* EDIT MODE: Combobox inputs strictly from actual class mappings */
+              <div className="space-y-5 p-5 bg-zinc-50 dark:bg-zinc-850 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                {/* Basic fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                      Garment Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                      Brand (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editBrand}
+                      onChange={(e) => setEditBrand(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Garment Identification */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <SearchableCombobox
+                    label="Article Type"
+                    value={editArticleType}
+                    options={classOptions.article_type || []}
+                    onChange={setEditArticleType}
+                  />
+                  <SearchableCombobox
+                    label="Master Category"
+                    value={editMasterCategory}
+                    options={classOptions.master_category || []}
+                    onChange={setEditMasterCategory}
+                  />
+                  <SearchableCombobox
+                    label="Subcategory"
+                    value={editSubCategory}
+                    options={classOptions.sub_category || []}
+                    onChange={setEditSubCategory}
+                  />
+                </div>
+
+                {/* Appearance */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <SearchableCombobox
+                    label="Base Colour"
+                    value={editBaseColour}
+                    options={classOptions.base_colour || []}
+                    onChange={setEditBaseColour}
+                  />
+                  <SearchableCombobox
+                    label="Pattern"
+                    value={editPattern}
+                    options={classOptions.pattern || []}
+                    onChange={setEditPattern}
+                  />
+                </div>
+
+                {/* Catalog Context */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <SearchableCombobox
+                    label="Gender"
+                    value={editGender}
+                    options={classOptions.gender || []}
+                    onChange={setEditGender}
+                  />
+                  <SearchableCombobox
+                    label="Season"
+                    value={editSeason}
+                    options={classOptions.season || []}
+                    onChange={setEditSeason}
+                  />
+                  <SearchableCombobox
+                    label="Usage"
+                    value={editUsage}
+                    options={classOptions.usage || []}
+                    onChange={setEditUsage}
+                  />
+                  <SearchableCombobox
+                    label="Age Group"
+                    value={editAgeGroup}
+                    options={classOptions.age_group || []}
+                    onChange={setEditAgeGroup}
+                  />
                 </div>
               </div>
             )}
-
-            {/* Bottom Actions */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              {!isFinalized && (
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={handleFinalize}
-                  disabled={isSaving}
-                  icon={<Check className="w-4 h-4" />}
-                >
-                  Finalize & Confirm Garment
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="md"
-                onClick={() => navigate('/create')}
-                icon={<Sparkles className="w-4 h-4" />}
-              >
-                Create Outfit Post With This Piece
-              </Button>
-              <Button
-                variant="outline"
-                size="md"
-                onClick={() => navigate('/daily-fit')}
-              >
-                Test in Daily Fit
-              </Button>
-            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Outfits Using This Item */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-              Outfits Using This Item
-            </h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
-              Algorithmically synthesized combinations featuring this garment.
-            </p>
-          </div>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            {relatedOutfits.length} Generated Combos
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {relatedOutfits.map((combo) => (
-            <div
-              key={combo.id}
-              className="bg-white dark:bg-zinc-900 rounded-md p-4 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                  {combo.title}
-                </h3>
-                <span className="text-[11px] bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-2.5 py-0.5 rounded-md font-medium border border-zinc-200 dark:border-zinc-700">
-                  {combo.occasion}
-                </span>
-              </div>
-
-              {/* Pieces horizontal reel */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {combo.pieces.map((piece) => (
-                  <div key={piece.id} className="relative group/piece">
-                    <img
-                      src={piece.image}
-                      alt={piece.name}
-                      className="w-full aspect-square rounded-md object-cover border border-zinc-200 dark:border-zinc-800"
-                    />
-                    <span className="text-[11px] block text-zinc-600 dark:text-zinc-400 truncate mt-1">
-                      {piece.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate('/daily-fit')}
-                className="w-full text-xs"
-              >
-                Style in Daily Fit →
-              </Button>
-            </div>
-          ))}
         </div>
       </div>
     </AppShell>

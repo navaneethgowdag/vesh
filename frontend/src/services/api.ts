@@ -608,6 +608,7 @@ export const api = {
       stage: string;
       originalImageUrl: string;
       statusUrl: string;
+      prediction?: any;
     }> {
       const apiBase = getApiBaseUrl();
       const formData = new FormData();
@@ -654,6 +655,7 @@ export const api = {
         stage: data.stage,
         originalImageUrl: data.original_image_url,
         statusUrl: data.status_url,
+        prediction: data.prediction,
       };
     },
 
@@ -780,6 +782,21 @@ export const api = {
       };
     },
 
+    async removeBackground(itemId: string): Promise<GarmentProcessingStatus> {
+      const raw = await request<any>(`/clothing/${itemId}/remove-background`, { method: 'POST' });
+      return {
+        itemId: String(raw.item_id),
+        status: raw.status,
+        stage: raw.stage,
+        reviewRequired: Boolean(raw.review_required),
+        isProcessedAvailable: Boolean(raw.is_processed_available),
+        durationSeconds: Number(raw.duration_seconds || 0),
+        errorMessage: raw.error_message,
+        originalImageUrl: raw.original_image_url,
+        processedImageUrl: raw.processed_image_url,
+      };
+    },
+
     async acceptImage(itemId: string): Promise<{ status: string; itemId: string; imageUrl: string }> {
       const raw = await request<any>(`/clothing/${itemId}/image/accept`, { method: 'POST' });
       return {
@@ -841,6 +858,10 @@ export const api = {
       return request<any>('/clothing/' + itemId + '/reanalyze', {
         method: 'POST',
       });
+    },
+
+    async getAttributeOptions(): Promise<Record<string, string[]>> {
+      return request<Record<string, string[]>>('/clothing/attribute-options');
     },
 
     async getAvatarAttributes(itemId: string): Promise<any> {

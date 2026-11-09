@@ -3,7 +3,7 @@ import uuid
 import logging
 import hashlib
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from PIL import Image
 
@@ -148,41 +148,21 @@ async def upload_clothing_image(
     # Set default image URL to the binary endpoint
     clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
 
-    # 4. Initialize analysis record with queued status
-    analysis = db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing.id).first()
-    if not analysis:
-        analysis = ClothingAnalysis(
-            clothing_id=clothing.id,
-            detected_category=clothing.category,
-            feature_vector={
-                "processing_status": "queued",
-                "processing_stage": "queued",
-                "review_required": False,
-                "has_processed": False,
-            },
-        )
-        db.add(analysis)
-    else:
-        fv = dict(analysis.feature_vector) if isinstance(analysis.feature_vector, dict) else {}
-        fv["processing_status"] = "queued"
-        fv["processing_stage"] = "queued"
-        analysis.feature_vector = fv
+    # 4. Run AI attribute prediction on the ORIGINAL uploaded image immediately
+    from app.services.clothing_processing_service import ClothingProcessingService
+    processor = ClothingProcessingService(db)
+    pred_res = processor.predict_original_garment(clothing_id=clothing.id, user_id=current_user.id)
 
-    db.commit()
     db.refresh(clothing)
-
-    # 5. Enqueue background processing job
-    job_service = JobService(db)
-    job_service.enqueue_garment_processing(user_id=current_user.id, clothing_id=clothing.id)
-
-    logger.info(f"Clothing {clothing.id} created and queued for background processing.")
+    logger.info(f"Clothing {clothing.id} created, original image classified with status={clothing.processing_status}.")
 
     return ClothingUploadResponse(
         item_id=clothing.id,
-        status="queued",
-        stage="queued",
+        status=clothing.processing_status or "predictions_ready",
+        stage=clothing.processing_stage or "predictions_ready",
         original_image_url=f"/api/v1/clothing/{clothing.id}/image/original",
         status_url=f"/api/v1/clothing/{clothing.id}/processing-status",
+        prediction=pred_res.get("prediction"),
     )
 
 
@@ -442,6 +422,45 @@ def get_processing_status(
         is_processed_available=is_proc,
         duration_seconds=clothing.processing_duration,
         error_message=clothing.processing_error or None,
+        original_image_url=f"/api/v1/clothing/{clothing.id}/image/original",
+        processed_image_url=f"/api/v1/clothing/{clothing.id}/image/processed" if is_proc else None,
+    )
+
+
+@router.post(
+    "/{item_id}/remove-background",
+    response_model=ClothingProcessingStatusResponse,
+)
+def remove_garment_background(
+    item_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Execute garment segmentation and neutral white catalog image composition
+    on the original image after attribute review.
+    Decoupled from initial upload and prediction.
+    """
+    clothing = db.query(Clothing).filter(Clothing.id == item_id).first()
+    if not clothing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clothing item not found")
+    if clothing.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this clothing item")
+
+    from app.services.clothing_processing_service import ClothingProcessingService
+    processor = ClothingProcessingService(db)
+    res = processor.remove_garment_background(clothing_id=item_id, user_id=current_user.id)
+
+    db.refresh(clothing)
+    is_proc = clothing.is_processed_available
+    return ClothingProcessingStatusResponse(
+        item_id=clothing.id,
+        status=clothing.processing_status or res.get("status", "ready_for_review"),
+        stage=clothing.processing_stage or res.get("stage", "image_processing_completed"),
+        review_required=clothing.review_required,
+        is_processed_available=is_proc,
+        duration_seconds=clothing.processing_duration or res.get("duration_seconds", 0.0),
+        error_message=clothing.processing_error or res.get("error"),
         original_image_url=f"/api/v1/clothing/{clothing.id}/image/original",
         processed_image_url=f"/api/v1/clothing/{clothing.id}/image/processed" if is_proc else None,
     )
@@ -717,6 +736,19 @@ def retry_processed_image(
 # ---------------------------------------------------------
 # Phase 2: Garment Understanding, Predictions & Attributes
 # ---------------------------------------------------------
+
+@router.get(
+    "/attribute-options",
+    response_model=Dict[str, List[str]],
+)
+def get_clothing_attribute_options():
+    """
+    Returns verified clean class options for all 9 model prediction heads:
+    article_type, master_category, sub_category, base_colour, gender, season, usage, pattern, age_group.
+    """
+    from app.ai.fashion_model import fashion_model_service
+    return fashion_model_service.get_attribute_options()
+
 
 @router.get(
     "/{item_id}/predictions",

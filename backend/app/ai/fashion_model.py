@@ -242,9 +242,12 @@ class FashionModelService:
     def _prepare_image(self, image_input: Union[Image.Image, bytes, np.ndarray]) -> Image.Image:
         """
         Normalize incoming image to RGB PIL image:
+        - Handles mobile phone EXIF orientation tags (e.g. portrait/landscape rotation).
         - Decodes bytes or converts numpy array.
         - Composites RGBA images on a solid white background to avoid transparent artifacts.
         """
+        from PIL import ImageOps
+
         if isinstance(image_input, bytes):
             img = Image.open(io.BytesIO(image_input))
         elif isinstance(image_input, np.ndarray):
@@ -253,6 +256,14 @@ class FashionModelService:
             img = image_input.copy()
         else:
             raise ValueError(f"Unsupported image input type: {type(image_input)}")
+
+        # Correct EXIF rotation metadata (phone camera orientation)
+        try:
+            transposed = ImageOps.exif_transpose(img)
+            if transposed is not None:
+                img = transposed
+        except Exception as exif_err:
+            logger.debug(f"[FashionModelService] EXIF transpose notice: {exif_err}")
 
         if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
             bg = Image.new("RGB", img.size, (255, 255, 255))
@@ -268,12 +279,16 @@ class FashionModelService:
         Returns snake_case response following API conventions with predictions,
         confidence scores, top alternatives, and review indicators.
         """
+        import time
+
         if not self.is_loaded or self.model is None or self.transform is None:
             # Attempt lazy loading if not yet initialized
             if not self.load_model():
                 raise RuntimeError("Fashion AI model is not available or could not be loaded from artifacts.")
 
+        t_start = time.perf_counter()
         pil_img = self._prepare_image(image_input)
+        orig_w, orig_h = pil_img.size
         tensor = self.transform(pil_img).unsqueeze(0).to(self.device)
 
         with torch.inference_mode():
@@ -286,34 +301,37 @@ class FashionModelService:
         for task, logits in outputs.items():
             snake_key = TASK_SNAKE_MAP.get(task, task.lower())
             probs = torch.softmax(logits, dim=1)[0]
-            k_val = min(3, probs.shape[0])
+            k_val = min(5, probs.shape[0])
             top_probs, top_indices = torch.topk(probs, k=k_val)
 
             mapping = self.class_mappings.get(task, {})
             idx_to_label = mapping.get("idx_to_label", {})
 
-            best_idx = str(top_indices[0].item())
-            best_label = idx_to_label.get(best_idx, "Unknown")
-            best_conf = round(float(top_probs[0].item()), 4)
+            # Filter out NaN/None/Null labels
+            valid_candidates = []
+            for p, idx in zip(top_probs, top_indices):
+                lbl = idx_to_label.get(str(idx.item()), "Unknown")
+                if lbl.lower() not in ("nan", "none", "null", ""):
+                    valid_candidates.append((lbl, round(float(p.item()), 4)))
 
-            # Clean NaN strings
-            if best_label.lower() in ("nan", "none", "null"):
-                best_label = "All-Season" if snake_key == "season" else "Standard"
+            if valid_candidates:
+                best_label, best_conf = valid_candidates[0]
+                alt_candidates = valid_candidates[1:4]
+            else:
+                default_fallback = "All-Season" if snake_key == "season" else ("Casual" if snake_key == "usage" else "Standard")
+                best_label = default_fallback
+                best_conf = round(float(top_probs[0].item()), 4)
+                alt_candidates = []
 
             confidences.append(best_conf)
             is_low_conf = best_conf < self.confidence_threshold
             if is_low_conf:
                 any_review_required = True
 
-            alternatives = []
-            for p, idx in zip(top_probs[1:], top_indices[1:]):
-                alt_idx = str(idx.item())
-                alt_label = idx_to_label.get(alt_idx, "Unknown")
-                if alt_label.lower() not in ("nan", "none", "null"):
-                    alternatives.append({
-                        "label": alt_label,
-                        "confidence": round(float(p.item()), 4),
-                    })
+            alternatives = [
+                {"label": alt_lbl, "confidence": alt_c}
+                for alt_lbl, alt_c in alt_candidates
+            ]
 
             task_results[snake_key] = {
                 "prediction": best_label,
@@ -323,6 +341,17 @@ class FashionModelService:
             }
 
         avg_confidence = round(float(np.mean(confidences)), 4) if confidences else 0.0
+        elapsed_ms = round((time.perf_counter() - t_start) * 1000, 2)
+
+        # Diagnostic logging of inference performance and top attributes
+        logger.info(
+            f"[FashionModel:Inference] InputSize={orig_w}x{orig_h}, Device={self.device}, "
+            f"Latency={elapsed_ms}ms, AvgConfidence={avg_confidence}, "
+            f"ArticleType='{task_results.get('article_type', {}).get('prediction')}' ({task_results.get('article_type', {}).get('confidence')}), "
+            f"Color='{task_results.get('base_colour', {}).get('prediction')}', "
+            f"Season='{task_results.get('season', {}).get('prediction')}', "
+            f"Usage='{task_results.get('usage', {}).get('prediction')}'"
+        )
 
         response = {
             **task_results,
@@ -362,7 +391,7 @@ class FashionModelService:
     def format_wardrobe_payload(
         self,
         prediction_res: Dict[str, Any],
-        image_source: str = "processed",
+        image_source: str = "original",
     ) -> Dict[str, Any]:
         """
         Format prediction result into standard schema payload for ClothingPrediction
@@ -370,7 +399,7 @@ class FashionModelService:
         """
         article_type = prediction_res.get("article_type", {}).get("prediction", "Clothing")
         article_conf = prediction_res.get("article_type", {}).get("confidence", 0.5)
-        article_alts = prediction_res.get("article_type", {}).get("alternatives", [])
+        raw_alts = prediction_res.get("article_type", {}).get("alternatives", [])
 
         master_cat = prediction_res.get("master_category", {}).get("prediction", "Apparel")
         sub_cat = prediction_res.get("sub_category", {}).get("prediction", "Topwear")
@@ -383,8 +412,19 @@ class FashionModelService:
 
         mapped_category = self.map_wardrobe_category(article_type, sub_cat, master_cat)
 
+        category_alternatives = []
+        for alt in raw_alts:
+            alt_lbl = alt.get("label", "")
+            mapped_alt = self.map_wardrobe_category(alt_lbl, sub_cat, master_cat)
+            category_alternatives.append({
+                "category": mapped_alt,
+                "display_name": alt_lbl,
+                "score": alt.get("confidence", 0.0),
+            })
+
         predicted_attributes = {
             "category": mapped_category,
+            "category_display": article_type,
             "subcategory": article_type,
             "article_type": article_type,
             "master_category": master_cat,
@@ -415,12 +455,40 @@ class FashionModelService:
             "predicted_category": article_type,
             "category_group": master_cat,
             "category_score": article_conf,
-            "category_alternatives": article_alts,
+            "category_alternatives": category_alternatives,
             "predicted_attributes": predicted_attributes,
             "prediction_scores": prediction_res,
             "color_palette": color_palette,
             "review_required": prediction_res.get("review_required", False),
         }
+
+    def get_attribute_options(self) -> Dict[str, List[str]]:
+        """
+        Return clean lists of all possible classes for all 9 heads,
+        excluding 'nan' and empty values.
+        Keys are snake_case (e.g. article_type, base_colour).
+        """
+        if not self.class_mappings:
+            mappings_path = os.path.join(self.artifacts_dir, "class_mappings.json")
+            if os.path.exists(mappings_path):
+                try:
+                    with open(mappings_path, "r", encoding="utf-8") as f:
+                        self.class_mappings = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Could not read class_mappings.json: {e}")
+            else:
+                self.load_model()
+
+        options: Dict[str, List[str]] = {}
+        for task, snake_key in TASK_SNAKE_MAP.items():
+            mapping = self.class_mappings.get(task, {})
+            classes = mapping.get("classes", [])
+            valid_classes = [
+                c for c in classes
+                if str(c).lower() not in ("nan", "none", "null", "")
+            ]
+            options[snake_key] = valid_classes
+        return options
 
 
 # Global singleton instance

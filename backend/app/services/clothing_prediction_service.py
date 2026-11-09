@@ -268,17 +268,25 @@ class ClothingPredictionService:
         pred_attrs = prediction.get("predicted_attributes", {}) if prediction else {}
 
         current_attributes = {
+            "name": clothing.name,
+            "article_type": verified.get("article_type") or pred_attrs.get("article_type") or clothing.subcategory or clothing.category or "Shirts",
+            "master_category": verified.get("master_category") or pred_attrs.get("master_category") or verified.get("category_group") or "Apparel",
+            "sub_category": verified.get("sub_category") or pred_attrs.get("sub_category") or "Topwear",
+            "gender": verified.get("gender") or pred_attrs.get("gender") or "Unisex",
+            "base_colour": verified.get("base_colour") or verified.get("primary_color") or clothing.color or pred_attrs.get("base_colour") or "Black",
+            "season": verified.get("season") or clothing.season or pred_attrs.get("season") or "Summer",
+            "usage": verified.get("usage") or verified.get("occasion") or clothing.occasion or pred_attrs.get("usage") or "Casual",
+            "pattern": verified.get("pattern") or clothing.pattern or pred_attrs.get("pattern") or "Solid",
+            "age_group": verified.get("age_group") or pred_attrs.get("age_group") or "Adults",
             "category": verified.get("category") or clothing.category or pred_attrs.get("category"),
-            "category_group": verified.get("category_group") or pred_attrs.get("category_group"),
-            "category_display": verified.get("category_display") or pred_attrs.get("category_display"),
-            "primary_color": verified.get("primary_color") or clothing.color or pred_attrs.get("primary_color"),
+            "category_group": verified.get("category_group") or pred_attrs.get("category_group") or verified.get("master_category"),
+            "category_display": verified.get("category_display") or verified.get("article_type") or pred_attrs.get("category_display"),
+            "primary_color": verified.get("primary_color") or verified.get("base_colour") or clothing.color or pred_attrs.get("primary_color"),
             "primary_hex": verified.get("primary_hex") or pred_attrs.get("primary_hex"),
             "secondary_color": verified.get("secondary_color") or clothing.secondary_color or pred_attrs.get("secondary_color"),
             "secondary_hex": verified.get("secondary_hex") or pred_attrs.get("secondary_hex"),
-            "pattern": verified.get("pattern") or clothing.pattern or pred_attrs.get("pattern"),
-            "style": verified.get("style") or pred_attrs.get("style"),
-            "season": verified.get("season") or clothing.season or pred_attrs.get("season"),
-            "occasion": verified.get("occasion") or clothing.occasion or pred_attrs.get("occasion"),
+            "style": verified.get("style") or verified.get("usage") or pred_attrs.get("style"),
+            "occasion": verified.get("occasion") or verified.get("usage") or clothing.occasion or pred_attrs.get("occasion"),
             "formality": verified.get("formality") if "formality" in verified else pred_attrs.get("formality", 0.5),
             "fabric": verified.get("fabric") or clothing.material or pred_attrs.get("fabric"),
             "brand": verified.get("brand") or clothing.brand,
@@ -351,9 +359,26 @@ class ClothingPredictionService:
             verified_attrs[attr] = new_val
 
             # Synchronize to top-level Clothing model columns
-            if attr == "category":
+            if attr == "name":
+                clothing.name = str(new_val)
+            elif attr == "article_type":
+                from app.ai.fashion_model import fashion_model_service
+                clothing.subcategory = str(new_val)
+                clothing.name = clothing.name or str(new_val)
+                m_cat = verified_attrs.get("master_category", "")
+                s_cat = verified_attrs.get("sub_category", "")
+                clothing.category = fashion_model_service.map_wardrobe_category(str(new_val), s_cat, m_cat)
+            elif attr == "master_category":
+                verified_attrs["category_group"] = str(new_val)
+            elif attr == "sub_category":
+                pass
+            elif attr == "base_colour":
+                verified_attrs["primary_color"] = str(new_val)
+                clothing.color = str(new_val)
+            elif attr == "category":
                 clothing.category = str(new_val)
             elif attr == "primary_color":
+                verified_attrs["base_colour"] = str(new_val)
                 clothing.color = str(new_val)
             elif attr == "secondary_color":
                 clothing.secondary_color = str(new_val)
@@ -363,8 +388,14 @@ class ClothingPredictionService:
                 clothing.material = str(new_val)
             elif attr == "season":
                 clothing.season = str(new_val)
-            elif attr == "occasion":
+            elif attr in ("occasion", "usage"):
+                verified_attrs["occasion"] = str(new_val)
+                verified_attrs["usage"] = str(new_val)
                 clothing.occasion = str(new_val)
+            elif attr == "gender":
+                pass
+            elif attr == "age_group":
+                pass
             elif attr == "brand":
                 clothing.brand = str(new_val)
             elif attr == "category_specific" and isinstance(new_val, dict):
@@ -392,6 +423,9 @@ class ClothingPredictionService:
         if verified_attributes:
             self.update_attributes(db, clothing, user_id, verified_attributes)
 
+        if not clothing.image_url:
+            clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
+
         analysis = self.get_or_create_analysis(db, clothing)
         fv = dict(analysis.feature_vector or {})
         fv["is_finalized"] = True
@@ -400,6 +434,7 @@ class ClothingPredictionService:
         fv["processing_stage"] = "completed"
         analysis.feature_vector = fv
 
+        clothing.updated_at = datetime.now(timezone.utc)
         db.commit()
         return self.get_attributes(db, clothing, user_id)
 

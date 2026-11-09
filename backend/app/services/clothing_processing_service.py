@@ -82,14 +82,21 @@ class ClothingProcessingService:
         else:
             self.db.flush()
 
-    def process_clothing_item(
+    def predict_original_garment(
         self,
         clothing_id: UUID,
         user_id: UUID,
     ) -> Dict[str, Any]:
         """
-        Execute the full CPU garment processing pipeline.
-        Safe, idempotent, and updates real status in Neon PostgreSQL.
+        Execute AI garment attribute prediction on the ORIGINAL uploaded photograph:
+        1. Fetch original image binary from Neon BYTEA.
+        2. Correct mobile EXIF orientation and validate dimensions.
+        3. Pass ORIGINAL image directly to MultiTaskEfficientNetB0.
+        4. Extract 9 classification heads (articleType, masterCategory, subCategory,
+           gender, baseColour, season, usage, pattern, ageGroup).
+        5. Persist predictions in Neon database (ClothingPrediction and ClothingAnalysis).
+        6. Transition state to 'predictions_ready' (review_required=True, has_processed=False).
+        Returns predicted attributes, scores, and alternatives for immediate user review.
         """
         t0 = time.time()
         clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
@@ -98,19 +105,7 @@ class ClothingProcessingService:
         if clothing.user_id != user_id:
             raise PermissionError("Access denied to this clothing item")
 
-        now_iso = datetime.now(timezone.utc).isoformat()
-        # Immediately mark claimed by worker so UI advances from 'queued' to 'processing'
-        self._update_metadata(
-            clothing,
-            status="processing",
-            stage="claimed_by_worker",
-            claimed_at=now_iso,
-            commit=True,
-        )
-        logger.info(f"[Pipeline:Claimed] clothing_id={clothing_id} at {now_iso}")
-
         # 1. Fetch original image binary from Neon
-        t_fetch = time.time()
         orig_res = self.image_service.get_image(clothing_id, user_id, image_type="original")
         if not orig_res:
             self._update_metadata(
@@ -123,41 +118,136 @@ class ClothingProcessingService:
             return {"status": "failed", "error": "Original image not found"}
 
         image_bytes, mime_type = orig_res
-        logger.info(f"[Pipeline:ImageRetrieved] clothing_id={clothing_id}, size={len(image_bytes)} bytes in {round(time.time() - t_fetch, 3)}s")
 
         try:
-            # 2. Stage: Image orientation correction & input validation
-            t_stage = time.time()
             self._update_metadata(clothing, status="processing", stage="analyzing_clothing", commit=True)
-            
+
             raw_img = Image.open(io.BytesIO(image_bytes))
-            # Handle mobile EXIF orientation tag
             pil_img = ImageOps.exif_transpose(raw_img).convert("RGB")
 
             orig_w, orig_h = pil_img.size
             if orig_w < 32 or orig_h < 32:
                 raise ValueError(f"Image dimensions too small: {orig_w}x{orig_h}. Minimum required is 32x32.")
 
-            # Working resolution optimization: max 1600px
+            from app.ai.fashion_model import fashion_model_service
+
+            # Predict on the ORIGINAL image using the trained Multi-task EfficientNet-B0 model
+            model_pred = fashion_model_service.predict(pil_img)
+            prediction_res = fashion_model_service.format_wardrobe_payload(
+                prediction_res=model_pred,
+                image_source="original",
+            )
+
+            # Persist predictions in database
+            saved_pred = prediction_service.save_prediction(
+                db=self.db,
+                clothing=clothing,
+                prediction_result=prediction_res,
+                user_id=user_id,
+            )
+
+            dur = round(time.time() - t0, 3)
+
+            # Mark predictions ready for user review (has_processed remains False until background removal)
+            self._update_metadata(
+                clothing=clothing,
+                status="predictions_ready",
+                stage="predictions_ready",
+                review_required=True,
+                has_processed=False,
+                duration=dur,
+                commit=True,
+            )
+
+            logger.info(
+                f"[Pipeline:PredictOriginal] clothing_id={clothing_id} => "
+                f"Predicted in {dur}s on original image ({orig_w}x{orig_h}). Stage: predictions_ready."
+            )
+
+            return {
+                "status": "predictions_ready",
+                "stage": "predictions_ready",
+                "review_required": True,
+                "has_processed": False,
+                "duration_seconds": dur,
+                "prediction": saved_pred,
+            }
+
+        except Exception as e:
+            logger.exception(f"[Pipeline] Prediction on original image failed for clothing {clothing_id}: {e}")
+            dur = round(time.time() - t0, 3)
+            # Even if model throws, allow user manual review without crashing
+            self._update_metadata(
+                clothing=clothing,
+                status="predictions_ready",
+                stage="predictions_ready",
+                review_required=True,
+                has_processed=False,
+                error_message=str(e),
+                duration=dur,
+                commit=True,
+            )
+            return {
+                "status": "predictions_ready",
+                "stage": "predictions_ready",
+                "review_required": True,
+                "has_processed": False,
+                "error": str(e),
+                "duration_seconds": dur,
+            }
+
+    def remove_garment_background(
+        self,
+        clothing_id: UUID,
+        user_id: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Execute garment segmentation and neutral white catalog image composition:
+        1. Fetch original image binary from Neon BYTEA.
+        2. Correct EXIF orientation and pre-scale if > 1600px.
+        3. Segment garment mask and suppress skin/background clutter.
+        4. Compose catalog image on neutral white with margins.
+        5. Encode as WebP (quality=90, method=3) and store in Neon PostgreSQL BYTEA as 'processed'.
+        6. Transition state to 'image_processing_completed' / 'ready_for_review'.
+        """
+        t0 = time.time()
+        clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
+        if not clothing:
+            raise ValueError("Clothing item not found")
+        if clothing.user_id != user_id:
+            raise PermissionError("Access denied to this clothing item")
+
+        # 1. Fetch original image binary from Neon
+        orig_res = self.image_service.get_image(clothing_id, user_id, image_type="original")
+        if not orig_res:
+            self._update_metadata(
+                clothing,
+                status="failed",
+                stage="failed",
+                error_message="Original image binary not found in database.",
+                commit=True,
+            )
+            return {"status": "failed", "error": "Original image not found"}
+
+        image_bytes, mime_type = orig_res
+
+        try:
+            # 2. Stage: Removing background
+            self._update_metadata(clothing, status="processing", stage="removing_background", commit=True)
+
+            raw_img = Image.open(io.BytesIO(image_bytes))
+            pil_img = ImageOps.exif_transpose(raw_img).convert("RGB")
+
+            orig_w, orig_h = pil_img.size
             if max(orig_w, orig_h) > 1600:
                 scale = 1600.0 / max(orig_w, orig_h)
                 pil_img = pil_img.resize((int(orig_w * scale), int(orig_h * scale)), Image.Resampling.LANCZOS)
-                logger.info(f"[Pipeline:PreScale] clothing_id={clothing_id} scaled from {orig_w}x{orig_h} to {pil_img.size[0]}x{pil_img.size[1]}")
 
-            t_analysis = round(time.time() - t_stage, 3)
-
-            # 3. Stage: Removing background using garment segmentation
-            t_stage = time.time()
-            self._update_metadata(clothing, status="processing", stage="removing_background", commit=True)
             raw_mask, seg_meta = garment_segmentation_service.segment(pil_img)
-
-            # 4. Refine mask and assess quality with contour void protection and color-guarded skin suppression
             refined_mask = image_cleanup_service.refine_mask(pil_img, raw_mask, suppress_skin=True)
             quality_assessment = quality_service.assess_segmentation_quality(pil_img, refined_mask)
-            t_seg = round(time.time() - t_stage, 3)
 
-            # 5. Stage: Preparing catalog image (12% padding, centered on neutral white background)
-            t_stage = time.time()
+            # 3. Stage: Preparing catalog image
             self._update_metadata(clothing, status="processing", stage="preparing_catalog_image", commit=True)
             catalog_img, transparent_img = image_cleanup_service.compose_catalog_image(
                 pil_img,
@@ -166,14 +256,12 @@ class ClothingProcessingService:
                 bg_color=(255, 255, 255),
             )
 
-            # 6. Optimized WebP compression: method=3 instead of method=6 (14x speedup, identical visual quality)
+            # 4. WebP compression (method=3)
             buf = io.BytesIO()
             catalog_img.save(buf, format="WEBP", quality=90, method=3)
             processed_bytes = buf.getvalue()
-            t_comp = round(time.time() - t_stage, 3)
 
-            # 7. Store processed bytes into Neon PostgreSQL
-            t_stage = time.time()
+            # 5. Store processed image in Neon PostgreSQL
             stored_record = self.image_service.store_image(
                 clothing_id=clothing_id,
                 user_id=user_id,
@@ -187,68 +275,31 @@ class ClothingProcessingService:
             has_proc = self.image_service.has_image(clothing_id, user_id, "processed")
             if not has_proc and not stored_record:
                 raise RuntimeError("Processed image verification failed: binary record not persisted in Neon.")
-            t_storage = round(time.time() - t_stage, 3)
 
-            # 8. Stage: Specialized Fashion Computer Vision Attribute Extraction
-            t_stage = time.time()
-            self._update_metadata(clothing, status="processing", stage="understanding_garment", commit=True)
+            # Optional: Enrich fine-grained silhouette details from transparent mask if available
             try:
-                from app.ai.fashion_model import fashion_model_service
-
-                # Predict on catalog image using the trained Multi-task EfficientNet-B0 model
-                model_pred = fashion_model_service.predict(catalog_img)
-                prediction_res = fashion_model_service.format_wardrobe_payload(
-                    prediction_res=model_pred,
-                    image_source="processed",
-                )
-
-                # Enrich with fine-grained silhouette geometry & pixel color analysis
-                try:
-                    cv_res = garment_classifier.analyze_garment(
-                        image_input=transparent_img,
-                        image_source="processed",
-                    )
+                cv_res = garment_classifier.analyze_garment(image_input=transparent_img, image_source="processed")
+                analysis = clothing.analysis
+                if analysis and analysis.feature_vector:
+                    fv = dict(analysis.feature_vector)
+                    v_attrs = fv.get("verified_attributes", {})
                     cv_attrs = cv_res.get("predicted_attributes", {})
-                    pred_attrs = prediction_res["predicted_attributes"]
-                    for k in ["sleeve_type", "neckline", "silhouette", "fit", "length", "category_specific"]:
-                        if k in cv_attrs and k not in pred_attrs:
-                            pred_attrs[k] = cv_attrs[k]
-                    if cv_res.get("color_palette"):
-                        prediction_res["color_palette"] = cv_res["color_palette"]
-                except Exception as cve:
-                    logger.debug(f"[Pipeline] Auxiliary CV enrichment notice: {cve}")
-
-                prediction_service.save_prediction(
-                    db=self.db,
-                    clothing=clothing,
-                    prediction_result=prediction_res,
-                    user_id=user_id,
-                )
-            except Exception as pe:
-                logger.warning(f"[Pipeline] Specialized model classification warning for clothing {clothing_id}: {pe}")
-                try:
-                    fallback_res = garment_classifier.analyze_garment(
-                        image_input=transparent_img,
-                        image_source="processed",
-                    )
-                    prediction_service.save_prediction(
-                        db=self.db,
-                        clothing=clothing,
-                        prediction_result=fallback_res,
-                        user_id=user_id,
-                    )
-                except Exception as fe:
-                    logger.error(f"[Pipeline] Classification fallback failed: {fe}")
-            t_und = round(time.time() - t_stage, 3)
+                    for k in ["sleeve_type", "neckline", "silhouette", "length"]:
+                        if k in cv_attrs and k not in v_attrs:
+                            v_attrs[k] = cv_attrs[k]
+                    fv["verified_attributes"] = v_attrs
+                    analysis.feature_vector = fv
+                    self.db.commit()
+            except Exception as enr_err:
+                logger.debug(f"[Pipeline] Auxiliary silhouette enrichment notice: {enr_err}")
 
             total_duration = round(time.time() - t0, 2)
-            final_status = "ready_for_review"
 
-            # 9. Mark ready for review in Neon PostgreSQL and commit all final metadata
+            # 6. Mark image processing completed and ready for review
             self._update_metadata(
                 clothing=clothing,
-                status=final_status,
-                stage="ready_for_review",
+                status="ready_for_review",
+                stage="image_processing_completed",
                 review_required=True,
                 has_processed=True,
                 duration=total_duration,
@@ -257,20 +308,22 @@ class ClothingProcessingService:
             )
 
             logger.info(
-                f"[Pipeline:Timings] clothing_id={clothing_id} => "
-                f"prep={t_analysis}s, seg={t_seg}s, comp={t_comp}s, "
-                f"storage={t_storage}s, cv_understand={t_und}s | TOTAL={total_duration}s. Stage: ready_for_review."
+                f"[Pipeline:RemoveBackground] clothing_id={clothing_id} => "
+                f"Background removed in {total_duration}s. Stage: image_processing_completed."
             )
+
             return {
-                "status": final_status,
-                "stage": "ready_for_review",
+                "status": "ready_for_review",
+                "stage": "image_processing_completed",
                 "duration_seconds": total_duration,
+                "has_processed": True,
                 "review_required": True,
+                "processed_image_url": f"/api/v1/clothing/{clothing_id}/image/processed",
                 "quality": quality_assessment.to_dict(),
             }
 
         except Exception as e:
-            logger.exception(f"[Pipeline] Processing failure for clothing {clothing_id}: {e}")
+            logger.exception(f"[Pipeline] Background removal failure for clothing {clothing_id}: {e}")
             total_duration = round(time.time() - t0, 2)
             self._update_metadata(
                 clothing=clothing,
@@ -286,3 +339,58 @@ class ClothingProcessingService:
                 "error": str(e),
                 "duration_seconds": total_duration,
             }
+
+    def process_clothing_item(
+        self,
+        clothing_id: UUID,
+        user_id: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Full garment pipeline coordinator (for batch upload and queue workers).
+        ENFORCED ORDER:
+        1. Predict on ORIGINAL uploaded image FIRST.
+        2. Remove background and compose catalog image SECOND.
+        """
+        t0 = time.time()
+        clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
+        if not clothing:
+            raise ValueError("Clothing item not found")
+        if clothing.user_id != user_id:
+            raise PermissionError("Access denied to this clothing item")
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        self._update_metadata(
+            clothing,
+            status="processing",
+            stage="claimed_by_worker",
+            claimed_at=now_iso,
+            commit=True,
+        )
+
+        # Step 1: Predict on ORIGINAL image first
+        pred_res = self.predict_original_garment(clothing_id=clothing_id, user_id=user_id)
+
+        # Step 2: Remove background second
+        bg_res = self.remove_garment_background(clothing_id=clothing_id, user_id=user_id)
+
+        total_dur = round(time.time() - t0, 2)
+        final_status = "ready_for_review" if bg_res.get("status") != "failed" else "predictions_ready"
+        final_stage = "ready_for_review" if bg_res.get("status") != "failed" else "failed"
+
+        self._update_metadata(
+            clothing=clothing,
+            status=final_status,
+            stage=final_stage,
+            review_required=True,
+            has_processed=bg_res.get("has_processed", False),
+            duration=total_dur,
+            commit=True,
+        )
+
+        return {
+            "status": final_status,
+            "stage": final_stage,
+            "duration_seconds": total_dur,
+            "prediction": pred_res,
+            "background_removal": bg_res,
+        }
