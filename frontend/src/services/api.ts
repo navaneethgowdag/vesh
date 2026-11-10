@@ -53,15 +53,50 @@ import { getDefaultAvatar } from '../utils/avatarHelper';
 export const API_BASE = getApiBaseUrl();
 
 const TOKEN_STORAGE_KEY = 'stylesphere_token';
+const ADMIN_TOKEN_KEY = 'tailorbird_admin_token';
 
 let memoryToken: string | null = null;
+let memoryAdminToken: string | null = null;
+
 try {
   if (typeof window !== 'undefined' && window.localStorage) {
     memoryToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    memoryAdminToken = window.localStorage.getItem(ADMIN_TOKEN_KEY);
   }
 } catch {
   // localStorage may be restricted in sandbox/SSR
 }
+
+export const adminTokenStorage = {
+  get: (): string | null => {
+    if (!memoryAdminToken && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        memoryAdminToken = window.localStorage.getItem(ADMIN_TOKEN_KEY);
+      } catch {}
+    }
+    return memoryAdminToken;
+  },
+  set: (token: string | null) => {
+    memoryAdminToken = token;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        if (token) {
+          window.localStorage.setItem(ADMIN_TOKEN_KEY, token);
+        } else {
+          window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+        }
+      } catch {}
+    }
+  },
+  clear: () => {
+    memoryAdminToken = null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+      } catch {}
+    }
+  },
+};
 
 export const tokenStorage = {
   get: (): string | null => {
@@ -184,7 +219,9 @@ export const apiCache = {
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
-  const token = tokenStorage.get();
+  const token = endpoint.startsWith('/admin')
+    ? (adminTokenStorage.get() || tokenStorage.get())
+    : tokenStorage.get();
   const isGet = method === 'GET';
   const cacheKey = `${endpoint}`;
 
@@ -3020,6 +3057,137 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ exclude_from_training: exclude }),
       });
+    },
+  },
+
+  // --- ADMIN CONSOLE & MODEL FINE-TUNING ---
+  admin: {
+    async login(data: { username: string; password: string }): Promise<any> {
+      const res = await request<any>('/admin/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (res && res.access_token) {
+        adminTokenStorage.set(res.access_token);
+      }
+      return res;
+    },
+    async logout(): Promise<any> {
+      try {
+        await request<any>('/admin/auth/logout', { method: 'POST' });
+      } finally {
+        adminTokenStorage.clear();
+      }
+    },
+    async getMe(): Promise<any> {
+      return request<any>('/admin/auth/me');
+    },
+    async me(): Promise<any> {
+      return this.getMe();
+    },
+    async getOverview(): Promise<any> {
+      return request<any>('/admin/dashboard/overview');
+    },
+    // Clothing Model
+    async getClothingModel(): Promise<any> {
+      return request<any>('/admin/models/clothing');
+    },
+    async trainClothingModel(config?: any): Promise<any> {
+      return request<any>('/admin/models/clothing/train', {
+        method: 'POST',
+        body: JSON.stringify(config || {}),
+      });
+    },
+    async listClothingJobs(): Promise<any[]> {
+      return request<any[]>('/admin/models/clothing/jobs');
+    },
+    async getClothingMetrics(): Promise<any> {
+      return request<any>('/admin/models/clothing/metrics');
+    },
+    async promoteClothingModel(versionTag: string): Promise<any> {
+      return request<any>('/admin/models/clothing/promote', {
+        method: 'POST',
+        body: JSON.stringify({ version_tag: versionTag, confirm: true }),
+      });
+    },
+    async rollbackClothingModel(targetVersion?: string): Promise<any> {
+      return request<any>('/admin/models/clothing/rollback', {
+        method: 'POST',
+        body: JSON.stringify({ target_version: targetVersion, confirm: true }),
+      });
+    },
+    // Recommendation Model
+    async getRecommendationModel(): Promise<any> {
+      return request<any>('/admin/models/recommendation');
+    },
+    async previewRecommendationDataset(): Promise<any> {
+      return request<any>('/admin/models/recommendation/dataset/preview', {
+        method: 'POST',
+      });
+    },
+    async getRecommendationDatasetPreview(): Promise<any> {
+      return this.previewRecommendationDataset();
+    },
+    async trainRecommendationModel(config?: any): Promise<any> {
+      return request<any>('/admin/models/recommendation/train', {
+        method: 'POST',
+        body: JSON.stringify(config || {}),
+      });
+    },
+    async listRecommendationJobs(): Promise<any[]> {
+      return request<any[]>('/admin/models/recommendation/jobs');
+    },
+    async getRecommendationMetrics(): Promise<any> {
+      return request<any>('/admin/models/recommendation/metrics');
+    },
+    async promoteRecommendationModel(versionTag: string): Promise<any> {
+      return request<any>('/admin/models/recommendation/promote', {
+        method: 'POST',
+        body: JSON.stringify({ version_tag: versionTag, confirm: true }),
+      });
+    },
+    async promoteRecommendationCandidate(data: { candidate_version: string }): Promise<any> {
+      return this.promoteRecommendationModel(data.candidate_version);
+    },
+    async rollbackRecommendationModel(targetVersion?: string): Promise<any> {
+      return request<any>('/admin/models/recommendation/rollback', {
+        method: 'POST',
+        body: JSON.stringify({ target_version: targetVersion, confirm: true }),
+      });
+    },
+    async reloadRecommendationModel(): Promise<any> {
+      return request<any>('/admin/models/recommendation');
+    },
+    // Registry & History
+    async listAllVersions(): Promise<any> {
+      return request<any>('/admin/models/versions');
+    },
+    async getModelVersions(): Promise<any> {
+      return this.listAllVersions();
+    },
+    async unifiedRollback(modelType: string, targetVersion?: string): Promise<any> {
+      return request<any>(`/admin/models/${encodeURIComponent(modelType)}/rollback`, {
+        method: 'POST',
+        body: JSON.stringify({ target_version: targetVersion, confirm: true }),
+      });
+    },
+    async getTrainingHistory(filterOrType?: string | { model_type?: string; status?: string }, status?: string): Promise<any[]> {
+      const params = new URLSearchParams();
+      if (typeof filterOrType === 'object' && filterOrType !== null) {
+        if (filterOrType.model_type) params.append('model_type', filterOrType.model_type);
+        if (filterOrType.status) params.append('status', filterOrType.status);
+      } else {
+        if (filterOrType) params.append('model_type', filterOrType);
+        if (status) params.append('status', status);
+      }
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      return request<any[]>(`/admin/training/history${qs}`);
+    },
+    async getJobDetails(jobId: string): Promise<any> {
+      return request<any>(`/admin/training/jobs/${encodeURIComponent(jobId)}`);
+    },
+    async getTrainingJob(jobId: string): Promise<any> {
+      return this.getJobDetails(jobId);
     },
   },
 

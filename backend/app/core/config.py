@@ -163,6 +163,10 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str = ""
     BACKEND_URL: str = "http://localhost:8000"
     
+    # Administrator credentials (securely provisioned from environment)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = ""
+    
     _cached_resolved_url: Optional[str] = None
 
     model_config = SettingsConfigDict(

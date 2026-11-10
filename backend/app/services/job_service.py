@@ -349,5 +349,61 @@ class JobService:
         except Exception as e:
             logger.warning(f"Database error querying BackgroundJob list: {e}")
             return [j for j in _IN_MEMORY_JOBS.values() if j.user_id == user_id][:limit]
-            logger.warning(f"Database error querying BackgroundJob list: {e}")
-            return []
+
+    def list_jobs(
+        self,
+        user_id: Optional[UUID] = None,
+        job_type: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[BackgroundJob]:
+        """List background jobs with optional filtering by user, job_type, and status."""
+        jobs: List[BackgroundJob] = []
+        if self._has_table:
+            try:
+                q = self.db.query(BackgroundJob)
+                if user_id:
+                    q = q.filter(BackgroundJob.user_id == user_id)
+                if job_type:
+                    q = q.filter(BackgroundJob.job_type == job_type)
+                if status:
+                    q = q.filter(BackgroundJob.status == status)
+                jobs = q.order_by(BackgroundJob.created_at.desc()).limit(limit).all()
+            except Exception as e:
+                logger.warning(f"Database error querying BackgroundJob list_jobs: {e}")
+
+        mem_jobs = list(_IN_MEMORY_JOBS.values())
+        if user_id:
+            mem_jobs = [j for j in mem_jobs if j.user_id == user_id]
+        if job_type:
+            mem_jobs = [j for j in mem_jobs if j.job_type == job_type]
+        if status:
+            mem_jobs = [j for j in mem_jobs if j.status == status]
+
+        existing_ids = {str(j.id) for j in jobs}
+        for mj in mem_jobs:
+            if str(mj.id) not in existing_ids:
+                jobs.append(mj)
+
+        return sorted(jobs, key=lambda x: str(getattr(x, "created_at", "")) or "", reverse=True)[:limit]
+
+    def get_job(self, job_id: Any) -> Optional[BackgroundJob]:
+        """Fetch job record by ID (UUID or str) without user restriction (for admin inspection)."""
+        job = None
+        jid_str = str(job_id)
+        if self._has_table:
+            try:
+                job = self.db.query(BackgroundJob).filter(BackgroundJob.id == jid_str).first()
+            except Exception:
+                try:
+                    import uuid
+                    uid = uuid.UUID(jid_str) if isinstance(jid_str, str) else job_id
+                    job = self.db.query(BackgroundJob).filter(BackgroundJob.id == uid).first()
+                except Exception as e:
+                    logger.warning(f"Database error querying BackgroundJob by ID: {e}")
+        if not job:
+            job = _IN_MEMORY_JOBS.get(jid_str)
+        return job
+
+    def get_job_by_id(self, job_id: Any) -> Optional[BackgroundJob]:
+        return self.get_job(job_id)

@@ -79,3 +79,20 @@ def get_current_user_optional(
     except HTTPException:
         return None
 
+
+def get_current_admin_user(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Enforces administrator role verification on protected admin endpoints.
+    Rejects ordinary users with HTTP 403 Forbidden.
+    """
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Administrator privileges required.",
+        )
+    return current_user
+

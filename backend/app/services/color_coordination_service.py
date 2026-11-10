@@ -119,6 +119,29 @@ class ColorCoordinationService:
         norm = ColorCoordinationService.normalize_color_name(color_name)
         return norm in NEUTRALS
 
+    @classmethod
+    def get_harmony_score(cls, c1: str, c2: str) -> float:
+        """Returns pairwise color harmony score between 0.0 and 1.0."""
+        n1 = cls.normalize_color_name(c1)
+        n2 = cls.normalize_color_name(c2)
+        if n1 == n2:
+            return 0.95
+        if cls.is_neutral(n1) or cls.is_neutral(n2):
+            return 0.92
+        pair = (n1, n2)
+        if pair in HARMONIOUS_PAIRS or (n2, n1) in HARMONIOUS_PAIRS:
+            return 0.95
+        hsv1 = COLOR_HSV_MAP.get(n1, (0.0, 50.0, 70.0))
+        hsv2 = COLOR_HSV_MAP.get(n2, (180.0, 50.0, 70.0))
+        delta_h = cls.compute_hue_delta(hsv1[0], hsv2[0])
+        if delta_h <= 25.0:
+            return 0.95
+        if delta_h <= 60.0:
+            return 0.93
+        if 140.0 <= delta_h <= 220.0:
+            return 0.94
+        return 0.85
+
     @staticmethod
     def compute_hue_delta(hue1: float, hue2: float) -> float:
         """Absolute smallest angle between two hues on 360-degree color wheel."""

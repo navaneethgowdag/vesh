@@ -26,9 +26,19 @@ from app.api.routes import (
     laundry,
     vault,
     model_learning,
+    admin_auth,
+    admin_dashboard,
+    admin_models,
+    admin_training,
 )
 
 api_router = APIRouter()
+
+# Admin routes
+api_router.include_router(admin_auth.router)
+api_router.include_router(admin_dashboard.router)
+api_router.include_router(admin_models.router)
+api_router.include_router(admin_training.router)
 
 api_router.include_router(auth.router)
 api_router.include_router(users.router)

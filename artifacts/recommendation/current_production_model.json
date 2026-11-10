@@ -1,0 +1,25 @@
+{
+  "model_type": "recommendation",
+  "version_tag": "v1.0.0",
+  "model_name": "TailorBird Random Forest Regressor",
+  "algorithm": "RandomForestRegressor",
+  "checkpoint_path": "artifacts/recommendation/versions/v1.0.0/tailorbird_preference_model.joblib",
+  "metadata_path": "artifacts/recommendation/versions/v1.0.0/tailorbird_preference_model.json",
+  "status": "production",
+  "feature_count": 42,
+  "target": "synthetic_preference_score",
+  "data_type": "synthetic",
+  "metrics": {
+    "mae": 0.08113399452112917,
+    "rmse": 0.10271512966382558,
+    "r2": 0.5953149556652315
+  },
+  "training_rows": 10109,
+  "testing_rows": 2624,
+  "training_users": 400,
+  "testing_users": 100,
+  "sklearn_version": "1.9.1",
+  "promoted_at": "2026-11-10T13:19:36.680276+00:00",
+  "promoted_by": "admin",
+  "notes": "Initial Scikit-Learn 1.9.1 Random Forest Regressor baseline trained on audited schema."
+}

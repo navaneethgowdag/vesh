@@ -1,0 +1,25 @@
+{
+  "model_type": "clothing",
+  "version_tag": "v1.0.0",
+  "model_name": "EfficientNet-B0 Multi-Task Clothing Classifier",
+  "architecture": "EfficientNet-B0",
+  "checkpoint_path": "artifacts/clothing/versions/v1.0.0/best_model.pt",
+  "status": "production",
+  "heads_count": 9,
+  "total_classes": 275,
+  "heads": [
+    "articleType",
+    "masterCategory",
+    "subCategory",
+    "gender",
+    "baseColour",
+    "season",
+    "usage",
+    "pattern",
+    "ageGroup"
+  ],
+  "image_size": [224, 224],
+  "promoted_at": "2026-11-08T19:09:00Z",
+  "promoted_by": "system",
+  "notes": "Baseline PyTorch Multi-Task EfficientNet-B0 classifier"
+}

@@ -1,0 +1,34 @@
+{
+  "image_size": [
+    224,
+    224
+  ],
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "train_augmentations": {
+    "resize": [
+      224,
+      224
+    ],
+    "random_horizontal_flip_p": 0.5,
+    "random_rotation_deg": 10,
+    "color_jitter": {
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "eval_augmentations": {
+    "resize": [
+      224,
+      224
+    ]
+  }
+}

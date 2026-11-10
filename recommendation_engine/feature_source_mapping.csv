@@ -1,0 +1,25 @@
+model_feature,source_type,actual_audit_field_or_source,handling
+occupation,onboarding,occupation,Direct categorical
+student_campus_dress,onboarding,studentDetails.campusDress,Conditional
+professional_industry,onboarding,workDetails.industry,Conditional
+professional_dress_code,onboarding,workDetails.dressCode,Conditional
+professional_work_mode,onboarding,workDetails.workMode,Conditional
+freelancer_field,onboarding,freelancerDetails.field,Conditional
+freelancer_meeting_frequency,onboarding,freelancerDetails.meetingFrequency,Conditional
+general_routine_style,onboarding,generalRoutineStyle,Direct categorical
+weekly_routine_profile,onboarding,weeklyRoutine,Derived summary; real pipeline should parse schedule
+selected_styles,onboarding,selectedStyles,Multi-select
+disliked_styles,settings/onboarding,dislikedStyles,Multi-select
+preferred_colors,onboarding,preferredColors,Multi-select
+disliked_colors,onboarding,dislikedColors,Multi-select
+selected_fits,onboarding,selectedFits,Multi-select
+comfort_vs_appearance,onboarding,comfortVsAppearance,Direct categorical
+simple_vs_experimental,onboarding,simpleVsExperimental,Direct categorical
+selected_occasions,onboarding,selectedOccasions,Multi-select; canonicalize through taxonomy aliases
+budget_tier,onboarding,budgetTier,Shopping only
+shopping_philosophy,onboarding,shoppingPhilosophy,Shopping only
+comfort_priority,onboarding,comfortPriority,Numeric slider
+familiar_vs_new,onboarding,familiarVsNew,Direct categorical
+repeat_frequency,onboarding,repeatFrequency,Direct categorical
+variety_preference,onboarding,varietyPreference,Direct categorical
+color_harmony_score,derived,clothing.color + ColorCoordinationService,"Use production service, not synthetic approximation"

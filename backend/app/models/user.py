@@ -91,6 +91,19 @@ class User(Base):
     def age_range(self) -> str:
         return ""
 
+    @property
+    def is_admin(self) -> bool:
+        from app.core.config import settings
+        admin_u = (getattr(settings, "ADMIN_USERNAME", None) or "admin").lower()
+        if self.username and self.username.lower() == admin_u:
+            return True
+        if self.email and self.email.lower() == f"{admin_u}@tailorbird.internal":
+            return True
+        if self.preference and getattr(self.preference, "preferred_fits", None):
+            if isinstance(self.preference.preferred_fits, dict) and self.preference.preferred_fits.get("role") == "admin":
+                return True
+        return False
+
     # Relationships
     preference = relationship("UserPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
     learned_preference = relationship("LearnedPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")

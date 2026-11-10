@@ -19,6 +19,7 @@ from app.services.weather_service import weather_service
 from app.services.personalization_service import PersonalizationService
 from app.services.color_coordination_service import ColorCoordinationService
 from app.services.laundry_service import LaundryService
+from app.services.recommendation_ml_service import recommendation_ml_service
 from app.core.occasion_profiles import get_occasion_profile, OCCASION_PROFILES
 import logging
 
@@ -1155,9 +1156,35 @@ class RecommendationService:
                 3,
             )
 
+            # 7. Machine Learning Preference Prediction (Random Forest Regressor, 42 features)
+            ml_preference_score = None
+            try:
+                ml_features = recommendation_ml_service.construct_42_features(
+                    items=items,
+                    user=user,
+                    user_pref=user_pref,
+                    target_occasion=target_occasion,
+                    occasion_prof=occasion_prof,
+                    temp=temp,
+                    condition=condition,
+                    color_analysis=color_analysis,
+                    compat_score=compat_score,
+                    score_occasion=score_occasion,
+                    hard_eligible=True,
+                )
+                ml_preference_score = recommendation_ml_service.predict_preference_score(ml_features)
+            except Exception as ml_err:
+                logger.debug(f"[RecommendationService] ML scoring fallback: {ml_err}")
+
+            if ml_preference_score is not None:
+                # Hybrid Architecture: 50% ML predicted preference + 50% multi-factor deterministic score
+                blended_score = round(0.50 * base_score + 0.50 * ml_preference_score, 3)
+            else:
+                blended_score = base_score
+
             # Boost preferred items
             if preferred_set and any(i.id in preferred_set for i in items):
-                base_score = min(0.99, round(base_score + 0.10, 3))
+                blended_score = min(0.99, round(blended_score + 0.10, 3))
 
             # Repetition Avoidance & Recency Penalty (Feature 4)
             recency_penalty = 0.0
@@ -1169,7 +1196,7 @@ class RecommendationService:
             if max_wear >= 6:
                 recency_penalty += 0.05
 
-            final_score = max(0.25, min(0.99, round(base_score - recency_penalty, 3)))
+            final_score = max(0.25, min(0.99, round(blended_score - recency_penalty, 3)))
 
             explanations = self._generate_deterministic_explanations(
                 items=items,
@@ -1222,6 +1249,8 @@ class RecommendationService:
                     "event_dress_code": target_event_dress_code,
                     "event_tone": target_event_tone,
                     "is_personalized": personalization_enabled,
+                    "ml_model_version": recommendation_ml_service.active_version if recommendation_ml_service.is_loaded else "deterministic_fallback",
+                    "ml_score": ml_preference_score,
                 },
                 "score_breakdown": {
                     "compatibility": compat_score,

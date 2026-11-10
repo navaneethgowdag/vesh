@@ -34,6 +34,16 @@ const WardrobeInsights = lazy(() => import('./pages/WardrobeInsights').then((m) 
 const OccasionVault = lazy(() => import('./pages/OccasionVault').then((m) => ({ default: m.OccasionVault })));
 const ModelLearning = lazy(() => import('./pages/ModelLearning').then((m) => ({ default: m.ModelLearning })));
 
+// Admin Console Routes (Restricted ML Ops & Governance)
+const AdminProtectedRoute = lazy(() => import('./components/admin/AdminProtectedRoute').then((m) => ({ default: m.AdminProtectedRoute })));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then((m) => ({ default: m.AdminLogin })));
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview').then((m) => ({ default: m.AdminOverview })));
+const AdminClothingModel = lazy(() => import('./pages/admin/AdminClothingModel').then((m) => ({ default: m.AdminClothingModel })));
+const AdminRecommendationModel = lazy(() => import('./pages/admin/AdminRecommendationModel').then((m) => ({ default: m.AdminRecommendationModel })));
+const AdminTrainingHistory = lazy(() => import('./pages/admin/AdminTrainingHistory').then((m) => ({ default: m.AdminTrainingHistory })));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then((m) => ({ default: m.AdminSettings })));
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
@@ -275,6 +285,25 @@ export const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+
+                {/* Admin Authentication & Governance Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminLayout />
+                    </AdminProtectedRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/admin/overview" replace />} />
+                  <Route path="overview" element={<AdminOverview />} />
+                  <Route path="clothing-model" element={<AdminClothingModel />} />
+                  <Route path="recommendation-model" element={<AdminRecommendationModel />} />
+                  <Route path="training-history" element={<AdminTrainingHistory />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="*" element={<Navigate to="/admin/overview" replace />} />
+                </Route>
 
                 {/* Catch-all 404 Page */}
                 <Route path="*" element={<NotFound />} />
