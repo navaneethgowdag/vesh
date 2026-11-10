@@ -24,28 +24,28 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center font-sans font-medium transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none rounded-md tracking-normal select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2';
+    'inline-flex items-center justify-center font-sans font-medium transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none rounded-xl tracking-normal select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#727D69] dark:focus-visible:ring-[#9EAB97] focus-visible:ring-offset-2 cursor-pointer';
 
   const variants = {
     primary:
-      'bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-900 font-medium border border-transparent shadow-subtle',
+      'bg-[#202321] hover:bg-[#323833] dark:bg-[#F8F6F1] dark:hover:bg-[#E9E6DE] text-[#F8F6F1] dark:text-[#202321] font-semibold border border-transparent shadow-subtle',
     champagne:
-      'bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-900 font-medium border border-transparent shadow-subtle',
+      'bg-[#727D69] hover:bg-[#5C6554] text-[#F8F6F1] font-semibold border border-transparent shadow-subtle',
     secondary:
-      'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700',
+      'bg-[#F1EEE7] hover:bg-[#E9E6DE] dark:bg-[#252A26] dark:hover:bg-[#2F3630] text-[#202321] dark:text-[#F8F6F1] border border-[#E2DDD3] dark:border-[#2D342F] font-medium',
     outline:
-      'border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+      'border border-[#D8D3C8] dark:border-[#38413A] text-[#202321] dark:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] font-medium',
     ghost:
-      'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800',
+      'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] font-medium',
     danger:
-      'bg-rose-600 text-white hover:bg-rose-700 border border-transparent',
+      'bg-rose-700 text-white hover:bg-rose-800 border border-transparent font-medium shadow-subtle',
   };
 
   const sizes = {
-    sm: 'text-xs min-h-[36px] px-3 py-1.5 gap-1.5',
-    md: 'text-sm min-h-[44px] px-4 py-2.5 gap-2',
-    lg: 'text-base min-h-[48px] px-5 py-3 gap-2.5 font-medium',
-    icon: 'min-h-[44px] min-w-[44px] p-2.5',
+    sm: 'text-xs min-h-[36px] px-3.5 py-1.5 gap-1.5 rounded-lg',
+    md: 'text-sm min-h-[44px] px-4 py-2 gap-2 rounded-xl',
+    lg: 'text-base min-h-[48px] px-6 py-2.5 gap-2.5 font-semibold rounded-xl',
+    icon: 'min-h-[44px] min-w-[44px] p-2.5 rounded-xl',
   };
 
   const isDisabled = disabled || isLoading;

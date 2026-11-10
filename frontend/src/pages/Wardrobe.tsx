@@ -326,15 +326,20 @@ export const Wardrobe: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <span className="text-xs uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
-              Personal Inventory
+            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
+              Personal Collection
             </span>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
               Capsule Wardrobe
             </h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              {acceptedItems.length} active garments in closet
-              {pendingItems.length > 0 && ` · ${pendingItems.length} pending AI review`}.
+            <p className="text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-sans">
+              <span className="font-semibold text-[#202321] dark:text-[#F8F6F1]">{acceptedItems.length}</span> active garments in closet
+              {pendingItems.length > 0 && (
+                <>
+                  {' · '}
+                  <span className="text-[#899783] font-semibold">{pendingItems.length} pending AI review</span>
+                </>
+              )}
             </p>
           </div>
 
@@ -343,7 +348,7 @@ export const Wardrobe: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/wardrobe-gap')}
-              icon={<Layers className="w-4 h-4 text-primary-500" />}
+              icon={<Layers className="w-4 h-4 text-[#727D69]" />}
             >
               Gap Analysis
             </Button>
@@ -367,22 +372,22 @@ export const Wardrobe: React.FC = () => {
         </div>
 
         {/* Section Navigation Tabs: Accepted Closet | Pending AI Review | All Clothing */}
-        <div className="flex items-center gap-2 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-3 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-2 mb-6 border-b border-[#E2DDD3] dark:border-[#2D342F] pb-3 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => handleTabChange('accepted')}
-            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               wardrobeSection === 'accepted'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
+                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Accepted Closet</span>
             <span
-              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+              className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-semibold ${
                 wardrobeSection === 'accepted'
-                  ? 'bg-white/20 text-white dark:bg-black/10 dark:text-zinc-900'
-                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  ? 'bg-white/20 text-white dark:bg-black/15 dark:text-[#202321]'
+                  : 'bg-[#E9E6DE] dark:bg-[#2D342F] text-[#292D29] dark:text-[#F8F6F1]'
               }`}
             >
               {acceptedItems.length}
@@ -391,20 +396,20 @@ export const Wardrobe: React.FC = () => {
 
           <button
             onClick={() => handleTabChange('pending')}
-            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               wardrobeSection === 'pending'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
+                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-[#B5AA99]" />
             <span>Pending AI Review</span>
             {pendingItems.length > 0 && (
               <span
-                className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-bold ${
                   wardrobeSection === 'pending'
-                    ? 'bg-white text-amber-700'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                    ? 'bg-[#B5AA99] text-[#202321]'
+                    : 'bg-[#B5AA99]/20 text-[#202321] dark:text-[#F8F6F1]'
                 }`}
               >
                 {pendingItems.length}
@@ -414,18 +419,18 @@ export const Wardrobe: React.FC = () => {
 
           <button
             onClick={() => handleTabChange('all')}
-            className={`px-4 py-2 text-xs font-bold rounded-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               wardrobeSection === 'all'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
+                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
             }`}
           >
             <span>All Clothing</span>
             <span
-              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+              className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-semibold ${
                 wardrobeSection === 'all'
-                  ? 'bg-white/20 text-white dark:bg-black/10 dark:text-zinc-900'
-                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  ? 'bg-white/20 text-white dark:bg-black/15 dark:text-[#202321]'
+                  : 'bg-[#E9E6DE] dark:bg-[#2D342F] text-[#292D29] dark:text-[#F8F6F1]'
               }`}
             >
               {totalItems}
@@ -435,7 +440,7 @@ export const Wardrobe: React.FC = () => {
 
         {/* Quick Metrics Bar (Shown for Accepted & All Views) */}
         {wardrobeSection !== 'pending' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
             {[
               { label: 'Tops & Shirts', count: topsCount },
               { label: 'Bottoms & Jeans', count: bottomsCount },
@@ -444,12 +449,12 @@ export const Wardrobe: React.FC = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="bg-white dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 text-center sm:text-left"
+                className="bg-white dark:bg-[#1C201D] p-4 rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] text-center sm:text-left shadow-xs"
               >
-                <p className="text-xs uppercase font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
+                <p className="text-[11px] uppercase font-semibold tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
                   {stat.label}
                 </p>
-                <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                <p className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] mt-0.5">
                   {stat.count}
                 </p>
               </div>
@@ -459,15 +464,15 @@ export const Wardrobe: React.FC = () => {
 
         {/* Pending Review Action Banner (Only in Pending Review Tab) */}
         {wardrobeSection === 'pending' && pendingItems.length > 0 && (
-          <div className="mb-6 p-4 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="mb-6 p-5 rounded-2xl bg-[#F1EEE7] dark:bg-[#1C201D] border border-[#B5AA99]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                <Sparkles className="w-4 h-4 text-[#727D69]" />
+                <h3 className="text-sm font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                   {readyToReviewItems.length} Garment(s) Ready for Your Verification
                 </h3>
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1">
                 Our EfficientNet-B0 fashion model analyzed your garments. Review and confirm predictions so they appear in your Daily Fits.
               </p>
             </div>
@@ -500,7 +505,7 @@ export const Wardrobe: React.FC = () => {
         )}
 
         {/* Search, Sort & Category Filter Bar */}
-        <div className="space-y-3 mb-6">
+        <div className="space-y-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <input
@@ -508,17 +513,17 @@ export const Wardrobe: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, fabric, pattern, color, brand, or style..."
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
+                className="w-full bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69] transition-colors shadow-xs"
               />
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
+              <Search className="w-4 h-4 text-[#777C75] dark:text-[#A3ABA0] absolute left-3.5 top-3.5" />
             </div>
 
-            <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md p-1 min-h-[44px] text-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 ml-2" />
+            <div className="flex items-center gap-1 bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl p-1 min-h-[44px] text-xs shadow-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#777C75] ml-2" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent border-none text-zinc-900 dark:text-zinc-100 text-xs py-2 pr-3 pl-1 focus:outline-none cursor-pointer"
+                className="bg-transparent border-none text-[#202321] dark:text-[#F8F6F1] text-xs py-2 pr-3 pl-1 focus:outline-none cursor-pointer font-medium"
               >
                 <option value="recent">Recently Added</option>
                 <option value="wears">Most Worn</option>
@@ -529,13 +534,13 @@ export const Wardrobe: React.FC = () => {
             <button
               onClick={() => setFavoritesOnly(!favoritesOnly)}
               title="Filter Favorite Garments"
-              className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors cursor-pointer shadow-xs ${
                 favoritesOnly
                   ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
-                  : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#292D29] dark:text-[#F8F6F1] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
               }`}
             >
-              <Heart className={`w-3.5 h-3.5 ${favoritesOnly ? 'fill-rose-500 text-rose-500' : 'text-zinc-500'}`} />
+              <Heart className={`w-3.5 h-3.5 ${favoritesOnly ? 'fill-rose-500 text-rose-500' : 'text-[#777C75]'}`} />
               <span>Favorites</span>
             </button>
           </div>
@@ -543,7 +548,7 @@ export const Wardrobe: React.FC = () => {
           {/* Laundry Status Filter Pills (Clean / In laundry / Unavailable) */}
           {wardrobeSection !== 'pending' && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mr-1">Status:</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mr-1">Status:</span>
               {[
                 { id: 'all' as const, label: 'All Items' },
                 { id: 'clean' as const, label: `Clean (${cleanCount})` },
@@ -553,10 +558,10 @@ export const Wardrobe: React.FC = () => {
                 <button
                   key={pill.id}
                   onClick={() => setLaundryFilter(pill.id)}
-                  className={`text-xs px-3 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                  className={`text-xs px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
                     laundryFilter === pill.id
-                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
-                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent font-semibold shadow-xs'
+                      : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#6B7269] dark:text-[#A3ABA0] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
                   }`}
                 >
                   {pill.label}
@@ -567,19 +572,19 @@ export const Wardrobe: React.FC = () => {
 
           {/* Occasion Vault Banner */}
           {wardrobeSection !== 'pending' && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <Crown className="w-5 h-5" />
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#B5AA99]/15 via-[#B5AA99]/5 to-transparent border border-[#B5AA99]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#B5AA99]/20 text-[#202321] dark:text-[#F8F6F1] flex items-center justify-center shrink-0 border border-[#B5AA99]/30">
+                  <Crown className="w-5 h-5 text-[#B5AA99]" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <h4 className="text-sm font-serif font-bold text-[#202321] dark:text-[#F8F6F1] flex items-center gap-2">
                     <span>Occasion Vault</span>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-400 text-zinc-950">
-                      Luxury & Special
+                    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B5AA99] text-[#202321] font-bold">
+                      Luxury Shield
                     </span>
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-zinc-600 dark:text-zinc-400">
+                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5">
                     Safeguard high-value gala attire, wedding outfits, and reserved pieces from everyday casual wear.
                   </p>
                 </div>
@@ -588,10 +593,10 @@ export const Wardrobe: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/vault')}
-                className="border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 whitespace-nowrap shrink-0"
-                icon={<Crown className="w-3.5 h-3.5 text-amber-500" />}
+                className="border-[#B5AA99]/50 text-[#202321] dark:text-[#F8F6F1] hover:bg-[#B5AA99]/15 whitespace-nowrap shrink-0"
+                icon={<Crown className="w-3.5 h-3.5 text-[#B5AA99]" />}
               >
-                Open Occasion Vault
+                Open Vault
               </Button>
             </div>
           )}
@@ -599,7 +604,7 @@ export const Wardrobe: React.FC = () => {
           {/* Collection Group Filter Pills */}
           {wardrobeSection !== 'pending' && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mr-1">Group:</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mr-1">Group:</span>
               {[
                 { id: 'all', label: 'All Collections' },
                 { id: 'daily_work', label: 'Daily & Work' },
@@ -610,10 +615,10 @@ export const Wardrobe: React.FC = () => {
                 <button
                   key={grp.id}
                   onClick={() => setSelectedWardrobeGroup(grp.id)}
-                  className={`text-xs px-3 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                  className={`text-xs px-3.5 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
                     selectedWardrobeGroup === grp.id
-                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
-                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent font-semibold shadow-xs'
+                      : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#6B7269] dark:text-[#A3ABA0] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
                   }`}
                 >
                   {grp.label}
@@ -629,10 +634,10 @@ export const Wardrobe: React.FC = () => {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`text-xs px-3.5 py-2 min-h-[40px] rounded-md border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                  className={`text-xs px-4 py-2 min-h-[40px] rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
                     activeCategory === cat
-                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold'
-                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent font-semibold shadow-xs'
+                      : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#6B7269] dark:text-[#A3ABA0] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
                   }`}
                 >
                   {cat}
@@ -645,17 +650,17 @@ export const Wardrobe: React.FC = () => {
         {/* Empty States and Garment Grids */}
         {wardrobeSection === 'pending' ? (
           displayItems.length === 0 ? (
-            <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+            <div className="text-center py-20 bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-8 shadow-xs">
               <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <p className="font-bold text-zinc-900 dark:text-zinc-100 text-base">
+              <p className="font-serif font-bold text-[#202321] dark:text-[#F8F6F1] text-lg">
                 All Uploaded Garments Reviewed
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1.5 max-w-sm mx-auto">
                 There are no pending garments requiring review. All AI-analyzed pieces have been accepted into your capsule closet.
               </p>
-              <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="flex items-center justify-center gap-2 mt-5">
                 <Button
                   variant="primary"
                   size="sm"
@@ -674,7 +679,7 @@ export const Wardrobe: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {displayItems.map((item) => (
                 <PendingReviewCard
                   key={item.id}
@@ -686,15 +691,15 @@ export const Wardrobe: React.FC = () => {
             </div>
           )
         ) : displayItems.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-            <Shirt className="w-8 h-8 text-zinc-400 mx-auto mb-2 opacity-60" />
-            <p className="font-bold text-zinc-900 dark:text-zinc-100">
+          <div className="text-center py-20 bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-8 shadow-xs">
+            <Shirt className="w-10 h-10 text-[#899783] mx-auto mb-3 opacity-70" />
+            <p className="font-serif font-bold text-[#202321] dark:text-[#F8F6F1] text-lg">
               {searchQuery ? `No garments matching "${searchQuery}"` : 'Your Capsule Closet is Empty'}
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1.5 max-w-sm mx-auto">
               Add your clothing pieces via camera capture, device gallery, or image upload to unlock AI Daily Fits and outfit intelligence.
             </p>
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="flex items-center justify-center gap-2 mt-5">
               <Button
                 variant="outline"
                 size="sm"
@@ -714,7 +719,7 @@ export const Wardrobe: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {displayItems.map((item) => (
               <ClothingCard key={item.id} item={item} />
             ))}

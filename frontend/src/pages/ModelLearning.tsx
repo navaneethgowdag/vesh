@@ -23,6 +23,7 @@ import {
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { AppShell } from '../components/layout/AppShell';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { cn } from '../utils/cn';
@@ -195,42 +196,43 @@ export const ModelLearning: React.FC = () => {
   const activeCandidate = comparison?.has_candidate ? comparison.candidate : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-700/50 shadow-xl text-white">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-zinc-800 dark:bg-zinc-800/80 border border-zinc-700 text-teal-400">
-              <Cpu className="w-6 h-6" />
+    <AppShell>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-20 space-y-8 animate-fade-in">
+        {/* Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#202321] text-[#F8F6F1] border border-[#2D342F] shadow-md">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-[#2D342F] text-[#899783]">
+                <Cpu className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl font-serif font-bold tracking-tight text-[#F8F6F1]">
+                Model Learning & Classifier Optimization
+              </h1>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              Model Learning & Classifier Optimization
-            </h1>
+            <p className="text-sm text-[#A3ABA0] max-w-2xl font-sans">
+              Personal fine-tuning pipeline for TailorBird's Multi-Task EfficientNet-B0 clothing classifier.
+              Learns from your confirmed attribute reviews to improve your wardrobe recommendations.
+            </p>
           </div>
-          <p className="text-sm text-zinc-300 max-w-2xl">
-            Personal fine-tuning pipeline for TailorBird's Multi-Task EfficientNet-B0 clothing classifier.
-            Learns from your confirmed attribute reviews to improve your wardrobe recommendations.
-          </p>
-        </div>
 
-        {/* Active Production Status Pill */}
-        <div className="flex items-center gap-3 bg-zinc-800/80 dark:bg-zinc-900/90 border border-zinc-700/80 rounded-xl px-4 py-3 shrink-0">
-          <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                Production Model
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                ACTIVE
-              </span>
-            </div>
-            <div className="text-sm font-bold text-white font-mono">
-              {activeProductionVersion.version_tag}
+          {/* Active Production Status Pill */}
+          <div className="flex items-center gap-3 bg-[#1C201D] border border-[#2D342F] rounded-xl px-4 py-3 shrink-0">
+            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-semibold text-[#A3ABA0] uppercase tracking-wider">
+                  Production Model
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  ACTIVE
+                </span>
+              </div>
+              <div className="text-sm font-bold text-[#F8F6F1] font-mono">
+                {activeProductionVersion.version_tag}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Dataset Overview Grid */}
       <div className="space-y-4">
@@ -868,6 +870,7 @@ export const ModelLearning: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </div>
+      </div>
+    </AppShell>
   );
 };

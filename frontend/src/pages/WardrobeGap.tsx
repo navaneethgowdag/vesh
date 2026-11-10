@@ -144,19 +144,19 @@ export const WardrobeGap: React.FC = () => {
     switch (priority) {
       case 'High':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
             High Priority
           </span>
         );
       case 'Medium':
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
             Medium Priority
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] border border-[#899783]/30">
             Low Priority
           </span>
         );
@@ -167,17 +167,15 @@ export const WardrobeGap: React.FC = () => {
     <AppShell>
       <div className="max-w-5xl mx-auto px-4 py-8 select-none space-y-6 pb-20">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E2DDD3] dark:border-[#2D342F]">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800/40">
-                Wardrobe Intelligence & Shopping
-              </span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
+              Wardrobe Intelligence & Shopping
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
               Wardrobe Gap & Shopping Discovery
             </h1>
-            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs md:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-sans">
               Identifies missing essentials that unlock new outfits, with taste-ranked purchase recommendations.
             </p>
           </div>
@@ -195,22 +193,22 @@ export const WardrobeGap: React.FC = () => {
 
         {/* Provider Status Banner (Informative & Honest) */}
         {providerStatus && (
-          <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-zinc-500 shrink-0" />
+          <div className="p-4 rounded-2xl bg-[#F8F6F1] dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] flex items-center justify-between text-xs shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <Info className="w-4 h-4 text-[#777C75] shrink-0" />
               <div>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="font-semibold text-[#202321] dark:text-[#F8F6F1]">
                   {providerStatus.provider_name}:{' '}
                 </span>
-                <span className="text-zinc-600 dark:text-zinc-400">{providerStatus.message}</span>
+                <span className="text-[#777C75] dark:text-[#A3ABA0]">{providerStatus.message}</span>
               </div>
             </div>
             {providerStatus.is_live_configured ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                 Live API
               </span>
             ) : (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#E9E6DE] dark:bg-[#2D342F] text-[#292D29] dark:text-[#F8F6F1]">
                 Curated Mode
               </span>
             )}
@@ -218,13 +216,13 @@ export const WardrobeGap: React.FC = () => {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="flex items-center gap-2 border-b border-[#E2DDD3] dark:border-[#2D342F] pb-3 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab('gaps')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'gaps'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
+                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -233,10 +231,10 @@ export const WardrobeGap: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('shopping')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'shopping'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
+                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
             }`}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
@@ -247,8 +245,8 @@ export const WardrobeGap: React.FC = () => {
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-10 h-10 border-2 border-zinc-300 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin mb-4" />
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            <div className="w-10 h-10 border-2 border-[#E2DDD3] dark:border-[#2D342F] border-t-[#727D69] rounded-full animate-spin mb-4" />
+            <p className="text-sm font-medium text-[#777C75] dark:text-[#A3ABA0]">
               Analyzing accepted wardrobe items & catalog matches...
             </p>
           </div>
@@ -262,50 +260,50 @@ export const WardrobeGap: React.FC = () => {
                 {/* Overview Stats Cards */}
                 {analysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                      <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
                         Total Accepted Pieces
                       </span>
-                      <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">
+                      <div className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] mt-1">
                         {analysis.total_items}
                       </div>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 block">
-                        active in capsule closet
+                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
+                        active in closet
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                      <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
                         Identified Gaps
                       </span>
-                      <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">
+                      <div className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] mt-1">
                         {analysis.gaps.length}
                       </div>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 block">
+                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
                         {analysis.gaps.length === 0 ? 'Optimal versatility' : 'Actionable recommendations'}
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                      <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
                         Palette Tone
                       </span>
-                      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-2 truncate">
+                      <div className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1] mt-2 truncate">
                         {analysis.color_distribution.neutrals} Neutrals / {analysis.color_distribution.accents} Accents
                       </div>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 block">
+                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
                         CIELAB harmony balance
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                      <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
                         Formality Balance
                       </span>
-                      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-2 truncate">
+                      <div className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1] mt-2 truncate">
                         {analysis.formality_distribution.casual} Casual / {analysis.formality_distribution.formal} Formal
                       </div>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 block">
+                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
                         +{analysis.formality_distribution.smart_casual} Smart Casual
                       </span>
                     </div>
@@ -314,12 +312,12 @@ export const WardrobeGap: React.FC = () => {
 
                 {/* Gaps List */}
                 {analysis?.gaps.length === 0 ? (
-                  <div className="p-8 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                  <div className="p-8 text-center bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
                     <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                    <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                    <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                       Your Wardrobe is Exceptionally Balanced!
                     </h3>
-                    <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                    <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 max-w-sm mx-auto">
                       You have sufficient tops, bottoms, layers, and formal staples to cover all everyday and scheduled occasions.
                     </p>
                   </div>
@@ -328,39 +326,39 @@ export const WardrobeGap: React.FC = () => {
                     {analysis?.gaps.map((gap: WardrobeGapItem, idx: number) => (
                       <div
                         key={idx}
-                        className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4"
+                        className="bg-white dark:bg-[#1C201D] rounded-2xl p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs space-y-4"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+                            <div className="w-9 h-9 rounded-xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center font-bold font-mono">
                               {idx + 1}
                             </div>
                             <div>
-                              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                              <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                                 {gap.title}
                               </h3>
-                              <span className="text-xs text-zinc-500">{gap.category}</span>
+                              <span className="text-xs text-[#777C75] dark:text-[#A3ABA0]">{gap.category}</span>
                             </div>
                           </div>
                           {priorityBadge(gap.priority)}
                         </div>
 
-                        <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[#202321] dark:text-[#F8F6F1] leading-relaxed">
                           {gap.reason}
                         </p>
 
-                        <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 text-xs text-zinc-600 dark:text-zinc-400">
-                          <strong className="text-zinc-800 dark:text-zinc-200">Evidence: </strong>
+                        <div className="p-3.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] text-xs text-[#777C75] dark:text-[#A3ABA0] border border-[#E2DDD3] dark:border-[#2D342F]">
+                          <strong className="text-[#202321] dark:text-[#F8F6F1]">Evidence: </strong>
                           {gap.evidence}
                         </div>
 
                         {gap.occasions.length > 0 && (
                           <div className="flex items-center gap-2 flex-wrap text-xs">
-                            <span className="font-semibold text-zinc-500">Unlocks Occasions:</span>
+                            <span className="font-semibold text-[#777C75] dark:text-[#A3ABA0]">Unlocks Occasions:</span>
                             {gap.occasions.map((occ) => (
                               <span
                                 key={occ}
-                                className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-medium border border-indigo-200 dark:border-indigo-800/40"
+                                className="px-2.5 py-0.5 rounded-full bg-[#899783]/15 text-[#727D69] dark:text-[#A3ABA0] font-medium border border-[#899783]/20"
                               >
                                 {occ}
                               </span>
@@ -368,15 +366,15 @@ export const WardrobeGap: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                          <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        <div className="space-y-1.5 pt-2 border-t border-[#E2DDD3] dark:border-[#2D342F]">
+                          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
                             Suggested Garments to Complete this Gap:
                           </span>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 pt-1">
                             {gap.suggested_garments.map((garment, gIdx) => (
                               <span
                                 key={gIdx}
-                                className="text-xs px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium border border-zinc-200 dark:border-zinc-700"
+                                className="text-xs px-3 py-1 rounded-full bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] font-medium border border-[#E2DDD3] dark:border-[#2D342F]"
                               >
                                 {garment}
                               </span>
@@ -396,27 +394,27 @@ export const WardrobeGap: React.FC = () => {
             {activeTab === 'shopping' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                  <h2 className="text-xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                     Shopping Discovery
                   </h2>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5">
                     Live product recommendations require verified external shopping provider integration.
                   </p>
                 </div>
 
                 {shoppingRecs.length === 0 ? (
-                  <div className="p-8 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center mx-auto">
+                  <div className="p-10 text-center bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] space-y-4 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center mx-auto">
                       <ShoppingBag className="w-6 h-6" />
                     </div>
                     <div className="max-w-md mx-auto space-y-1.5">
-                      <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                      <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                         External Shopping Provider Unconfigured
                       </h3>
-                      <p className="text-xs text-zinc-500 leading-relaxed">
-                        TailorBird never fabricates synthetic products, dummy prices, or fake affiliate links. To browse live clothing items for your gaps, configure an external provider key (e.g., <code className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-[11px]">SERPAPI_API_KEY</code>).
+                      <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed">
+                        TailorBird never fabricates synthetic products, dummy prices, or fake affiliate links. To browse live clothing items for your gaps, configure an external provider key (e.g., <code className="px-1.5 py-0.5 rounded bg-[#F8F6F1] dark:bg-[#242A25] font-mono text-[11px]">SERPAPI_API_KEY</code>).
                       </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 pt-2 font-medium">
+                      <p className="text-xs text-[#727D69] dark:text-[#A3ABA0] pt-2 font-medium">
                         Your missing wardrobe essentials are accurately detailed in the Identified Gaps tab.
                       </p>
                     </div>
@@ -434,29 +432,29 @@ export const WardrobeGap: React.FC = () => {
                     {shoppingRecs.map((prod) => (
                       <div
                         key={prod.id}
-                        className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between group"
+                        className="bg-white dark:bg-[#1C201D] rounded-2xl overflow-hidden border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs flex flex-col justify-between group"
                       >
                         <div>
                           {/* Image */}
-                          <div className="aspect-square relative overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                          <div className="aspect-square relative overflow-hidden bg-[#F1EEE7] dark:bg-[#242A25]">
                             <img
                               src={prod.image_url}
                               alt={prod.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-black/70 text-white backdrop-blur-md">
+                            <span className="absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/75 text-white backdrop-blur-md">
                               {prod.brand}
                             </span>
                           </div>
 
                           {/* Details */}
                           <div className="p-4 space-y-2">
-                            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2">
+                            <h4 className="text-xs font-semibold text-[#202321] dark:text-[#F8F6F1] line-clamp-2">
                               {prod.title}
                             </h4>
 
                             <div className="flex items-center justify-between text-xs">
-                              <span className="font-extrabold text-zinc-900 dark:text-zinc-100">
+                              <span className="font-mono font-bold text-[#202321] dark:text-[#F8F6F1]">
                                 {prod.currency === 'INR' ? '₹' : '$'}
                                 {prod.price.toLocaleString()}
                               </span>
@@ -468,20 +466,20 @@ export const WardrobeGap: React.FC = () => {
                               )}
                             </div>
 
-                            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-3 bg-zinc-50 dark:bg-zinc-800/60 p-2 rounded-lg">
-                              <strong className="text-zinc-800 dark:text-zinc-200">Why: </strong>
+                            <p className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] line-clamp-3 bg-[#F8F6F1] dark:bg-[#242A25] p-2.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F]">
+                              <strong className="text-[#202321] dark:text-[#F8F6F1]">Why: </strong>
                               {prod.match_reason}
                             </p>
                           </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+                        <div className="p-3 border-t border-[#E2DDD3] dark:border-[#2D342F] space-y-2">
                           <a
                             href={prod.product_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full py-2 px-3 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity"
+                            className="w-full py-2 px-3 rounded-xl bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                           >
                             <span>View Product</span>
                             <ExternalLink className="w-3 h-3" />
@@ -490,10 +488,10 @@ export const WardrobeGap: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleSaveProduct(prod)}
-                              className={`flex-1 py-1.5 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors ${
+                              className={`flex-1 py-1.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                                 prod.is_saved
                                   ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 border-rose-300'
-                                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                  : 'border-[#E2DDD3] dark:border-[#2D342F] text-[#292D29] dark:text-[#F8F6F1] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
                               }`}
                             >
                               <Bookmark className="w-3 h-3" />
@@ -503,7 +501,7 @@ export const WardrobeGap: React.FC = () => {
                             <button
                               onClick={() => handleAlreadyOwn(prod)}
                               title="I already own a similar piece"
-                              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-emerald-600 transition-colors"
+                              className="p-1.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] hover:text-emerald-600 transition-colors cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -511,7 +509,7 @@ export const WardrobeGap: React.FC = () => {
                             <button
                               onClick={() => handleDismissProduct(prod)}
                               title="Not interested"
-                              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-rose-600 transition-colors"
+                              className="p-1.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] hover:text-rose-600 transition-colors cursor-pointer"
                             >
                               <EyeOff className="w-3.5 h-3.5" />
                             </button>

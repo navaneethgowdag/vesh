@@ -130,31 +130,31 @@ export const Modal: React.FC<ModalProps> = ({
             animate="visible"
             exit="exit"
             className={cn(
-              'relative w-full bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 z-10 overflow-hidden my-auto max-h-[92vh] flex flex-col shadow-xl focus:outline-none',
+              'relative w-full bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] z-10 overflow-hidden my-auto max-h-[92vh] flex flex-col shadow-2xl focus:outline-none',
               widthMap[resolvedSize]
             )}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-start justify-between p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-start justify-between p-6 pb-4 border-b border-[#E2DDD3] dark:border-[#2D342F]">
                 <div>
                   {title && (
                     <h3
                       id="modal-title"
-                      className="text-xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight"
+                      className="text-xl sm:text-2xl font-bold text-[#202321] dark:text-[#F8F6F1] font-serif tracking-tight"
                     >
                       {title}
                     </h3>
                   )}
                   {subtitle && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{subtitle}</p>
+                    <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1">{subtitle}</p>
                   )}
                 </div>
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[#777C75] hover:text-[#202321] dark:text-[#A3ABA0] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-[#727D69] cursor-pointer"
                     aria-label="Close dialog"
                   >
                     <X className="w-5 h-5" />

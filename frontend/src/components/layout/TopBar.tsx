@@ -1,33 +1,47 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Loader2, MessageSquare } from 'lucide-react';
+import {
+  Sun,
+  Moon,
+  Bell,
+  Loader2,
+  CloudSun,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Cloud,
+  User,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
-const getWeatherEmoji = (icon: string) => {
-  if (icon === 'sun') return '☀️';
-  if (icon === 'cloud-sun') return '⛅';
-  if (icon === 'cloud-rain') return '🌧️';
-  if (icon === 'cloud-snow') return '❄️';
-  if (icon === 'cloud-lightning') return '⛈️';
-  if (icon === 'cloud') return '☁️';
-  return '⛅';
+const renderWeatherIcon = (iconName: string) => {
+  const iconClass = "w-3.5 h-3.5 text-[#727D69] dark:text-[#9EAB97]";
+  if (iconName === 'sun') return <Sun className={iconClass} />;
+  if (iconName === 'cloud-sun') return <CloudSun className={iconClass} />;
+  if (iconName === 'cloud-rain') return <CloudRain className={iconClass} />;
+  if (iconName === 'cloud-snow') return <CloudSnow className={iconClass} />;
+  if (iconName === 'cloud-lightning') return <CloudLightning className={iconClass} />;
+  if (iconName === 'cloud') return <Cloud className={iconClass} />;
+  return <CloudSun className={iconClass} />;
 };
 
 export const TopBar: React.FC = () => {
-  const { unreadNotifsCount, unreadMessagesCount, weather, weatherStatus, isWeatherLoading } = useApp();
+  const { unreadNotifsCount, weather, weatherStatus, isWeatherLoading } = useApp();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-4 py-2.5 flex items-center justify-between transition-colors">
+    <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#1A1D1A]/95 backdrop-blur-md border-b border-[#E2DDD3] dark:border-[#2D342F] px-4 py-2.5 flex items-center justify-between transition-colors">
       {/* Brand */}
       <div
         onClick={() => navigate('/home')}
         className="flex items-center gap-2.5 cursor-pointer group"
       >
-        <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-sm transition-colors">
+        <div className="w-8 h-8 rounded-lg bg-[#202321] dark:bg-[#F8F6F1] flex items-center justify-center text-[#F8F6F1] dark:text-[#202321] font-serif font-bold text-sm transition-transform group-hover:scale-105 shadow-sm">
           T
         </div>
-        <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <span className="text-lg font-bold tracking-tight text-[#202321] dark:text-[#F8F6F1] font-serif">
           TailorBird
         </span>
       </div>
@@ -37,58 +51,55 @@ export const TopBar: React.FC = () => {
         {/* Weather chip */}
         <button
           onClick={() => navigate('/daily-fit')}
-          className="flex items-center gap-1.5 min-h-[44px] bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-3 py-2 rounded-md text-xs font-medium border border-zinc-200 dark:border-zinc-700 transition-colors"
+          className="flex items-center gap-1.5 min-h-[38px] bg-[#F8F6F1] dark:bg-[#252A26] hover:bg-[#EFECE4] dark:hover:bg-[#2F3630] text-[#202321] dark:text-[#F8F6F1] px-2.5 py-1.5 rounded-lg text-xs font-medium border border-[#E2DDD3] dark:border-[#2D342F] transition-colors cursor-pointer"
           title={weather.city ? `${weather.city} · ${weather.temp}°C ${weather.condition}` : 'Check Weather & Recommendations'}
         >
           {isWeatherLoading ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-600 dark:text-zinc-400" />
-              <span className="text-xs">Updating...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#777C75] dark:text-[#A3ABA0]" />
+              <span className="text-[11px] font-mono">Syncing...</span>
             </>
           ) : weather.city && weatherStatus === 'available' ? (
             <>
-              <span className="text-sm">{getWeatherEmoji(weather.icon)}</span>
-              <span className="font-semibold">{weather.temp}°C</span>
+              {renderWeatherIcon(weather.icon)}
+              <span className="font-mono font-semibold text-xs">{weather.temp}°C</span>
             </>
           ) : (
             <>
-              <span>🌤️</span>
-              <span className="text-xs">Weather</span>
+              <CloudSun className="w-3.5 h-3.5 text-[#727D69]" />
+              <span className="text-[11px] font-mono">Weather</span>
             </>
           )}
         </button>
 
-        {/* Search */}
+        {/* Theme Toggle */}
         <button
-          onClick={() => navigate('/explore')}
-          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          aria-label="Explore and Search"
+          onClick={toggleTheme}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors cursor-pointer"
+          aria-label="Toggle Theme"
         >
-          <Search className="w-4 h-4" />
+          {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         {/* Notification Bell */}
         <button
           onClick={() => navigate('/notifications')}
-          className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="relative w-9 h-9 rounded-lg flex items-center justify-center text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors cursor-pointer"
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4" />
           {unreadNotifsCount > 0 && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-100 ring-2 ring-white dark:ring-[#18181B]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#1A1D1A]" />
           )}
         </button>
 
-        {/* Messages */}
+        {/* Profile */}
         <button
-          onClick={() => navigate('/inbox')}
-          className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          aria-label="Messages"
+          onClick={() => navigate('/profile')}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors cursor-pointer"
+          aria-label="Profile"
         >
-          <MessageSquare className="w-4 h-4" />
-          {unreadMessagesCount > 0 && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#18181B]" />
-          )}
+          <User className="w-4 h-4" />
         </button>
       </div>
     </header>

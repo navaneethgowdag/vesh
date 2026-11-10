@@ -14,13 +14,17 @@ import {
   User as UserIcon,
   Settings,
   LogOut,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../../utils/cn';
 
 export const Sidebar: React.FC = () => {
   const { unreadNotifsCount, wardrobe, logout, showToast } = useApp();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
 
@@ -33,7 +37,6 @@ export const Sidebar: React.FC = () => {
     { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
     { name: 'Wardrobe Insights', path: '/insights', icon: BarChart2 },
     { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
-    { name: 'Model Learning', path: '/model-learning', icon: Cpu, badge: 'ML' },
   ];
 
   const accountNavItems = [
@@ -55,30 +58,30 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 bg-white dark:bg-[#18181B] border-r border-zinc-200 dark:border-zinc-800 px-5 py-6 justify-between select-none transition-colors">
+    <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 bg-white dark:bg-[#1A1D1A] border-r border-[#E2DDD3] dark:border-[#2D342F] px-5 py-6 justify-between select-none transition-colors">
       {/* Brand Header & Nav */}
       <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
         {/* Brand Header */}
         <div
           onClick={() => navigate('/home')}
-          className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-6"
+          className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-7"
         >
-          <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-base transition-colors shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-[#202321] dark:bg-[#F8F6F1] flex items-center justify-center text-[#F8F6F1] dark:text-[#202321] font-serif font-bold text-lg transition-transform group-hover:scale-105 shadow-sm">
             T
           </div>
           <div>
-            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 transition-colors">
+            <span className="text-xl font-bold tracking-tight text-[#202321] dark:text-[#F8F6F1] font-serif transition-colors">
               TailorBird
             </span>
-            <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-medium tracking-wide">
+            <p className="text-[10px] text-[#727D69] dark:text-[#9EAB97] font-semibold tracking-widest uppercase">
               AI Wardrobe Stylist
             </p>
           </div>
         </div>
 
         {/* Main Navigation Section */}
-        <div className="mb-6">
-          <p className="px-3 mb-2 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="mb-7">
+          <p className="px-3 mb-2 text-[11px] font-bold text-[#777C75] dark:text-[#8E968C] uppercase tracking-wider">
             Stylist & Wardrobe
           </p>
           <nav className="space-y-1">
@@ -91,10 +94,10 @@ export const Sidebar: React.FC = () => {
                   to={item.path}
                   className={({ isActive }) =>
                     cn(
-                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
+                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-[14px] font-medium transition-all duration-150',
                       isActive
-                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] font-semibold shadow-subtle'
+                        : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26]'
                     )
                   }
                 >
@@ -103,10 +106,10 @@ export const Sidebar: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <Icon
                           className={cn(
-                            'w-4 h-4 transition-transform group-hover:scale-105',
+                            'w-4 h-4 transition-transform group-hover:scale-110',
                             isActive
-                              ? 'text-white dark:text-zinc-900'
-                              : 'text-zinc-500 dark:text-zinc-400'
+                              ? 'text-[#F8F6F1] dark:text-[#202321]'
+                              : 'text-[#777C75] dark:text-[#8E968C]'
                           )}
                         />
                         <span>{item.name}</span>
@@ -116,10 +119,10 @@ export const Sidebar: React.FC = () => {
                         {item.badge && (
                           <span
                             className={cn(
-                              'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
+                              'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
                               isActive
-                                ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                                : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                                ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#202321]'
+                                : 'bg-[#E9E6DE] dark:bg-[#2D342F] text-[#727D69] dark:text-[#B8C7B3] border border-[#D8D3C8] dark:border-[#38413A]'
                             )}
                           >
                             {item.badge}
@@ -129,10 +132,10 @@ export const Sidebar: React.FC = () => {
                         {typeof item.count === 'number' && item.count > 0 && (
                           <span
                             className={cn(
-                              'text-xs px-2 py-0.5 rounded font-semibold',
+                              'text-xs px-2 py-0.5 rounded-full font-mono font-semibold',
                               isActive
-                                ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                                ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#202321]'
+                                : 'bg-[#F1EEE7] dark:bg-[#252A26] text-[#777C75] dark:text-[#A3ABA0]'
                             )}
                           >
                             {item.count}
@@ -149,7 +152,7 @@ export const Sidebar: React.FC = () => {
 
         {/* Account Navigation Section */}
         <div>
-          <p className="px-3 mb-2 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+          <p className="px-3 mb-2 text-[11px] font-bold text-[#777C75] dark:text-[#8E968C] uppercase tracking-wider">
             Account
           </p>
           <nav className="space-y-1">
@@ -162,10 +165,10 @@ export const Sidebar: React.FC = () => {
                   to={item.path}
                   className={({ isActive }) =>
                     cn(
-                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
+                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-[14px] font-medium transition-all duration-150',
                       isActive
-                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] font-semibold shadow-subtle'
+                        : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26]'
                     )
                   }
                 >
@@ -174,10 +177,10 @@ export const Sidebar: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <Icon
                           className={cn(
-                            'w-4 h-4 transition-transform group-hover:scale-105',
+                            'w-4 h-4 transition-transform group-hover:scale-110',
                             isActive
-                              ? 'text-white dark:text-zinc-900'
-                              : 'text-zinc-500 dark:text-zinc-400'
+                              ? 'text-[#F8F6F1] dark:text-[#202321]'
+                              : 'text-[#777C75] dark:text-[#8E968C]'
                           )}
                         />
                         <span>{item.name}</span>
@@ -186,10 +189,10 @@ export const Sidebar: React.FC = () => {
                       {typeof item.count === 'number' && item.count > 0 && (
                         <span
                           className={cn(
-                            'text-xs px-2 py-0.5 rounded font-semibold',
+                            'text-xs px-2 py-0.5 rounded-full font-mono font-semibold',
                             isActive
-                              ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                              : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                              ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#202321]'
+                              : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
                           )}
                         >
                           {item.count}
@@ -205,28 +208,33 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* User Card at Bottom */}
-      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors group">
+      <div className="pt-4 border-t border-[#E2DDD3] dark:border-[#2D342F]">
+        <div className="flex items-center justify-between p-2 rounded-xl hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors group">
           <div
             onClick={() => navigate('/profile')}
             className="flex items-center gap-3 cursor-pointer min-w-0 flex-1"
           >
             <Avatar src={currentUser.avatar} alt={currentUser.name} size="md" isVerified={currentUser.isVerified} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+              <p className="text-sm font-semibold text-[#202321] dark:text-[#F8F6F1] truncate">
                 {currentUser.name}
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">@{currentUser.username}</p>
+              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] font-mono truncate">
+                @{currentUser.username}
+              </p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            title="Log Out of TailorBird"
-            aria-label="Log Out"
-            className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleLogout}
+              title="Log Out of TailorBird"
+              aria-label="Log Out"
+              className="p-2 text-[#777C75] dark:text-[#A3ABA0] hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>

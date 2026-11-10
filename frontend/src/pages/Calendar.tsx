@@ -453,16 +453,14 @@ export const Calendar: React.FC = () => {
         {/* Page Title & Navigation Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-md">
-                <CalendarIcon className="w-4 h-4" />
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-                Wardrobe Calendar
-              </h1>
-            </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              Synchronize your Google schedule, plan outfits, and harmonize your daily looks.
+            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
+              Agenda & Outfits
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
+              Wardrobe Calendar
+            </h1>
+            <p className="text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1">
+              Synchronize your schedule, plan outfits, and harmonize your daily looks.
             </p>
           </div>
 
@@ -472,7 +470,7 @@ export const Calendar: React.FC = () => {
               onClick={handleRefresh}
               disabled={isRefreshing}
               title="Refresh calendar"
-              className="p-2.5 min-h-[44px] min-w-[44px] rounded-md border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer flex items-center justify-center"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] bg-white dark:bg-[#1C201D] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25] transition-all cursor-pointer flex items-center justify-center shadow-xs"
               aria-label="Refresh calendar"
             >
               <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
@@ -487,7 +485,7 @@ export const Calendar: React.FC = () => {
               Plan Outfit
             </Button>
 
-            <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md p-1 min-h-[44px]">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl p-1 min-h-[44px] shadow-xs">
               <Button
                 variant="ghost"
                 size="sm"
@@ -499,7 +497,7 @@ export const Calendar: React.FC = () => {
               <Button variant="outline" size="sm" onClick={handleToday}>
                 Today
               </Button>
-              <span className="px-2 text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 min-w-[120px] text-center">
+              <span className="px-2 text-xs sm:text-sm font-serif font-bold text-[#202321] dark:text-[#F8F6F1] min-w-[130px] text-center">
                 {monthNames[month]} {year}
               </span>
               <Button
@@ -517,14 +515,14 @@ export const Calendar: React.FC = () => {
         {/* Google Calendar Connection Status Banner */}
         <div className="mb-6">
           {calStatus?.is_connected ? (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#899783]/15 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center flex-shrink-0 border border-[#899783]/20">
                   <CalendarCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                    <span className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1]">
                       Google Calendar Connected
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -532,16 +530,16 @@ export const Calendar: React.FC = () => {
                       Active Sync
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5 font-sans">
                     {calStatus.google_email && <span>{calStatus.google_email}</span>}
                     <span>•</span>
-                    <span>
+                    <span className="font-mono">
                       {calStatus.event_count || 0} events tracked
                     </span>
                     {calStatus.last_sync_time && (
                       <>
                         <span>•</span>
-                        <span>
+                        <span className="font-mono">
                           Synced {new Date(calStatus.last_sync_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </>
@@ -574,7 +572,7 @@ export const Calendar: React.FC = () => {
                   onClick={handleDisconnectGoogle}
                   isLoading={isDisconnectingGoogle}
                   title="Disconnect Google Calendar"
-                  className="!text-zinc-400 hover:!text-red-600"
+                  className="!text-[#777C75] hover:!text-rose-600"
                   icon={<Unlink className="w-3.5 h-3.5" />}
                 >
                   Disconnect
@@ -582,16 +580,16 @@ export const Calendar: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-lg bg-gradient-to-r from-zinc-50 via-zinc-100/60 to-zinc-50 dark:from-zinc-900 dark:via-zinc-800/40 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="w-10 h-10 rounded-md bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                  <CalendarIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#F1EEE7] via-[#F8F6F1] to-[#F1EEE7] dark:from-[#1C201D] dark:via-[#242A25] dark:to-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center flex-shrink-0">
+                  <CalendarIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-sm sm:text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                     Connect Your Google Calendar
                   </h3>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 max-w-xl">
+                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5 max-w-xl">
                     Import meetings, flights, and dinners into TailorBird. Get personalized outfit recommendations automatically tuned to each event&apos;s dress code, formality, and local weather.
                   </p>
                 </div>
@@ -613,7 +611,7 @@ export const Calendar: React.FC = () => {
 
         {/* Source Filter Tabs */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mr-1">
+          <span className="text-xs font-semibold text-[#777C75] dark:text-[#A3ABA0] flex items-center gap-1 mr-1">
             <Filter className="w-3.5 h-3.5" /> Source:
           </span>
           {(['all', 'google', 'tailorbird'] as const).map((filter) => (
@@ -621,10 +619,10 @@ export const Calendar: React.FC = () => {
               key={filter}
               onClick={() => setSourceFilter(filter)}
               className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer',
+                'px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border',
                 sourceFilter === filter
-                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-                  : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent shadow-xs'
+                  : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#6B7269] dark:text-[#A3ABA0] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
               )}
             >
               {filter === 'all'
@@ -637,7 +635,7 @@ export const Calendar: React.FC = () => {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 p-3.5 mb-6 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+          <div className="flex items-center gap-2 p-4 mb-6 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
             <Button variant="ghost" size="sm" onClick={loadEvents} className="ml-auto">
@@ -649,9 +647,9 @@ export const Calendar: React.FC = () => {
         {/* Main Grid: Calendar Matrix (Left) + Selected Day Agenda (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Calendar Monthly Matrix (8 cols) */}
-          <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-5">
+          <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-5 shadow-xs">
             {/* Day of Week Header */}
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center mb-2 pb-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center mb-2 pb-2 border-b border-[#E2DDD3] dark:border-[#2D342F] text-xs font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
               <span>Sun</span>
               <span>Mon</span>
               <span>Tue</span>
@@ -665,7 +663,7 @@ export const Calendar: React.FC = () => {
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {/* Empty offset slots */}
               {Array.from({ length: startDayIndex }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square rounded opacity-0" />
+                <div key={`empty-${i}`} className="aspect-square rounded-xl opacity-0" />
               ))}
 
               {/* Days of the month */}
@@ -683,21 +681,21 @@ export const Calendar: React.FC = () => {
                     key={dateStr}
                     onClick={() => setSelectedDate(dateStr)}
                     className={cn(
-                      'aspect-square rounded p-2 flex flex-col justify-between transition-colors border text-left relative group cursor-pointer',
+                      'aspect-square rounded-xl p-2 flex flex-col justify-between transition-all border text-left relative group cursor-pointer',
                       isSelected
-                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-bold'
+                        ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent font-bold shadow-sm'
                         : isToday
-                          ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-400 dark:border-zinc-500 font-bold'
-                          : 'bg-zinc-50/50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
+                          ? 'bg-[#F1EEE7] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] border-[#727D69] font-bold'
+                          : 'bg-[#F8F6F1]/50 dark:bg-[#1C201D] text-[#202321] dark:text-[#F8F6F1] border-[#E2DDD3] dark:border-[#2D342F] hover:border-[#899783]'
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
                       <span
                         className={cn(
-                          'text-xs font-semibold',
+                          'text-xs font-mono font-semibold',
                           isSelected
-                            ? 'text-white dark:text-zinc-900'
-                            : 'text-zinc-900 dark:text-zinc-100'
+                            ? 'text-[#F8F6F1] dark:text-[#202321]'
+                            : 'text-[#202321] dark:text-[#F8F6F1]'
                         )}
                       >
                         {dayNum}
@@ -707,7 +705,7 @@ export const Calendar: React.FC = () => {
                           className={cn(
                             'text-[9px] font-bold px-1 rounded',
                             isSelected
-                              ? 'bg-white/20 text-white'
+                              ? 'bg-white/20 text-white dark:bg-black/20 dark:text-black'
                               : 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
                           )}
                           title="Imported from Google Calendar"
@@ -729,13 +727,13 @@ export const Calendar: React.FC = () => {
                                 'w-1.5 h-1.5 rounded-full',
                                 isGoogle
                                   ? isSelected
-                                    ? 'bg-blue-200'
+                                    ? 'bg-blue-300'
                                     : 'bg-blue-500'
                                   : ev.status === 'completed'
                                     ? 'bg-emerald-500'
                                     : isSelected
-                                      ? 'bg-white dark:bg-zinc-900'
-                                      : 'bg-zinc-900 dark:bg-zinc-100'
+                                      ? 'bg-white dark:bg-[#202321]'
+                                      : 'bg-[#727D69]'
                               )}
                               title={`${ev.title || ev.occasion || 'Event'}: ${ev.status}`}
                             />
@@ -744,10 +742,10 @@ export const Calendar: React.FC = () => {
                         {dayEvts.length > 3 && (
                           <span
                             className={cn(
-                              'text-[10px] font-bold',
+                              'text-[10px] font-mono font-bold',
                               isSelected
-                                ? 'text-white dark:text-zinc-900'
-                                : 'text-zinc-500 dark:text-zinc-400'
+                                ? 'text-[#F8F6F1] dark:text-[#202321]'
+                                : 'text-[#777C75] dark:text-[#A3ABA0]'
                             )}
                           >
                             +{dayEvts.length - 3}
@@ -763,13 +761,13 @@ export const Calendar: React.FC = () => {
 
           {/* Selected Day Agenda (4 cols) */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-5">
-              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3 mb-4">
+            <div className="bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#E2DDD3] dark:border-[#2D342F] pb-3.5 mb-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
                     Agenda for
                   </span>
-                  <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                     {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
                       weekday: 'short',
                       month: 'short',
@@ -799,33 +797,33 @@ export const Calendar: React.FC = () => {
 
               {/* Day Harmonizer: Multi-Event Analysis Card */}
               {dayAgenda && dayAgenda.event_count > 1 && (
-                <div className="mb-4 p-3.5 rounded-lg border bg-zinc-50/80 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700/60">
+                <div className="mb-4 p-4 rounded-xl border bg-[#F1EEE7]/80 dark:bg-[#242A25]/60 border-[#E2DDD3] dark:border-[#2D342F]">
                   <div className="flex items-start gap-2.5">
-                    <div className="p-1 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 mt-0.5 flex-shrink-0">
+                    <div className="p-1 rounded-lg bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] mt-0.5 flex-shrink-0">
                       <Layers className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
                           Day Harmonizer ({dayAgenda.event_count} Events)
                         </span>
                         {dayAgenda.is_outfit_change_recommended ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                            Outfit Change Recommended
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                            Outfit Change
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                            Single Versatile Look
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                            Versatile Look
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1">
+                      <p className="text-xs text-[#202321] dark:text-[#F8F6F1] mt-1.5 leading-relaxed">
                         {dayAgenda.reason}
                       </p>
-                      <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-500 dark:text-zinc-400">
-                        <span>Target: <strong className="text-zinc-800 dark:text-zinc-200">{dayAgenda.suggested_overall_occasion}</strong></span>
+                      <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-[#E2DDD3] dark:border-[#2D342F] text-[11px] text-[#777C75] dark:text-[#A3ABA0]">
+                        <span>Target: <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">{dayAgenda.suggested_overall_occasion}</strong></span>
                         <span>•</span>
-                        <span>Style: <strong className="text-zinc-800 dark:text-zinc-200">{dayAgenda.suggested_dress_code}</strong></span>
+                        <span>Style: <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">{dayAgenda.suggested_dress_code}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -834,19 +832,19 @@ export const Calendar: React.FC = () => {
 
               {/* List of Events for Selected Day */}
               {isLoading ? (
-                <div className="py-12 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="py-12 text-center text-xs text-[#777C75] dark:text-[#A3ABA0]">
                   Loading scheduled fits...
                 </div>
               ) : dayEvents.length === 0 ? (
-                <div className="py-10 text-center rounded-md bg-zinc-50 dark:bg-zinc-800/40 border border-dashed border-zinc-200 dark:border-zinc-800 p-6">
-                  <Shirt className="w-8 h-8 text-zinc-400 dark:text-zinc-500 mx-auto mb-2" />
-                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                <div className="py-10 text-center rounded-2xl bg-[#F8F6F1]/60 dark:bg-[#141715]/40 border border-dashed border-[#E2DDD3] dark:border-[#2D342F] p-6">
+                  <Shirt className="w-8 h-8 text-[#899783] mx-auto mb-2 opacity-70" />
+                  <p className="font-serif font-bold text-[#202321] dark:text-[#F8F6F1] text-sm">
                     No Outfits or Events
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-[220px] mx-auto">
+                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 max-w-[220px] mx-auto leading-relaxed">
                     Schedule a look manually or let TailorBird synthesize recommendations for this day.
                   </p>
-                  <div className="flex items-center justify-center gap-2 mt-3.5">
+                  <div className="flex items-center justify-center gap-2 mt-4">
                     <Button
                       variant="primary"
                       size="sm"
@@ -886,10 +884,10 @@ export const Calendar: React.FC = () => {
                       <div
                         key={event.id}
                         className={cn(
-                          'p-4 rounded-md border transition-all bg-zinc-50 dark:bg-zinc-800/40',
+                          'p-4 rounded-xl border transition-all bg-[#F8F6F1]/60 dark:bg-[#242A25]/40',
                           event.status === 'cancelled'
-                            ? 'border-zinc-200 dark:border-zinc-800 opacity-60'
-                            : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
+                            ? 'border-[#E2DDD3] dark:border-[#2D342F] opacity-60'
+                            : 'border-[#E2DDD3] dark:border-[#2D342F] hover:border-[#899783]'
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -897,10 +895,10 @@ export const Calendar: React.FC = () => {
                             <img
                               src={event.outfit.image}
                               alt={event.outfit.title}
-                              className="w-16 h-16 rounded object-cover shadow-sm flex-shrink-0"
+                              className="w-16 h-16 rounded-xl object-cover shadow-xs flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-14 h-14 rounded bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500 flex-shrink-0">
+                            <div className="w-14 h-14 rounded-xl bg-[#E9E6DE] dark:bg-[#1C201D] flex items-center justify-center text-[#777C75] flex-shrink-0">
                               <Shirt className="w-6 h-6" />
                             </div>
                           )}
@@ -910,17 +908,17 @@ export const Calendar: React.FC = () => {
                             <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                               <div className="flex items-center gap-1.5">
                                 {isGoogleEvent ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                     Google Calendar
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9E6DE] dark:bg-[#1C201D] text-[#202321] dark:text-[#F8F6F1]">
                                     TailorBird
                                   </span>
                                 )}
 
                                 {(event.inferredOccasion || event.occasion) && (
-                                  <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                  <span className="text-[10px] font-medium text-[#777C75] dark:text-[#A3ABA0]">
                                     {event.inferredOccasion || event.occasion}
                                   </span>
                                 )}
@@ -928,12 +926,12 @@ export const Calendar: React.FC = () => {
 
                               <span
                                 className={cn(
-                                  'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1',
+                                  'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1',
                                   event.status === 'completed'
                                     ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
                                     : event.status === 'cancelled'
-                                      ? 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20'
-                                      : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                                      ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20'
+                                      : 'bg-[#E9E6DE] dark:bg-[#1C201D] text-[#202321] dark:text-[#F8F6F1]'
                                 )}
                               >
                                 {event.status === 'completed' && <Check className="w-2.5 h-2.5" />}
@@ -942,7 +940,7 @@ export const Calendar: React.FC = () => {
                             </div>
 
                             {/* Event Title */}
-                            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                            <h4 className="text-sm font-semibold text-[#202321] dark:text-[#F8F6F1] truncate">
                               {eventTitle}
                             </h4>
 

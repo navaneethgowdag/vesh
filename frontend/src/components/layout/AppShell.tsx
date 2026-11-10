@@ -15,7 +15,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   showRightSidebar = false,
 }) => {
   return (
-    <div className="min-h-screen bg-[#F7F4EE] dark:bg-[#171715] text-[#25211E] dark:text-[#F4F0E8] flex flex-col antialiased transition-colors duration-200">
+    <div className="min-h-screen bg-[#F8F6F1] dark:bg-[#141715] text-[#202321] dark:text-[#F8F6F1] flex flex-col antialiased transition-colors duration-200">
       {/* Top bar on Mobile / Tablet */}
       <TopBar />
 
@@ -25,7 +25,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 pb-24 lg:pb-12 px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
-          <div className="max-w-4xl mx-auto">{children}</div>
+          <div className="max-w-5xl mx-auto">{children}</div>
         </main>
 
         {/* Right Sidebar on Desktop (if active for page) */}

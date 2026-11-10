@@ -15,7 +15,7 @@ export const MobileNavigation: React.FC = () => {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white dark:bg-[#18181B] border-t border-neutral-200 dark:border-neutral-800 flex items-stretch justify-around transition-colors h-14"
+      className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 dark:bg-[#1A1D1A]/95 backdrop-blur-md border-t border-[#E2DDD3] dark:border-[#2D342F] flex items-stretch justify-around transition-colors h-16 pb-safe"
     >
       {navItems.map((item) => {
         const Icon = item.icon;
@@ -25,10 +25,10 @@ export const MobileNavigation: React.FC = () => {
             to={item.path}
             className={({ isActive }) =>
               cn(
-                'flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 px-1 transition-colors select-none focus:outline-none',
+                'flex-1 flex flex-col items-center justify-center min-h-[48px] py-1.5 px-1 transition-all select-none focus:outline-none relative',
                 isActive
-                  ? 'text-neutral-900 dark:text-neutral-50 font-semibold'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
+                  ? 'text-[#202321] dark:text-[#F8F6F1] font-semibold'
+                  : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
               )
             }
           >
@@ -36,13 +36,16 @@ export const MobileNavigation: React.FC = () => {
               <>
                 <Icon
                   className={cn(
-                    'w-5 h-5 mb-0.5',
-                    isActive
-                      ? 'text-neutral-900 dark:text-neutral-50 stroke-[2.2]'
-                      : 'text-neutral-500 dark:text-neutral-400 stroke-[1.8]'
+                    'w-5 h-5 mb-1 transition-transform',
+                    isActive ? 'scale-110 stroke-[2.3]' : 'stroke-[1.8]'
                   )}
                 />
-                <span className="text-[11px] leading-none tracking-tight">{item.name}</span>
+                <span className="text-[11px] font-medium leading-none tracking-tight">
+                  {item.name}
+                </span>
+                {isActive && (
+                  <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[#727D69] dark:bg-[#899783]" />
+                )}
               </>
             )}
           </NavLink>

@@ -247,18 +247,18 @@ export const OccasionVault: React.FC = () => {
     <AppShell showRightSidebar={true}>
       <div className="max-w-5xl mx-auto space-y-8 pb-16 select-none">
         {/* Header Banner */}
-        <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-zinc-900 via-neutral-900 to-amber-950 text-white overflow-hidden shadow-xl border border-amber-500/20">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+        <div className="relative rounded-3xl p-6 sm:p-8 bg-[#202321] text-[#F8F6F1] overflow-hidden shadow-xl border border-[#B5AA99]/40">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 rounded-full bg-[#B5AA99]/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-semibold tracking-wide uppercase">
-                <Crown className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B5AA99]/20 border border-[#B5AA99]/40 text-[#B5AA99] text-xs font-semibold tracking-wide uppercase font-mono">
+                <Crown className="w-3.5 h-3.5 text-[#B5AA99]" />
                 <span>Occasion Vault & Wardrobe Protection</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-serif text-white">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-serif text-[#F8F6F1]">
                 Occasion Vault
               </h1>
-              <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed">
+              <p className="text-[#A3ABA0] text-xs sm:text-sm leading-relaxed font-sans">
                 Protect special-occasion and luxury attire from inappropriate casual rotations. Prepare
                 curated outfits for galas, weddings, and milestone ceremonies, and track wear cost efficiency.
               </p>
@@ -268,7 +268,7 @@ export const OccasionVault: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 cursor-pointer"
                 onClick={() => {
                   setIsRefreshing(true);
                   fetchVaultData();
@@ -280,7 +280,7 @@ export const OccasionVault: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                className="bg-amber-400 text-neutral-950 hover:bg-amber-300 font-bold"
+                className="bg-[#B5AA99] text-[#202321] hover:bg-[#B5AA99]/90 font-bold cursor-pointer"
                 onClick={() => navigate('/wardrobe')}
                 icon={<Plus className="w-3.5 h-3.5" />}
               >
@@ -292,28 +292,28 @@ export const OccasionVault: React.FC = () => {
           {/* Quick Metrics */}
           {analytics && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10 text-xs">
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
-                <span className="text-zinc-400 block text-[11px]">Vault Valuation</span>
-                <span className="text-lg font-bold text-amber-300">
+              <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                <span className="text-[#A3ABA0] block text-[11px] uppercase tracking-wider">Vault Valuation</span>
+                <span className="text-xl font-bold font-mono text-[#B5AA99]">
                   ${analytics.total_valuation.toLocaleString()}
                 </span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
-                <span className="text-zinc-400 block text-[11px]">Avg. Cost Per Wear</span>
-                <span className="text-lg font-bold text-white">
-                  ${Math.round(analytics.average_cost_per_wear)} / wear
+              <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                <span className="text-[#A3ABA0] block text-[11px] uppercase tracking-wider">Avg. Cost Per Wear</span>
+                <span className="text-xl font-bold font-mono text-[#F8F6F1]">
+                  ${Math.round(analytics.average_cost_per_wear)} <span className="text-xs text-[#A3ABA0] font-sans">/ wear</span>
                 </span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
-                <span className="text-zinc-400 block text-[11px]">Luxury & Special</span>
-                <span className="text-lg font-bold text-white">
-                  {analytics.luxury_items_count} items
+              <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                <span className="text-[#A3ABA0] block text-[11px] uppercase tracking-wider">Luxury & Special</span>
+                <span className="text-xl font-bold font-mono text-[#F8F6F1]">
+                  {analytics.luxury_items_count} <span className="text-xs text-[#A3ABA0] font-sans">pieces</span>
                 </span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
-                <span className="text-zinc-400 block text-[11px]">Reserved Garments</span>
-                <span className="text-lg font-bold text-emerald-400">
-                  {analytics.reserved_items_count} locked
+              <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                <span className="text-[#A3ABA0] block text-[11px] uppercase tracking-wider">Reserved Garments</span>
+                <span className="text-xl font-bold font-mono text-emerald-400">
+                  {analytics.reserved_items_count} <span className="text-xs text-[#A3ABA0] font-sans">locked</span>
                 </span>
               </div>
             </div>
@@ -321,17 +321,17 @@ export const OccasionVault: React.FC = () => {
         </div>
 
         {/* SECTION 1: Event Readiness Preparation Tool */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <Sparkles className="w-5 h-5" />
+        <div className="bg-white dark:bg-[#1C201D] rounded-3xl p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b border-[#E2DDD3] dark:border-[#2D342F] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#B5AA99]/20 text-[#202321] dark:text-[#F8F6F1] flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-[#B5AA99]" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                   Occasion Readiness & Event Preparation
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5">
                   Pre-flight check for upcoming weddings, galas, and celebrations with care reminders.
                 </p>
               </div>
@@ -342,7 +342,7 @@ export const OccasionVault: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             {/* Event Name */}
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block font-semibold text-[#777C75] dark:text-[#A3ABA0] mb-1">
                 Event Name
               </label>
               <input
@@ -350,19 +350,19 @@ export const OccasionVault: React.FC = () => {
                 value={prepEventName}
                 onChange={(e) => setPrepEventName(e.target.value)}
                 placeholder="e.g. Maya & Arjun Wedding"
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] text-[#202321] dark:text-[#F8F6F1] focus:outline-none focus:ring-1 focus:ring-[#727D69]"
               />
             </div>
 
             {/* Occasion Selection */}
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block font-semibold text-[#777C75] dark:text-[#A3ABA0] mb-1">
                 Occasion Type
               </label>
               <select
                 value={prepOccasion}
                 onChange={(e) => setPrepOccasion(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] text-[#202321] dark:text-[#F8F6F1] focus:outline-none focus:ring-1 focus:ring-[#727D69] cursor-pointer"
               >
                 {CANONICAL_OCCASION_GROUPS.map((grp) => (
                   <optgroup key={grp.categoryKey} label={grp.name}>
@@ -378,13 +378,13 @@ export const OccasionVault: React.FC = () => {
 
             {/* Attendee Role */}
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block font-semibold text-[#777C75] dark:text-[#A3ABA0] mb-1">
                 Your Role
               </label>
               <select
                 value={prepRole}
                 onChange={(e) => setPrepRole(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] text-[#202321] dark:text-[#F8F6F1] focus:outline-none focus:ring-1 focus:ring-[#727D69] cursor-pointer"
               >
                 {EVENT_ATTENDEE_ROLES.map((r) => (
                   <option key={r.key} value={r.key}>
@@ -396,14 +396,14 @@ export const OccasionVault: React.FC = () => {
 
             {/* Date */}
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block font-semibold text-[#777C75] dark:text-[#A3ABA0] mb-1">
                 Target Date
               </label>
               <input
                 type="date"
                 value={prepDate}
                 onChange={(e) => setPrepDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] text-[#202321] dark:text-[#F8F6F1] focus:outline-none focus:ring-1 focus:ring-[#727D69] font-mono"
               />
             </div>
           </div>
@@ -414,7 +414,7 @@ export const OccasionVault: React.FC = () => {
               size="sm"
               onClick={handleRunEventPrep}
               disabled={isPrepping}
-              className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold"
+              className="bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-bold shadow-xs cursor-pointer"
               icon={<Sparkles className={`w-3.5 h-3.5 ${isPrepping ? 'animate-spin' : ''}`} />}
             >
               {isPrepping ? 'Evaluating Wardrobe...' : 'Evaluate Event Readiness'}
@@ -531,14 +531,14 @@ export const OccasionVault: React.FC = () => {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 text-xs overflow-x-auto">
+            <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#E9E6DE] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] text-xs overflow-x-auto hide-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveTab('all')}
-                className={`px-4 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
+                className={`px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
                   activeTab === 'all'
-                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-semibold shadow-xs'
+                    : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
                 }`}
               >
                 All Vault Items ({vaultItems.length})
@@ -546,10 +546,10 @@ export const OccasionVault: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('luxury_special')}
-                className={`px-4 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
+                className={`px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
                   activeTab === 'luxury_special'
-                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-semibold shadow-xs'
+                    : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
                 }`}
               >
                 Luxury & Special
@@ -557,10 +557,10 @@ export const OccasionVault: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('elevated')}
-                className={`px-4 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
+                className={`px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
                   activeTab === 'elevated'
-                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-semibold shadow-xs'
+                    : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
                 }`}
               >
                 Elevated Wear
@@ -568,10 +568,10 @@ export const OccasionVault: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('reserved')}
-                className={`px-4 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
+                className={`px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer shrink-0 ${
                   activeTab === 'reserved'
-                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-semibold shadow-xs'
+                    : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
                 }`}
               >
                 Reserved Garments
@@ -582,18 +582,18 @@ export const OccasionVault: React.FC = () => {
           {/* Grid of Garments */}
           {isLoading ? (
             <div className="py-24 text-center space-y-3">
-              <RefreshCw className="w-8 h-8 text-zinc-400 animate-spin mx-auto" />
-              <p className="text-xs text-zinc-500">Opening Occasion Vault...</p>
+              <RefreshCw className="w-8 h-8 text-[#899783] animate-spin mx-auto" />
+              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0]">Opening Occasion Vault...</p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-20 px-4 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs max-w-md mx-auto space-y-3">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+            <div className="text-center py-20 px-4 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs max-w-md mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#B5AA99]/20 text-[#B5AA99] flex items-center justify-center mx-auto">
                 <Crown className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+              <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
                 No garments in this Vault view
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0]">
                 You can tag any wardrobe item as Special, Luxury, or Elevated to keep it protected in the Vault.
               </p>
               <Button
@@ -616,43 +616,43 @@ export const OccasionVault: React.FC = () => {
                 return (
                   <div
                     key={item.id}
-                    className="group relative rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
+                    className="group relative rounded-2xl bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs overflow-hidden flex flex-col justify-between transition-all hover:border-[#899783] duration-300"
                   >
                     {/* Image Thumbnail */}
-                    <div className="relative aspect-[3/4] bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                    <div className="relative aspect-[3/4] bg-[#F1EEE7] dark:bg-[#242A25] overflow-hidden">
                       <img
                         src={resolveImageUrl(item.image)}
                         alt={item.name}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500 ease-out"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = FALLBACK_POST_IMAGE;
                         }}
                       />
 
                       {/* Top Badges */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
                         {isLux && (
-                          <span className="px-2 py-0.5 rounded-md bg-amber-500 text-zinc-950 font-extrabold text-[10px] shadow-sm flex items-center gap-1">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#B5AA99] text-[#202321] font-mono font-bold text-[10px] shadow-sm flex items-center gap-1">
                             <Crown className="w-3 h-3" />
                             LUXURY
                           </span>
                         )}
                         {item.wearTier === 'elevated' && !isLux && (
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-900/90 text-white font-bold text-[10px] backdrop-blur-xs">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#202321]/90 text-white font-mono font-bold text-[10px] backdrop-blur-xs border border-white/10">
                             ELEVATED
                           </span>
                         )}
                       </div>
 
                       {/* Reserved Status Overlay */}
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2.5 right-2.5">
                         {isReserved ? (
-                          <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-bold text-[10px] shadow-sm flex items-center gap-1">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[10px] shadow-sm flex items-center gap-1">
                             <Lock className="w-3 h-3" />
                             RESERVED
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-900/70 text-zinc-200 font-medium text-[10px] backdrop-blur-xs">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#202321]/70 text-[#F8F6F1] font-mono font-medium text-[10px] backdrop-blur-xs">
                             Available
                           </span>
                         )}
@@ -660,28 +660,28 @@ export const OccasionVault: React.FC = () => {
                     </div>
 
                     {/* Garment Details */}
-                    <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                    <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
                       <div>
-                        <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                        <div className="flex items-center justify-between text-[11px] text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider font-semibold">
                           <span>{item.category}</span>
-                          {item.brand && <span className="font-semibold truncate max-w-[90px]">{item.brand}</span>}
+                          {item.brand && <span className="font-medium text-[#202321] dark:text-[#F8F6F1] truncate max-w-[90px]">{item.brand}</span>}
                         </div>
-                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate mt-0.5">
+                        <h4 className="text-xs font-semibold text-[#202321] dark:text-[#F8F6F1] truncate mt-1">
                           {item.name}
                         </h4>
                       </div>
 
                       {/* Valuation / Cost Per Wear stats */}
-                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                      <div className="pt-2.5 border-t border-[#E2DDD3] dark:border-[#2D342F] flex items-center justify-between text-[11px]">
                         <div>
-                          <span className="text-zinc-400 block text-[10px]">Price</span>
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                          <span className="text-[#777C75] dark:text-[#A3ABA0] block text-[10px] font-mono">Price</span>
+                          <span className="font-semibold font-mono text-[#202321] dark:text-[#F8F6F1]">
                             {price ? `$${price}` : '—'}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="text-zinc-400 block text-[10px]">Cost / Wear</span>
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                          <span className="text-[#777C75] dark:text-[#A3ABA0] block text-[10px] font-mono">Cost / Wear</span>
+                          <span className="font-semibold font-mono text-[#202321] dark:text-[#F8F6F1]">
                             {cpw ? `$${Math.round(cpw)}` : '—'}
                           </span>
                         </div>
@@ -689,7 +689,7 @@ export const OccasionVault: React.FC = () => {
 
                       {/* Care Instruction Tag */}
                       {(item.careType || item.care_type) && (
-                        <div className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-lg truncate">
+                        <div className="text-[10px] font-mono font-medium text-[#727D69] dark:text-[#A3ABA0] bg-[#E9E6DE]/60 dark:bg-[#242A25] px-2.5 py-1 rounded-full truncate">
                           Care: {(item.careType || item.care_type || '').replace('_', ' ')}
                         </div>
                       )}

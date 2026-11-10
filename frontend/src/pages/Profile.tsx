@@ -127,10 +127,10 @@ export const Profile: React.FC = () => {
             <div className="flex-1 text-center sm:text-left min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
                     {currentUser.name}
                   </h1>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">@{currentUser.username}</p>
+                  <p className="text-sm font-mono text-[#777C75] dark:text-[#A3ABA0]">@{currentUser.username}</p>
                 </div>
 
                 <div className="flex items-center justify-center sm:justify-end gap-2">
@@ -145,40 +145,40 @@ export const Profile: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 max-w-xl leading-relaxed mb-4">
+              <p className="text-sm text-[#292D29] dark:text-[#F8F6F1] max-w-xl leading-relaxed mb-4 font-sans">
                 {currentUser.bio}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#777C75] dark:text-[#A3ABA0] mb-6">
                 {currentUser.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#727D69]" />
                     {currentUser.location}
                   </span>
                 )}
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                <span className="flex items-center gap-1.5 font-mono">
+                  <Calendar className="w-3.5 h-3.5 text-[#727D69]" />
                   {currentUser.joinedDate}
                 </span>
               </div>
 
               {/* Social Stats Row */}
-              <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-[#E2DDD3] dark:border-[#2D342F]">
                 <div className="text-center sm:text-left">
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block">
                     {myPosts.length}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Posts</span>
+                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold">Posts</span>
                 </div>
                 <button
                   type="button"
                   onClick={openFollowersModal}
                   className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                 >
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block group-hover:underline transition-colors">
+                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block group-hover:underline transition-colors">
                     {formatStatCount(currentUser.followersCount || 0)}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold group-hover:text-[#202321] dark:group-hover:text-[#F8F6F1] transition-colors">
                     Followers
                   </span>
                 </button>
@@ -187,18 +187,18 @@ export const Profile: React.FC = () => {
                   onClick={openFollowingModal}
                   className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                 >
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block group-hover:underline transition-colors">
+                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block group-hover:underline transition-colors">
                     {formatStatCount(currentUser.followingCount || 0)}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold group-hover:text-[#202321] dark:group-hover:text-[#F8F6F1] transition-colors">
                     Following
                   </span>
                 </button>
                 <div className="text-center sm:text-left">
-                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block">
                     {wardrobe.length}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Wardrobe</span>
+                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold">Wardrobe</span>
                 </div>
               </div>
             </div>
@@ -208,45 +208,45 @@ export const Profile: React.FC = () => {
         {/* Style Preferences & Wardrobe Analytics Box */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
           {/* Style Preferences */}
-          <div className="md:col-span-7 bg-white dark:bg-zinc-900 rounded-lg p-5 border border-zinc-200 dark:border-zinc-800">
+          <div className="md:col-span-7 bg-white dark:bg-[#1C201D] rounded-2xl p-5 sm:p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <Sparkles className="w-4 h-4 text-[#727D69]" />
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
                 Aesthetic Signature
               </h3>
             </div>
-            <div className="flex flex-wrap gap-1.5 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               {currentUser.preferences.styles.map((style) => (
                 <span
                   key={style}
-                  className="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium px-3 py-1 rounded border border-zinc-200 dark:border-zinc-700"
+                  className="bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] text-xs font-medium px-3.5 py-1.5 rounded-full border border-[#E2DDD3] dark:border-[#2D342F]"
                 >
                   {style}
                 </span>
               ))}
-              <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium px-3 py-1 rounded border border-zinc-200 dark:border-zinc-700">
+              <span className="bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] text-xs font-medium px-3.5 py-1.5 rounded-full border border-[#E2DDD3] dark:border-[#2D342F]">
                 Neutral Tones
               </span>
             </div>
 
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">Lifestyle:</strong>{' '}
+            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed">
+              <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">Lifestyle:</strong>{' '}
               {currentUser.preferences.lifestyle}
             </p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mt-1">
-              <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">Staple Pieces:</strong>{' '}
+            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed mt-1">
+              <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">Staple Pieces:</strong>{' '}
               {currentUser.preferences.staplePieces.join(', ')}
             </p>
           </div>
 
           {/* Recharts Capsule Visualizer */}
-          <div className="md:col-span-5 bg-white dark:bg-zinc-900 rounded-lg p-5 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between">
+          <div className="md:col-span-5 bg-white dark:bg-[#1C201D] rounded-2xl p-5 sm:p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                <PieIcon className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] flex items-center gap-1.5">
+                <PieIcon className="w-3.5 h-3.5 text-[#727D69]" />
                 Capsule Distribution
               </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{wardrobe.length} Pieces</span>
+              <span className="text-xs font-mono text-[#777C75] dark:text-[#A3ABA0]">{wardrobe.length} Pieces</span>
             </div>
 
             <div className="h-36 w-full">
@@ -267,11 +267,11 @@ export const Profile: React.FC = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#18181B',
-                      borderColor: '#27272A',
-                      borderRadius: '6px',
+                      backgroundColor: '#1C201D',
+                      borderColor: '#2D342F',
+                      borderRadius: '12px',
                       fontSize: '12px',
-                      color: '#F4F4F5',
+                      color: '#F8F6F1',
                     }}
                   />
                 </PieChart>

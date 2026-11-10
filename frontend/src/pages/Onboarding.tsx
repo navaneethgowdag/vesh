@@ -257,16 +257,16 @@ export const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-sand-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#F8F6F1] dark:bg-[#141715] text-[#202321] dark:text-[#F8F6F1] flex flex-col justify-between p-4 sm:p-6 lg:p-8 transition-colors duration-200">
       {/* Top Header */}
-      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-4 border-b border-[#E2DDD3] dark:border-[#2D342F]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-sm">
+          <div className="w-9 h-9 rounded-xl bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] flex items-center justify-center font-serif font-bold text-base shadow-xs">
             T
           </div>
           <div>
-            <h1 className="text-base font-bold text-zinc-900 dark:text-zinc-100">TailorBird Setup</h1>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Step {step} of 6</p>
+            <h1 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">TailorBird Setup</h1>
+            <p className="text-xs font-mono text-[#777C75] dark:text-[#A3ABA0]">Step {step} of 6</p>
           </div>
         </div>
 
@@ -277,10 +277,10 @@ export const Onboarding: React.FC = () => {
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === step
-                  ? 'w-6 bg-zinc-900 dark:bg-zinc-100'
+                  ? 'w-6 bg-[#202321] dark:bg-[#F8F6F1]'
                   : i < step
-                  ? 'w-2 bg-emerald-500'
-                  : 'w-2 bg-zinc-200 dark:bg-zinc-800'
+                  ? 'w-2 bg-[#727D69]'
+                  : 'w-2 bg-[#E2DDD3] dark:bg-[#2D342F]'
               }`}
             />
           ))}

@@ -4,130 +4,152 @@
 
 @layer base {
   :root {
-    --luxury-bg: #FBFBFB;
-    --luxury-surface: #FFFFFF;
-    --luxury-surface-subtle: #F4F4F5;
-    --luxury-elevated: #FFFFFF;
-    --luxury-text: #18181B;
-    --luxury-text-muted: #71717A;
-    --luxury-primary: #18181B;
-    --luxury-secondary: #52525B;
-    --luxury-muted: #71717A;
-    --luxury-champagne: #96633B;
-    --luxury-olive: #4B5542;
-    --luxury-border: #E4E4E7;
-    --luxury-border-subtle: #F4F4F5;
-    --luxury-espresso: #18181B;
+    /* TailorBird Fashion-Editorial Design Tokens (Light Theme) */
+    --luxury-bg: #F8F6F1;              /* Warm Ivory Canvas */
+    --luxury-surface: #FFFFFF;         /* Crisp White Surface */
+    --luxury-surface-subtle: #F1EEE7;  /* Soft Stone / Subtle Surface */
+    --luxury-elevated: #FFFFFF;        /* Elevated Card */
+    --luxury-text: #202321;            /* Deep Ink / Charcoal (Contrast > 14:1) */
+    --luxury-text-muted: #6B7269;      /* Muted Secondary Text (WCAG AA Contrast > 4.8:1) */
+    --luxury-primary: #202321;         /* Deep Ink Accent */
+    --luxury-secondary: #727D69;       /* Muted Olive */
+    --luxury-muted: #6B7269;
+    --luxury-champagne: #899783;       /* Muted Sage */
+    --luxury-olive: #727D69;           /* Muted Olive */
+    --luxury-border: #E2DDD3;          /* Refined Stone Border */
+    --luxury-border-subtle: #EFECE4;   /* Subtle Border */
+    --luxury-espresso: #202321;
 
-    /* Legacy compatibility variables in light mode */
-    --cream-bg: #FBFBFB;
+    /* Legacy compatibility variables */
+    --cream-bg: #F8F6F1;
     --card-bg: #FFFFFF;
-    --sand-subtle: #F4F4F5;
-    --charcoal-main: #18181B;
-    --cognac-accent: #96633B;
+    --sand-subtle: #F1EEE7;
+    --charcoal-main: #202321;
+    --cognac-accent: #899783;
   }
 
   .dark {
-    --luxury-bg: #121214;
-    --luxury-surface: #1E1E21;
-    --luxury-surface-subtle: #27272A;
-    --luxury-elevated: #27272A;
-    --luxury-text: #F4F4F5;
-    --luxury-text-muted: #A1A1AA;
-    --luxury-primary: #F4F4F5;
-    --luxury-secondary: #D4D4D8;
-    --luxury-muted: #A1A1AA;
-    --luxury-champagne: #D4BBA5;
-    --luxury-olive: #8E9C82;
-    --luxury-border: #27272A;
-    --luxury-border-subtle: #1F1F23;
-    --luxury-espresso: #F4F4F5;
+    /* TailorBird Fashion-Editorial Design Tokens (Dark Theme) */
+    --luxury-bg: #141715;              /* Deep Charcoal Canvas */
+    --luxury-surface: #1C201D;         /* Dark Ink Card Surface */
+    --luxury-surface-subtle: #242A25;  /* Subtle Elevated Dark Surface */
+    --luxury-elevated: #2B322D;        /* Elevated Popover / Modal Surface */
+    --luxury-text: #F8F6F1;            /* Warm Ivory Primary Text (Contrast > 12:1) */
+    --luxury-text-muted: #A3ABA0;      /* High-Contrast Muted Text (Contrast > 5.5:1) */
+    --luxury-primary: #F8F6F1;
+    --luxury-secondary: #899783;       /* Muted Sage */
+    --luxury-muted: #A3ABA0;
+    --luxury-champagne: #899783;
+    --luxury-olive: #9EAB97;
+    --luxury-border: #2D342F;          /* Subtle Dark Border */
+    --luxury-border-subtle: #222823;
+    --luxury-espresso: #F8F6F1;
 
     /* Legacy compatibility variables in dark mode */
-    --cream-bg: #121214;
-    --card-bg: #1E1E21;
-    --sand-subtle: #27272A;
-    --charcoal-main: #F4F4F5;
-    --cognac-accent: #D4BBA5;
+    --cream-bg: #141715;
+    --card-bg: #1C201D;
+    --sand-subtle: #242A25;
+    --charcoal-main: #F8F6F1;
+    --cognac-accent: #899783;
 
     /* Dark alias definitions for classes with dark- prefix */
-    --luxury-dark-bg: #121214;
-    --luxury-dark-surface: #1E1E21;
-    --luxury-dark-surface-subtle: #27272A;
-    --luxury-dark-text: #F4F4F5;
-    --luxury-dark-text-muted: #A1A1AA;
-    --luxury-dark-border: #27272A;
-    --luxury-dark-champagne: #D4BBA5;
-    --luxury-dark-espresso: #121214;
+    --luxury-dark-bg: #141715;
+    --luxury-dark-surface: #1C201D;
+    --luxury-dark-surface-subtle: #242A25;
+    --luxury-dark-text: #F8F6F1;
+    --luxury-dark-text-muted: #A3ABA0;
+    --luxury-dark-border: #2D342F;
+    --luxury-dark-champagne: #899783;
+    --luxury-dark-espresso: #141715;
+  }
+
+  * {
+    border-color: var(--luxury-border);
   }
 
   body {
     background-color: var(--luxury-bg);
     color: var(--luxury-text);
-    font-family: Arial, Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
     font-size: 15px;
-    line-height: 1.5;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Minimal clean scrollbar */
+  /* Refined, Minimal Scrollbar */
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #D4D4D8;
-    border-radius: 2px;
+    background: #D8D3C8;
+    border-radius: 9999px;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: #3F3F46;
+    background: #363E38;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #71717A;
+    background: #B5AA99;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #505A53;
+  }
+
+  /* Accessible, visible focus outlines */
+  :focus-visible {
+    outline: 2px solid #727D69;
+    outline-offset: 2px;
   }
 }
 
 @layer utilities {
-  .editorial-title {
-    font-family: Arial, Helvetica, sans-serif;
-    letter-spacing: -0.01em;
+  .editorial-heading {
+    font-family: "Playfair Display", Georgia, serif;
+    letter-spacing: -0.015em;
     font-weight: 700;
   }
 
   .editorial-sub {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Plus Jakarta Sans", sans-serif;
     color: var(--luxury-text-muted);
+    line-height: 1.5;
   }
 
   .editorial-caps {
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
   }
 
-  .luxury-card {
+  .fashion-card {
     background-color: var(--luxury-surface);
     border: 1px solid var(--luxury-border);
-    border-radius: 6px;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px -2px rgba(32, 35, 33, 0.05);
+    transition: all 0.2s ease-in-out;
   }
 
-  .dark .luxury-card {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  .dark .fashion-card {
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.35);
   }
 
-  .luxury-glass {
-    background: var(--luxury-surface);
-  }
-
-  .dark .luxury-glass {
-    background: var(--luxury-surface);
+  .fashion-pill {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--luxury-border);
+    background-color: var(--luxury-surface);
+    color: var(--luxury-text);
   }
 
   .hide-scrollbar {

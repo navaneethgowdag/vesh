@@ -48,7 +48,7 @@ function applyThemeToDom(resolved: ResolvedTheme) {
     meta.setAttribute('name', 'theme-color');
     document.head.appendChild(meta);
   }
-  meta.setAttribute('content', resolved === 'dark' ? '#171715' : '#F7F4EE');
+  meta.setAttribute('content', resolved === 'dark' ? '#141715' : '#F8F6F1');
 }
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
