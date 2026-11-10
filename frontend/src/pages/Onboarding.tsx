@@ -6,106 +6,88 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
-  User,
-  Globe,
+  Briefcase,
+  GraduationCap,
+  Calendar,
   Palette,
-  Shirt,
-  Compass,
+  Layers,
+  ShoppingBag,
   Sliders,
-  Edit2,
+  CheckCircle2,
+  Clock,
   Heart,
+  ChevronRight,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '../components/ui/Button';
-import { Avatar } from '../components/ui/Avatar';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
-import { AVATAR_OPTIONS, getDefaultAvatar, AvatarStyle } from '../utils/avatarHelper';
 
-// --- QUESTION DATA DEFINITIONS ---
+// --- CONSTANTS & TAXONOMIES ---
 
-const GENDER_OPTIONS = [
-  { id: 'male', label: 'Male', desc: 'Masculine-styled silhouette fallback' },
-  { id: 'female', label: 'Female', desc: 'Feminine-styled silhouette fallback' },
-  { id: 'non-binary', label: 'Non-binary', desc: 'Contemporary androgynous silhouette' },
-  { id: 'prefer-not-to-say', label: 'Prefer not to say', desc: 'Neutral atelier mannequin fallback' },
+const OCCUPATION_OPTIONS = [
+  { id: 'student', label: 'Student', icon: GraduationCap, desc: 'College, university, or high school campus life' },
+  { id: 'working_professional', label: 'Working Professional', icon: Briefcase, desc: 'Corporate, tech, healthcare, or office environments' },
+  { id: 'freelancer', label: 'Freelancer / Consultant', icon: Layers, desc: 'Flexible schedule, hybrid client meetings & remote work' },
+  { id: 'homemaker', label: 'Homemaker', icon: Heart, desc: 'Comfort-first daily routines and family management' },
+  { id: 'job_seeker', label: 'Job Seeker', icon: Sparkles, desc: 'Preparing for interviews, networking, and career transitions' },
+  { id: 'other', label: 'Other', icon: Calendar, desc: 'Unique lifestyle, artistic, or custom daily routines' },
+  { id: 'prefer_not_to_say', label: 'Prefer not to say', icon: Sliders, desc: 'Keep styling general without lifestyle specifics' },
 ];
 
-const STYLE_OPTIONS = [
-  { id: 'Casual', label: 'Casual', desc: 'Everyday comfort, quality basics & easy styling' },
-  { id: 'Smart casual', label: 'Smart Casual', desc: 'Tailored trousers, fine knitwear & polished ease' },
-  { id: 'Formal', label: 'Formal', desc: 'Sharp tailoring, structured silhouettes & evening polish' },
-  { id: 'Streetwear', label: 'Streetwear', desc: 'Contemporary oversized fits, statement sneakers & bold accents' },
-  { id: 'Minimalist', label: 'Minimalist', desc: 'Clean lines, monochromatic palettes & understated luxury' },
-  { id: 'Traditional Indian', label: 'Traditional Indian', desc: 'Sarees, kurtas, lehengas & heritage handcrafted textiles' },
-  { id: 'Ethnic fusion', label: 'Ethnic Fusion', desc: 'Indo-western drapes, contemporary kurtis & hybrid aesthetics' },
-  { id: 'Sporty', label: 'Sporty', desc: 'Athletic wearability, performance textiles & active movement' },
-  { id: 'Vintage', label: 'Vintage', desc: 'Nostalgic cuts, heritage leather & retro aesthetic nuance' },
-  { id: 'Elegant', label: 'Elegant', desc: 'Timeless evening wear, silk textures & graceful lines' },
-  { id: 'Trendy', label: 'Trendy', desc: 'Runway rotations, seasonal statement pieces & bold silhouettes' },
+const STYLE_AESTHETICS = [
+  { id: 'Minimalist', label: 'Minimalist', desc: 'Clean silhouettes, neutral tones & uncluttered tailoring' },
+  { id: 'Classic', label: 'Classic / Timeless', desc: 'Structured essentials, enduring cuts & refined polish' },
+  { id: 'Smart casual', label: 'Smart Casual', desc: 'Chinos, blazers, polos & polished everyday versatility' },
+  { id: 'Casual', label: 'Casual / Effortless', desc: 'Everyday comfort, quality denim & relaxed basics' },
+  { id: 'Streetwear', label: 'Streetwear', desc: 'Contemporary oversized cuts, statement sneakers & graphic pieces' },
+  { id: 'Traditional Indian', label: 'Traditional / Ethnic', desc: 'Sarees, kurtas, lehengas & heritage handcrafted textiles' },
+  { id: 'Bohemian', label: 'Bohemian', desc: 'Flowing drapes, relaxed textures & artisanal flair' },
+  { id: 'Sporty', label: 'Athletic / Sporty', desc: 'Active performance wear, joggers & technical fabrics' },
+  { id: 'Bold', label: 'Bold / Statement', desc: 'Expressive colors, dramatic cuts & runway-inspired styling' },
+  { id: 'Vintage', label: 'Vintage / Retro', desc: 'Nostalgic eras, heritage denim & textured throwback pieces' },
 ];
 
-const CATEGORY_OPTIONS = [
-  'Shirts',
-  'T-shirts',
-  'Jeans',
-  'Trousers',
-  'Dresses',
-  'Kurtas',
-  'Sarees',
-  'Lehengas',
-  'Salwar suits',
-  'Sherwanis',
-  'Sneakers',
-  'Formal footwear',
-  'Sandals',
-  'Accessories',
-];
-
-const COLOR_SWATCHES = [
+const COLOR_PALETTES = [
   { name: 'Black', hex: '#18181B' },
   { name: 'White', hex: '#FFFFFF', border: true },
-  { name: 'Gray', hex: '#71717A' },
   { name: 'Navy', hex: '#1E3A8A' },
-  { name: 'Blue', hex: '#2563EB' },
-  { name: 'Red', hex: '#DC2626' },
-  { name: 'Green', hex: '#16A34A' },
-  { name: 'Pink', hex: '#EC4899' },
+  { name: 'Grey', hex: '#71717A' },
+  { name: 'Beige / Khaki', hex: '#D4B996' },
   { name: 'Brown', hex: '#78350F' },
-  { name: 'Beige', hex: '#D4B996' },
-  { name: 'Cream', hex: '#FDFBF7', border: true },
-  { name: 'Purple', hex: '#9333EA' },
-  { name: 'Yellow', hex: '#EAB308' },
-  { name: 'Orange', hex: '#F97316' },
-  { name: 'Multicolor', gradient: true },
-  { name: 'No preference', none: true },
+  { name: 'Olive Green', hex: '#4D7C0F' },
+  { name: 'Pastels', hex: '#FBCFE8' },
+  { name: 'Jewel Tones', hex: '#047857' },
+  { name: 'Vibrant / Bright', hex: '#EA580C' },
 ];
 
-const OCCASION_OPTIONS = [
-  'Office / Work',
+const OCCASIONS_LIST = [
+  'Everyday',
   'College',
+  'Office',
+  'Business meetings',
+  'Presentations',
   'Casual outings',
   'Parties',
-  'Weddings and functions',
-  'Traditional occasions',
-  'Travel',
-  'Sports / Gym',
   'Dates',
+  'Weddings',
+  'Festivals',
   'Family gatherings',
+  'Gym / Sports',
+  'Travel',
+  'Interviews',
+  'Formal events',
 ];
 
-const FIT_OPTIONS = ['Slim', 'Regular', 'Relaxed', 'Oversized', 'No preference'];
-
-const OUTFIT_STYLE_OPTIONS = [
-  'Simple and comfortable',
-  'Coordinated colors',
-  'Bold combinations',
-  'Classic and formal',
-  'Trend-focused',
-  'No preference',
+const DEFAULT_WEEKLY_ROUTINE = [
+  { day: 'Monday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+  { day: 'Tuesday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Business Casual' },
+  { day: 'Wednesday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+  { day: 'Thursday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+  { day: 'Friday', activity: 'Work', time_range: '09:00 - 17:00', dress_code: 'Casual' },
+  { day: 'Saturday', activity: 'Outing', time_range: '11:00 - 22:00', dress_code: 'Casual' },
+  { day: 'Sunday', activity: 'Rest', time_range: 'All Day', dress_code: 'Casual' },
 ];
-
-const BUDGET_OPTIONS = ['Budget-conscious', 'Mid-range', 'Premium', 'No preference'];
 
 export const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -115,702 +97,813 @@ export const Onboarding: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Step 1: Basic Profile
-  const [displayName, setDisplayName] = useState(currentUser?.name || '');
-  const [gender, setGender] = useState<string>('prefer-not-to-say');
-  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>('neutral');
-  const [country, setCountry] = useState(currentUser?.location || '');
-  const [preferredLanguage, setPreferredLanguage] = useState('English');
-  const [dob, setDob] = useState('');
+  // Step 1: Lifestyle & Occupation
+  const [occupation, setOccupation] = useState<string>('working_professional');
+  const [studentDetails, setStudentDetails] = useState({
+    institution: 'College / University',
+    fieldOfStudy: '',
+    campusDress: 'Casual',
+  });
+  const [workDetails, setWorkDetails] = useState({
+    industry: 'Technology',
+    dressCode: 'Smart Casual',
+    workMode: 'Hybrid',
+  });
+  const [freelancerDetails, setFreelancerDetails] = useState({
+    field: 'Creative / Tech',
+    meetingFrequency: 'A few times a week',
+  });
+  const [generalRoutineStyle, setGeneralRoutineStyle] = useState('Mixed / Flexible');
 
-  // Step 2: Fashion preferences
+  // Step 2: Daily Routine & Weekly Schedule
+  const [weeklyRoutine, setWeeklyRoutine] = useState(DEFAULT_WEEKLY_ROUTINE);
+
+  // Step 3: Fashion Preferences
   const [selectedStyles, setSelectedStyles] = useState<string[]>(['Minimalist', 'Smart casual']);
+  const [preferredColors, setPreferredColors] = useState<string[]>(['Black', 'White', 'Navy']);
+  const [dislikedColors, setDislikedColors] = useState<string[]>([]);
+  const [selectedFits, setSelectedFits] = useState<string[]>(['Regular', 'Relaxed']);
+  const [comfortVsAppearance, setComfortVsAppearance] = useState<'comfort' | 'balanced' | 'style'>('balanced');
+  const [simpleVsExperimental, setSimpleVsExperimental] = useState<'simple' | 'balanced' | 'experimental'>('balanced');
 
-  // Step 3: Clothing interests
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['Shirts', 'Trousers', 'Sneakers']);
+  // Step 4: Occasion Preferences
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([
+    'Everyday',
+    'Office',
+    'Casual outings',
+    'Dates',
+  ]);
 
-  // Step 4: Preferred colors
-  const [selectedColors, setSelectedColors] = useState<string[]>(['Black', 'White', 'Beige']);
+  // Step 5: Shopping & Wardrobe Preferences (Optional)
+  const [budgetTier, setBudgetTier] = useState<string>('mid_range');
+  const [shoppingPhilosophy, setShoppingPhilosophy] = useState<string>('essentials_first');
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([
+    'Tops & Shirts',
+    'Bottoms & Jeans',
+    'Footwear',
+  ]);
+  const [preferredPlatforms, setPreferredPlatforms] = useState<string[]>(['Myntra', 'Zara', 'Uniqlo']);
 
-  // Step 5: Lifestyle and occasions
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>(['Office / Work', 'Casual outings']);
+  // Step 6: Recommendation Tuning
+  const [comfortPriority, setComfortPriority] = useState<number>(0.5);
+  const [familiarVsNew, setFamiliarVsNew] = useState<string>('balanced');
+  const [repeatFrequency, setRepeatFrequency] = useState<string>('moderate');
+  const [varietyPreference, setVarietyPreference] = useState<string>('balanced');
 
-  // Step 6: Fit and styling
-  const [selectedFit, setSelectedFit] = useState<string>('Regular');
-  const [selectedOutfitStyle, setSelectedOutfitStyle] = useState<string>('Simple and comfortable');
-  const [selectedBudget, setSelectedBudget] = useState<string>('Mid-range');
-
-  // Toggle multi-select helper
-  const toggleSelection = (list: string[], item: string, setter: (val: string[]) => void) => {
-    if (item === 'No preference') {
-      setter(['No preference']);
-      return;
-    }
-    const cleanList = list.filter((i) => i !== 'No preference');
-    if (cleanList.includes(item)) {
-      const next = cleanList.filter((i) => i !== item);
-      setter(next.length > 0 ? next : ['No preference']);
+  // Multi-select toggle helpers
+  const toggleItem = (list: string[], item: string, setter: (val: string[]) => void) => {
+    if (list.includes(item)) {
+      setter(list.filter((i) => i !== item));
     } else {
-      setter([...cleanList, item]);
+      setter([...list, item]);
     }
   };
 
-  const handleGenderSelect = (val: string) => {
-    setGender(val);
-    if (val === 'male') setAvatarStyle('masculine');
-    else if (val === 'female') setAvatarStyle('feminine');
-    else if (val === 'non-binary') setAvatarStyle('androgynous');
-    else setAvatarStyle('neutral');
-  };
-
-  const handleSkip = async () => {
-    setIsSubmitting(true);
-    try {
-      await api.users.completeOnboarding({
-        display_name: displayName.trim() || undefined,
-        gender: gender || 'prefer-not-to-say',
-        avatar_style: avatarStyle || 'neutral',
-        preferred_styles: [],
-        preferred_categories: [],
-        preferred_colors: [],
-        preferred_occasions: [],
-      });
-      showToast('Welcome to TailorBird! You can customize your style profile anytime in Settings.', 'info');
-      await refreshData();
-      navigate('/home', { replace: true });
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to complete setup.', 'error');
-    } finally {
-      setIsSubmitting(false);
+  // Quick routine template application
+  const applyRoutineTemplate = (type: 'work' | 'college' | 'hybrid' | 'casual') => {
+    if (type === 'work') {
+      setWeeklyRoutine([
+        { day: 'Monday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+        { day: 'Tuesday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Business Casual' },
+        { day: 'Wednesday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+        { day: 'Thursday', activity: 'Work', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+        { day: 'Friday', activity: 'Work', time_range: '09:00 - 17:00', dress_code: 'Casual' },
+        { day: 'Saturday', activity: 'Outing', time_range: '12:00 - 22:00', dress_code: 'Casual' },
+        { day: 'Sunday', activity: 'Rest', time_range: 'All Day', dress_code: 'Casual' },
+      ]);
+    } else if (type === 'college') {
+      setWeeklyRoutine([
+        { day: 'Monday', activity: 'College', time_range: '09:00 - 16:00', dress_code: 'Casual' },
+        { day: 'Tuesday', activity: 'College', time_range: '09:00 - 16:00', dress_code: 'Casual' },
+        { day: 'Wednesday', activity: 'College', time_range: '09:00 - 16:00', dress_code: 'Casual' },
+        { day: 'Thursday', activity: 'College', time_range: '09:00 - 16:00', dress_code: 'Casual' },
+        { day: 'Friday', activity: 'College', time_range: '09:00 - 15:00', dress_code: 'Casual' },
+        { day: 'Saturday', activity: 'Outing', time_range: '14:00 - 22:00', dress_code: 'Casual' },
+        { day: 'Sunday', activity: 'Rest', time_range: 'All Day', dress_code: 'Casual' },
+      ]);
+    } else if (type === 'hybrid') {
+      setWeeklyRoutine([
+        { day: 'Monday', activity: 'Work (Home)', time_range: '09:00 - 18:00', dress_code: 'Casual' },
+        { day: 'Tuesday', activity: 'Work (Office)', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+        { day: 'Wednesday', activity: 'Work (Office)', time_range: '09:00 - 18:00', dress_code: 'Smart Casual' },
+        { day: 'Thursday', activity: 'Work (Home)', time_range: '09:00 - 18:00', dress_code: 'Casual' },
+        { day: 'Friday', activity: 'Work (Office)', time_range: '09:00 - 17:00', dress_code: 'Smart Casual' },
+        { day: 'Saturday', activity: 'Outing', time_range: '12:00 - 21:00', dress_code: 'Casual' },
+        { day: 'Sunday', activity: 'Rest', time_range: 'All Day', dress_code: 'Casual' },
+      ]);
     }
+    showToast('Routine template applied!', 'success');
   };
 
   const handleFinish = async () => {
     setIsSubmitting(true);
     try {
-      await api.users.completeOnboarding({
-        display_name: displayName.trim() || undefined,
-        gender,
-        avatar_style: avatarStyle,
-        country: country.trim() || undefined,
-        preferred_language: preferredLanguage,
-        date_of_birth: dob.trim() || undefined,
+      const occDetails =
+        occupation === 'student'
+          ? studentDetails
+          : occupation === 'working_professional'
+          ? workDetails
+          : occupation === 'freelancer'
+          ? freelancerDetails
+          : { routineStyle: generalRoutineStyle };
+
+      const payload = {
+        display_name: currentUser?.name || undefined,
+        lifestyle_occupation: {
+          occupation,
+          details: occDetails,
+        },
+        occupation_details: occDetails,
+        weekly_routine: weeklyRoutine,
         preferred_styles: selectedStyles,
-        preferred_categories: selectedCategories,
-        preferred_colors: selectedColors,
+        disliked_styles: [],
+        preferred_colors: preferredColors,
+        disliked_colors: dislikedColors,
+        avoided_colors: dislikedColors,
+        preferred_fits: selectedFits,
         preferred_occasions: selectedOccasions,
-        preferred_fit: selectedFit,
-        styling_preference: selectedOutfitStyle,
-        budget_preference: selectedBudget,
-      });
+        shopping_preferences: {
+          budget_tier: budgetTier,
+          shopping_philosophy: shoppingPhilosophy,
+          preferred_categories: preferredCategories,
+          preferred_platforms: preferredPlatforms,
+        },
+        recommendation_settings: {
+          comfort_priority: comfortPriority,
+          familiar_vs_new: familiarVsNew,
+          repeat_frequency: repeatFrequency,
+          variety_preference: varietyPreference,
+          comfort_vs_appearance: comfortVsAppearance,
+          simple_vs_experimental: simpleVsExperimental,
+        },
+      };
+
+      await api.users.completeOnboarding(payload);
 
       confetti({
-        particleCount: 90,
-        spread: 60,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 },
-        colors: ['#18181B', '#D97706', '#71717A', '#F4F4F5'],
       });
 
-      showToast('Your style profile is set! Welcome to TailorBird.', 'success');
+      showToast('Styling profile configured! Welcome to TailorBird.', 'success');
       await refreshData();
       navigate('/home', { replace: true });
     } catch (err: any) {
-      showToast(err?.message || 'Failed to complete onboarding. Please try again.', 'error');
+      showToast(err?.message || 'Could not save profile.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-sand-50 dark:bg-zinc-950 flex flex-col justify-between py-6 px-4 sm:px-8">
+    <div className="min-h-screen bg-sand-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col justify-between p-4 sm:p-6 lg:p-8">
       {/* Top Header */}
       <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-zinc-100 dark:text-zinc-900 font-bold text-sm tracking-wider">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-sm">
             T
           </div>
-          <span className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            TailorBird
-          </span>
+          <div>
+            <h1 className="text-base font-bold text-zinc-900 dark:text-zinc-100">TailorBird Setup</h1>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Step {step} of 6</p>
+          </div>
         </div>
 
-        {/* 7-Step Progress Indicator & Skip */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {[1, 2, 3, 4, 5, 6, 7].map((s) => (
-              <div
-                key={s}
-                onClick={() => s < step && setStep(s)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s === step
-                    ? 'w-7 bg-zinc-900 dark:bg-zinc-100'
-                    : s < step
-                    ? 'w-3.5 bg-zinc-600 dark:bg-zinc-400 cursor-pointer'
-                    : 'w-3.5 bg-zinc-200 dark:bg-zinc-800'
-                }`}
-              />
-            ))}
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 ml-2">
-              Step {step} of 7
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={isSubmitting}
-            className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            Skip for now
-          </button>
+        {/* Step Indicator dots */}
+        <div className="flex items-center gap-1.5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === step
+                  ? 'w-6 bg-zinc-900 dark:bg-zinc-100'
+                  : i < step
+                  ? 'w-2 bg-emerald-500'
+                  : 'w-2 bg-zinc-200 dark:bg-zinc-800'
+              }`}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Main Multi-Step Form Body */}
-      <div className="max-w-2xl mx-auto w-full my-auto py-6">
+      {/* Main Form Content */}
+      <div className="max-w-3xl mx-auto w-full py-8 flex-1">
         <AnimatePresence mode="wait">
-          {/* STEP 1: BASIC PROFILE & GENDER */}
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 1: LIFESTYLE & OCCUPATION */}
+          {/* ------------------------------------------------------------- */}
           {step === 1 && (
             <motion.div
-              key="step1"
+              key="step-1"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 1 &middot; Welcome
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  Lifestyle Foundation
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Configure Your Profile
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Tell us a bit about yourself. Gender selection is optional and solely chooses your default faceless avatar.
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  What is your primary daily activity?
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  TailorBird adapts recommendations around your real day-to-day lifestyle.
                 </p>
               </div>
 
-              {/* Avatar Preview */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <Avatar
-                  size="xl"
-                  gender={gender}
-                  avatarStyle={avatarStyle}
-                  alt={displayName || 'Your avatar'}
-                  className="ring-2 ring-zinc-200 dark:ring-zinc-700"
-                />
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-0.5">
-                    Your Faceless Default Avatar
-                  </h4>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                    Illustrated fallback when no profile photo is uploaded. You can customize this or upload your own photo anytime.
-                  </p>
-                </div>
-              </div>
-
-              {/* Display Name */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Display Name
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="e.g. Clara Vane"
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-                  />
-                  <User className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
-                </div>
-              </div>
-
-              {/* Gender Selection (Optional) */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Gender Selection <span className="font-normal text-zinc-400">(Optional &middot; For default avatar styling only)</span>
-                </label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {GENDER_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => handleGenderSelect(opt.id)}
-                      className={`p-3 rounded-lg border text-left transition-all ${
-                        gender === opt.id
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300'
-                      }`}
-                    >
-                      <span className="block text-xs font-bold">{opt.label}</span>
-                      <span className={`text-[11px] block mt-0.5 line-clamp-1 ${gender === opt.id ? 'opacity-80' : 'text-zinc-400'}`}>
-                        {opt.desc}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Country & Language */}
+              {/* Occupation Radio Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Country / Region <span className="font-normal text-zinc-400">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    placeholder="e.g. India, United States"
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Preferred Language
-                  </label>
-                  <select
-                    value={preferredLanguage}
-                    onChange={(e) => setPreferredLanguage(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-                  >
-                    <option value="English">English</option>
-                    <option value="Hindi">Hindi (हिंदी)</option>
-                    <option value="Spanish">Spanish (Español)</option>
-                    <option value="French">French (Français)</option>
-                  </select>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 2: FASHION PREFERENCES (STYLES) */}
-          {step === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 2 &middot; Aesthetics
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  What styles do you usually prefer?
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Select all aesthetics that resonate with you. TailorBird uses these to curate daily outfit recommendations.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
-                {STYLE_OPTIONS.map((s) => {
-                  const selected = selectedStyles.includes(s.label);
+                {OCCUPATION_OPTIONS.map((item) => {
+                  const Icon = item.icon;
+                  const isSelected = occupation === item.id;
                   return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => toggleSelection(selectedStyles, s.label, setSelectedStyles)}
-                      className={`p-3.5 rounded-xl border text-left flex items-start justify-between gap-2.5 transition-all ${
-                        selected
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900/5 dark:bg-zinc-100/10 ring-1 ring-zinc-900 dark:ring-zinc-100'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300'
+                    <div
+                      key={item.id}
+                      onClick={() => setOccupation(item.id)}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-md'
+                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
                       }`}
                     >
-                      <div>
-                        <span className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          {s.label}
-                        </span>
-                        <span className="block text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          {s.desc}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-5 h-5 ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-500'}`} />
+                        <span className="font-semibold text-sm">{item.label}</span>
                       </div>
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${
-                          selected
-                            ? 'bg-zinc-900 dark:bg-zinc-100 border-transparent text-white dark:text-zinc-900'
-                            : 'border-zinc-300 dark:border-zinc-700'
-                        }`}
-                      >
-                        {selected && <Check className="w-2.5 h-2.5" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 3: CLOTHING INTERESTS (CATEGORIES) */}
-          {step === 3 && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 3 &middot; Wardrobe Staples
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Which items do you commonly wear?
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  All categories are open to everyone without gender restrictions.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_OPTIONS.map((cat) => {
-                  const selected = selectedCategories.includes(cat);
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleSelection(selectedCategories, cat, setSelectedCategories)}
-                      className={`px-3.5 py-2 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
-                        selected
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300'
-                      }`}
-                    >
-                      {selected && <Check className="w-3 h-3" />}
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 4: PREFERRED COLORS */}
-          {step === 4 && (
-            <motion.div
-              key="step4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 4 &middot; Color Palette
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Which colors do you enjoy wearing?
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Select your go-to hues. TailorBird balances these with high-contrast color harmony rules.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {COLOR_SWATCHES.map((swatch) => {
-                  const selected = selectedColors.includes(swatch.name);
-                  return (
-                    <button
-                      key={swatch.name}
-                      type="button"
-                      onClick={() => toggleSelection(selectedColors, swatch.name, setSelectedColors)}
-                      className={`p-2.5 rounded-xl border flex items-center gap-2.5 text-left transition-all ${
-                        selected
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900/5 dark:bg-zinc-100/10 ring-1 ring-zinc-900 dark:ring-zinc-100'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center ${
-                          swatch.border ? 'border border-zinc-300' : ''
-                        }`}
-                        style={{
-                          backgroundColor: swatch.hex,
-                          background: swatch.gradient
-                            ? 'linear-gradient(135deg, #EC4899, #3B82F6, #10B981, #F59E0B)'
-                            : swatch.hex,
-                        }}
-                      >
-                        {selected && (
-                          <Check
-                            className={`w-3 h-3 ${
-                              swatch.name === 'White' || swatch.name === 'Cream' || swatch.name === 'Yellow'
-                                ? 'text-zinc-900'
-                                : 'text-white'
-                            }`}
-                          />
-                        )}
-                      </div>
-                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">
-                        {swatch.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 5: LIFESTYLE & OCCASIONS */}
-          {step === 5 && (
-            <motion.div
-              key="step5"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 5 &middot; Lifestyle
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Which situations do you commonly dress for?
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Helps TailorBird match your daily routines and calendar context.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {OCCASION_OPTIONS.map((occ) => {
-                  const selected = selectedOccasions.includes(occ);
-                  return (
-                    <button
-                      key={occ}
-                      type="button"
-                      onClick={() => toggleSelection(selectedOccasions, occ, setSelectedOccasions)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
-                        selected
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300'
-                      }`}
-                    >
-                      <span className="text-xs font-bold">{occ}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                          selected
-                            ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white border-transparent'
-                            : 'border-zinc-300 dark:border-zinc-700'
-                        }`}
-                      >
-                        {selected && <Check className="w-2.5 h-2.5" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 6: FIT & STYLING PREFERENCES */}
-          {step === 6 && (
-            <motion.div
-              key="step6"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-amber-600 dark:text-amber-400 block mb-1">
-                  Step 6 &middot; Fit & Sensitivity
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Fit & Styling Preferences
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Fine-tune your silhouette cut and outfit assembly vibe.
-                </p>
-              </div>
-
-              {/* Preferred Fit */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Preferred Garment Fit
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {FIT_OPTIONS.map((fit) => (
-                    <button
-                      key={fit}
-                      type="button"
-                      onClick={() => setSelectedFit(fit)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                        selectedFit === fit
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300'
-                      }`}
-                    >
-                      {fit}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Outfit Assembly Style */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Preferred Outfit Assembly Style
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {OUTFIT_STYLE_OPTIONS.map((ostyle) => (
-                    <button
-                      key={ostyle}
-                      type="button"
-                      onClick={() => setSelectedOutfitStyle(ostyle)}
-                      className={`p-2.5 rounded-lg border text-left text-xs font-bold transition-all ${
-                        selectedOutfitStyle === ostyle
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200'
-                      }`}
-                    >
-                      {ostyle}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Optional Budget Sensitivity */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Shopping & Acquisition Sensitivity <span className="font-normal text-zinc-400">(Optional)</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {BUDGET_OPTIONS.map((b) => (
-                    <button
-                      key={b}
-                      type="button"
-                      onClick={() => setSelectedBudget(b)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                        selectedBudget === b
-                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300'
-                      }`}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 7: SUMMARY & CONFIRMATION */}
-          {step === 7 && (
-            <motion.div
-              key="step7"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-emerald-600 dark:text-emerald-400 block mb-1">
-                  Step 7 &middot; Profile Review
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  Your Personalized Style Blueprint
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Review your answers below. You can easily adjust individual sections now or update them later in Settings.
-                </p>
-              </div>
-
-              <div className="space-y-3.5 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs">
-                {/* Profile summary */}
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <Avatar size="md" gender={gender} avatarStyle={avatarStyle} />
-                    <div>
-                      <p className="font-bold text-zinc-900 dark:text-zinc-100">{displayName || 'Fashion Enthusiast'}</p>
-                      <p className="text-zinc-400 text-[11px]">
-                        Gender: {gender.replace('-', ' ')} &middot; {country || 'Global'}
+                      <p className={`text-xs mt-2 ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500'}`}>
+                        {item.desc}
                       </p>
                     </div>
-                  </div>
-                  <button onClick={() => setStep(1)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </button>
-                </div>
+                  );
+                })}
+              </div>
 
-                {/* Styles */}
-                <div className="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                  <div>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block mb-1">Preferred Aesthetics</span>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedStyles.map((s) => (
-                        <span key={s} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
-                          {s}
-                        </span>
-                      ))}
+              {/* Dynamic Conditional Questions */}
+              {occupation === 'student' && (
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Student Details</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block font-medium mb-1">Campus Environment</label>
+                      <select
+                        value={studentDetails.campusDress}
+                        onChange={(e) => setStudentDetails({ ...studentDetails, campusDress: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                      >
+                        <option value="Casual">Casual / Relaxed</option>
+                        <option value="Smart casual">Smart Casual</option>
+                        <option value="Strict formal / Uniform">Uniform / Strict Formal</option>
+                        <option value="Creative / Expressive">Creative & Expressive</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Major or Field (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Design, Law, Computer Science"
+                        value={studentDetails.fieldOfStudy}
+                        onChange={(e) => setStudentDetails({ ...studentDetails, fieldOfStudy: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                      />
                     </div>
                   </div>
-                  <button onClick={() => setStep(2)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </button>
                 </div>
+              )}
 
-                {/* Categories */}
-                <div className="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                  <div>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block mb-1">Wardrobe Staples</span>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedCategories.map((c) => (
-                        <span key={c} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
-                          {c}
-                        </span>
-                      ))}
+              {occupation === 'working_professional' && (
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Workplace Context</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <label className="block font-medium mb-1">Industry</label>
+                      <select
+                        value={workDetails.industry}
+                        onChange={(e) => setWorkDetails({ ...workDetails, industry: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                      >
+                        <option value="Technology">Technology</option>
+                        <option value="Finance & Corporate">Finance & Corporate</option>
+                        <option value="Creative & Design">Creative & Design</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education">Education</option>
+                        <option value="Legal & Consulting">Legal & Consulting</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Workplace Dress Code</label>
+                      <select
+                        value={workDetails.dressCode}
+                        onChange={(e) => setWorkDetails({ ...workDetails, dressCode: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                      >
+                        <option value="Smart Casual">Smart Casual</option>
+                        <option value="Business Casual">Business Casual</option>
+                        <option value="Business Formal">Business Formal / Suits</option>
+                        <option value="Tech Casual">Tech Casual</option>
+                        <option value="Uniform / Scrubs">Uniform / Scrubs</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-medium mb-1">Work Mode</label>
+                      <select
+                        value={workDetails.workMode}
+                        onChange={(e) => setWorkDetails({ ...workDetails, workMode: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                      >
+                        <option value="Hybrid">Hybrid (2-3 days office)</option>
+                        <option value="In-office">In-Office Full Time</option>
+                        <option value="Remote">Fully Remote</option>
+                      </select>
                     </div>
                   </div>
-                  <button onClick={() => setStep(3)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </button>
                 </div>
+              )}
+            </motion.div>
+          )}
 
-                {/* Colors */}
-                <div className="flex items-start justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                  <div>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block mb-1">Color Palette</span>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedColors.map((col) => (
-                        <span key={col} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
-                          {col}
-                        </span>
-                      ))}
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 2: DAILY ROUTINE & WEEKLY SCHEDULE */}
+          {/* ------------------------------------------------------------- */}
+          {step === 2 && (
+            <motion.div
+              key="step-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div>
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  Weekly Rhythm
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  Your Typical Monday to Sunday Routine
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  On days without calendar events, Daily Fit uses this schedule to tailor your outfit dress code.
+                </p>
+              </div>
+
+              {/* Template Shortcuts */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-zinc-500 mr-1">Quick Apply:</span>
+                <button
+                  onClick={() => applyRoutineTemplate('work')}
+                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  9-to-5 Office Weekdays
+                </button>
+                <button
+                  onClick={() => applyRoutineTemplate('college')}
+                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  College Campus
+                </button>
+                <button
+                  onClick={() => applyRoutineTemplate('hybrid')}
+                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Hybrid Work Routine
+                </button>
+              </div>
+
+              {/* Routine Days Grid */}
+              <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                {weeklyRoutine.map((item, idx) => (
+                  <div
+                    key={item.day}
+                    className="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="w-24 font-bold text-sm text-zinc-900 dark:text-zinc-100">{item.day}</div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1">
+                      <div>
+                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Activity</label>
+                        <select
+                          value={item.activity}
+                          onChange={(e) => {
+                            const updated = [...weeklyRoutine];
+                            updated[idx].activity = e.target.value;
+                            setWeeklyRoutine(updated);
+                          }}
+                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                        >
+                          <option value="Work">Work / Office</option>
+                          <option value="College">College / Study</option>
+                          <option value="Gym">Gym / Workout</option>
+                          <option value="Outing">Outing / Social</option>
+                          <option value="Rest">Home / Rest</option>
+                          <option value="Travel">Travel</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Dress Code</label>
+                        <select
+                          value={item.dress_code}
+                          onChange={(e) => {
+                            const updated = [...weeklyRoutine];
+                            updated[idx].dress_code = e.target.value;
+                            setWeeklyRoutine(updated);
+                          }}
+                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                        >
+                          <option value="Smart Casual">Smart Casual</option>
+                          <option value="Business Casual">Business Casual</option>
+                          <option value="Formal">Formal</option>
+                          <option value="Casual">Casual</option>
+                          <option value="Activewear">Activewear</option>
+                          <option value="Festive">Festive / Traditional</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Time Window</label>
+                        <input
+                          type="text"
+                          value={item.time_range}
+                          onChange={(e) => {
+                            const updated = [...weeklyRoutine];
+                            updated[idx].time_range = e.target.value;
+                            setWeeklyRoutine(updated);
+                          }}
+                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                          placeholder="e.g. 09:00 - 17:00"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <button onClick={() => setStep(4)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 3: FASHION PREFERENCES & PALETTES */}
+          {/* ------------------------------------------------------------- */}
+          {step === 3 && (
+            <motion.div
+              key="step-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div>
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  Personal Aesthetics
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  How do you like to dress?
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Select your core aesthetics and color preferences.
+                </p>
+              </div>
+
+              {/* Style Aesthetic Chips */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  Style Aesthetics (Select up to 4)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {STYLE_AESTHETICS.map((st) => {
+                    const isSelected = selectedStyles.includes(st.id);
+                    return (
+                      <div
+                        key={st.id}
+                        onClick={() => toggleItem(selectedStyles, st.id, setSelectedStyles)}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
+                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
+                        }`}
+                      >
+                        <p className="font-semibold">{st.label}</p>
+                        <p className={`text-[11px] mt-1 line-clamp-2 ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                          {st.desc}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Color Preferences */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                    Favorite Colors
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_PALETTES.map((c) => {
+                      const isSelected = preferredColors.includes(c.name);
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => toggleItem(preferredColors, c.name, setPreferredColors)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border border-zinc-300"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <span>{c.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Occasions & Fit */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block mb-1">Fit & Occasions</span>
-                    <p className="text-zinc-500 text-[11px]">
-                      Fit: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{selectedFit}</span> &middot; Style: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{selectedOutfitStyle}</span>
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedOccasions.map((o) => (
-                        <span key={o} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
-                          {o}
-                        </span>
-                      ))}
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                    Disliked Colors (Avoid)
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_PALETTES.map((c) => {
+                      const isDisliked = dislikedColors.includes(c.name);
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => toggleItem(dislikedColors, c.name, setDislikedColors)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all ${
+                            isDisliked
+                              ? 'bg-rose-600 text-white border-transparent'
+                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
+                          }`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border border-zinc-300"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <span>{c.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <button onClick={() => setStep(5)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </button>
+                </div>
+              </div>
+
+              {/* Sliders: Comfort vs Style & Simple vs Experimental */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Comfort vs. Appearance</span>
+                  <div className="flex gap-2 text-xs">
+                    {(['comfort', 'balanced', 'style'] as const).map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setComfortVsAppearance(val)}
+                        className={`flex-1 py-2 rounded-lg font-semibold capitalize border ${
+                          comfortVsAppearance === val
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
+                        }`}
+                      >
+                        {val === 'comfort' ? 'Comfort First' : val === 'style' ? 'Style First' : 'Balanced'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Simple vs. Experimental</span>
+                  <div className="flex gap-2 text-xs">
+                    {(['simple', 'balanced', 'experimental'] as const).map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setSimpleVsExperimental(val)}
+                        className={`flex-1 py-2 rounded-lg font-semibold capitalize border ${
+                          simpleVsExperimental === val
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
+                        }`}
+                      >
+                        {val === 'simple' ? 'Simple & Familiar' : val === 'experimental' ? 'Experimental' : 'Balanced'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 4: OCCASION PREFERENCES */}
+          {/* ------------------------------------------------------------- */}
+          {step === 4 && (
+            <motion.div
+              key="step-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div>
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  Occasion Focus
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  Which occasions do you dress for regularly?
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Select all occasions that match your lifestyle.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {OCCASIONS_LIST.map((occ) => {
+                  const isSelected = selectedOccasions.includes(occ);
+                  return (
+                    <div
+                      key={occ}
+                      onClick={() => toggleItem(selectedOccasions, occ, setSelectedOccasions)}
+                      className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
+                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 text-zinc-800 dark:text-zinc-200'
+                      }`}
+                    >
+                      <span className="font-semibold text-xs">{occ}</span>
+                      {isSelected && <Check className="w-4 h-4 shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 5: SHOPPING & WARDROBE PREFERENCES */}
+          {/* ------------------------------------------------------------- */}
+          {step === 5 && (
+            <motion.div
+              key="step-5"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div>
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  Shopping & Budget Habits (Optional)
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  How do you like to shop for clothing?
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Helps our Wardrobe Gap stylist surface relevant brand discoveries within your taste.
+                </p>
+              </div>
+
+              {/* Budget Tier */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  Budget Preference
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: 'budget', label: 'Budget-Friendly', desc: '₹ / Under ₹2,000' },
+                    { id: 'mid_range', label: 'Mid-Range', desc: '₹₹ / ₹2,000 - ₹6,000' },
+                    { id: 'premium', label: 'Premium / Designer', desc: '₹₹₹ / ₹6,000+' },
+                  ].map((tier) => (
+                    <div
+                      key={tier.id}
+                      onClick={() => setBudgetTier(tier.id)}
+                      className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                        budgetTier === tier.id
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
+                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                      }`}
+                    >
+                      <p className="font-semibold">{tier.label}</p>
+                      <p className={`text-[11px] mt-1 ${budgetTier === tier.id ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                        {tier.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Philosophy */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  Shopping Philosophy
+                </label>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  {[
+                    { id: 'essentials_first', label: 'Versatile Essentials First' },
+                    { id: 'balanced', label: 'Balanced Mix' },
+                    { id: 'trend_driven', label: 'Trend & Statement Driven' },
+                  ].map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => setShoppingPhilosophy(p.id)}
+                      className={`p-3 rounded-xl border text-center font-medium cursor-pointer transition-all ${
+                        shoppingPhilosophy === p.id
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                      }`}
+                    >
+                      {p.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note */}
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 italic">
+                * Note: TailorBird never requests financial or payment card details.
+              </p>
+            </motion.div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* STEP 6: RECOMMENDATION TUNING */}
+          {/* ------------------------------------------------------------- */}
+          {step === 6 && (
+            <motion.div
+              key="step-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div>
+                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                  AI Recommendation Tuning
+                </span>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
+                  How should TailorBird style you?
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Calibrate your daily stylist behavior to match your habits.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>Repeat Frequency Behavior</span>
+                    <span className="text-primary-600 uppercase">{repeatFrequency}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: 'strict', label: 'Avoid repeats within 7 days' },
+                      { id: 'moderate', label: 'Ok to repeat staple bottoms' },
+                      { id: 'relaxed', label: 'Mix & match freely' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setRepeatFrequency(opt.id)}
+                        className={`p-2.5 rounded-lg border text-center font-medium ${
+                          repeatFrequency === opt.id
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            : 'border-zinc-200 dark:border-zinc-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>Familiarity vs. New Pairings</span>
+                    <span className="text-primary-600 uppercase">{familiarVsNew}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: 'familiar', label: 'Safe go-to combinations' },
+                      { id: 'balanced', label: 'Balanced styling' },
+                      { id: 'novel', label: 'Surprise me with new looks' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setFamiliarVsNew(opt.id)}
+                        className={`p-2.5 rounded-lg border text-center font-medium ${
+                          familiarVsNew === opt.id
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
+                            : 'border-zinc-200 dark:border-zinc-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -818,14 +911,15 @@ export const Onboarding: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* Bottom Sticky Navigation */}
-      <div className="max-w-2xl mx-auto w-full pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4">
+      {/* Navigation Buttons */}
+      <div className="max-w-3xl mx-auto w-full pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
         {step > 1 ? (
           <Button
-            size="md"
             variant="outline"
+            size="md"
             onClick={() => setStep(step - 1)}
-            className="flex items-center gap-1.5 text-xs"
+            disabled={isSubmitting}
+            className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -835,36 +929,37 @@ export const Onboarding: React.FC = () => {
         )}
 
         <div className="flex items-center gap-2">
-          {step < 7 && (
-            <button
-              type="button"
-              onClick={() => setStep(step + 1)}
-              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 px-3 py-2 font-medium"
+          {step === 5 && (
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setStep(6)}
+              disabled={isSubmitting}
             >
               Skip
-            </button>
+            </Button>
           )}
 
-          {step < 7 ? (
+          {step < 6 ? (
             <Button
-              size="md"
               variant="primary"
+              size="md"
               onClick={() => setStep(step + 1)}
-              className="flex items-center gap-1.5 text-xs px-6"
+              className="flex items-center gap-2"
             >
-              Continue
+              Next Step
               <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
             <Button
-              size="md"
               variant="primary"
-              isLoading={isSubmitting}
+              size="md"
               onClick={handleFinish}
-              className="flex items-center gap-1.5 text-xs px-8 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 shadow-md font-bold"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              <Sparkles className="w-4 h-4" />
-              Finish & Unlock Recommendations
+              {isSubmitting ? 'Saving Profile...' : 'Complete Setup & Open Daily Fit'}
+              <CheckCircle2 className="w-4 h-4" />
             </Button>
           )}
         </div>

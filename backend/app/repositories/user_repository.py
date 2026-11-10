@@ -169,6 +169,15 @@ class UserRepository:
             "preferred_language",
             "date_of_birth",
             "onboarding_completed",
+            "lifestyle_occupation",
+            "occupation_details",
+            "weekly_routine",
+            "shopping_preferences",
+            "recommendation_settings",
+            "saved_products",
+            "dismissed_products",
+            "comfort_vs_appearance",
+            "simple_vs_experimental",
         ):
             if fld in kwargs and kwargs[fld] is not None:
                 fits_data[fld] = kwargs[fld]

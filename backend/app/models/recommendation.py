@@ -82,6 +82,46 @@ class Recommendation(Base):
     def worn_status(self) -> str:
         return "suggested"
 
+    @property
+    def status(self) -> str:
+        return getattr(self, "_status", "active")
+
+    @status.setter
+    def status(self, val: str):
+        self._status = val
+
+    @property
+    def empty_reason(self):
+        return getattr(self, "_empty_reason", None)
+
+    @empty_reason.setter
+    def empty_reason(self, val):
+        self._empty_reason = val
+
+    @property
+    def missing_slots(self):
+        return getattr(self, "_missing_slots", None)
+
+    @missing_slots.setter
+    def missing_slots(self, val):
+        self._missing_slots = val
+
+    @property
+    def can_wear(self) -> bool:
+        return getattr(self, "_can_wear", True)
+
+    @can_wear.setter
+    def can_wear(self, val: bool):
+        self._can_wear = val
+
+    @property
+    def filter_counts(self):
+        return getattr(self, "_filter_counts", None)
+
+    @filter_counts.setter
+    def filter_counts(self, val):
+        self._filter_counts = val
+
     # Relationships
     user = relationship("User", back_populates="recommendations")
     outfit = relationship("Outfit", back_populates="recommendations")

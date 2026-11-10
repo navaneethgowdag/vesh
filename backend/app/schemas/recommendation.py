@@ -15,15 +15,22 @@ class RecommendationExplanation(BaseModel):
 
 
 class RecommendationResponse(BaseModel):
-    id: UUID
+    id: Optional[UUID] = None
     recommendation_id: Optional[UUID] = None
-    outfit: OutfitResponse
-    score: float
+    outfit: Optional[OutfitResponse] = None
+    score: float = 0.0
     reasoning: Dict[str, Any] = Field(default_factory=dict)
     context: Dict[str, Any] = Field(default_factory=dict)
     reasons: List[str] = Field(default_factory=list)
     worn_status: str = "suggested"
-    created_at: datetime
+    created_at: Optional[datetime] = None
+
+    # Empty & Partial Outfit states (Rule 4.4a)
+    status: str = "active"  # active | no_items | partial_outfit | stale
+    empty_reason: Optional[Dict[str, Any]] = None
+    missing_slots: Optional[List[str]] = None
+    can_wear: bool = True
+    filter_counts: Optional[Dict[str, Any]] = None
 
     model_config = {"from_attributes": True}
 
@@ -118,6 +125,10 @@ class RecommendationGenerateRequest(BaseModel):
     preferred_colors: Optional[List[str]] = Field(default_factory=list)
     avoided_colors: Optional[List[str]] = Field(default_factory=list)
     specific_clothing_id: Optional[UUID] = None
+    force_regenerate: Optional[bool] = Field(
+        default=False,
+        description="Force generating a new recommendation rather than reusing an active persisted look for today."
+    )
     limit: Optional[int] = Field(default=1, ge=1, le=10)
 
 

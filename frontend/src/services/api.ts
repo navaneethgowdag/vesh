@@ -38,6 +38,7 @@ import {
   WeeklyPlan,
   WeeklyPlanDay,
   WeeklyDayStatus,
+  LaundrySettings,
   WardrobeGapAnalysis,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
@@ -433,6 +434,78 @@ export function mapPoll(p: any): Poll {
   };
 }
 
+function mapApiRecommendation(rec: any): Recommendation {
+  const outfit = rec.outfit || {};
+  const pieces = (outfit.clothing_items || []).map((ci: any) => ({
+    id: String(ci.id),
+    name: ci.name,
+    category: ci.category,
+    color: ci.color,
+    secondaryColor: ci.secondary_color,
+    pattern: ci.pattern,
+    style: ci.occasion || 'Casual',
+    season: ci.season || 'All-Season',
+    brand: ci.brand,
+    image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
+    preferredImageUrl: ci.preferred_image_url,
+    createdAt: ci.created_at || new Date().toISOString(),
+    wearCountSinceWash: ci.wear_count_since_wash ?? 0,
+    wear_count_since_wash: ci.wear_count_since_wash ?? 0,
+    laundryStatus: ci.laundry_status || 'clean',
+    laundry_status: ci.laundry_status || 'clean',
+    availableFrom: ci.available_from,
+    available_from: ci.available_from,
+    trackLaundry: ci.track_laundry !== false,
+    track_laundry: ci.track_laundry !== false,
+  }));
+  const outfitImg = outfit.image_url || (pieces.length > 0 ? pieces[0].image : '');
+  const score = Math.round((rec.score || rec.recommendation_score || 0.9) * 100);
+  const status = rec.status || (rec.empty_reason ? 'no_items' : 'active');
+  const emptyReason = rec.empty_reason || undefined;
+  const canWear = rec.can_wear !== undefined ? Boolean(rec.can_wear) : (status === 'active');
+  const missingSlots = rec.missing_slots || (emptyReason?.missing_slots) || [];
+  const filterCounts = rec.filter_counts || (emptyReason?.filter_counts) || {};
+
+  return {
+    id: String(rec.id || 'rec-' + Date.now()),
+    outfit: {
+      id: String(outfit.id || 'outfit-none'),
+      title: outfit.name || (status === 'no_items' ? 'No Outfit' : 'Curated Look'),
+      description: outfit.description,
+      pieces,
+      occasion: (outfit.occasion as Occasion) || (rec.occasion as Occasion) || 'Casual Daily',
+      style: outfit.style || 'Minimal',
+      season: outfit.season || 'All-Season',
+      score,
+      image: outfitImg,
+      tags: outfit.tags || [],
+      createdAt: outfit.created_at || new Date().toISOString(),
+    },
+    score,
+    weatherCompatibility: Math.round((rec.reasoning?.weather_match || 0.92) * 100),
+    styleCompatibility: Math.round((rec.reasoning?.style_compatibility || rec.reasoning?.style_match || 0.94) * 100),
+    occasionCompatibility: Math.round((rec.reasoning?.occasion_match || 0.90) * 100),
+    explanation: {
+      weatherMatch: typeof rec.reasoning?.weather_match === 'string' ? rec.reasoning.weather_match : 'Optimized for current weather and seasonal comfort.',
+      styleMatch: typeof rec.reasoning?.style_match === 'string' ? rec.reasoning.style_match : 'Harmonized with your personal aesthetic.',
+      wardrobeMatch: typeof rec.reasoning?.wardrobe_match === 'string' ? rec.reasoning.wardrobe_match : 'Rotates your signature wardrobe pieces.',
+      occasionMatch: typeof rec.reasoning?.occasion_match === 'string' ? rec.reasoning.occasion_match : 'Calibrated for your planned occasion.',
+    },
+    reasons: rec.context?.reasons || rec.reasons || (emptyReason?.message ? [emptyReason.message] : ['Weather compatible', 'High color harmony', 'Matches preferred aesthetic']),
+    wornStatus: rec.worn_status || 'suggested',
+    recommendedAt: rec.created_at || new Date().toISOString(),
+    status,
+    emptyReason,
+    empty_reason: emptyReason,
+    canWear,
+    can_wear: canWear,
+    missingSlots,
+    missing_slots: missingSlots,
+    filterCounts,
+    filter_counts: filterCounts,
+  };
+}
+
 export const api = {
   // --- AUTH ---
   auth: {
@@ -603,6 +676,22 @@ export const api = {
         categoryGroup: item.category_group,
         originalImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/original` : undefined,
         processedImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/processed` : undefined,
+        wearCountSinceWash: item.wear_count_since_wash ?? 0,
+        wear_count_since_wash: item.wear_count_since_wash ?? 0,
+        lastWornOn: item.last_worn_on,
+        last_worn_on: item.last_worn_on,
+        laundryStatus: item.laundry_status || 'clean',
+        laundry_status: item.laundry_status || 'clean',
+        laundryStartedOn: item.laundry_started_on,
+        laundry_started_on: item.laundry_started_on,
+        availableFrom: item.available_from,
+        available_from: item.available_from,
+        maxWearsOverride: item.max_wears_override,
+        max_wears_override: item.max_wears_override,
+        washDaysOverride: item.wash_days_override,
+        wash_days_override: item.wash_days_override,
+        trackLaundry: item.track_laundry !== false,
+        track_laundry: item.track_laundry !== false,
       }));
     },
 
@@ -749,6 +838,13 @@ export const api = {
         result: raw.result,
         errorMessage: raw.error_message,
       };
+    },
+    async getGapAnalysis(forceRefresh: boolean = false): Promise<any> {
+      const q = forceRefresh ? '?force_refresh=true' : '';
+      return request<any>(`/wardrobe/gap-analysis${q}`, {
+        cacheTTL: forceRefresh ? 0 : 120000,
+        bypassCache: forceRefresh,
+      });
     },
   },
 
@@ -1076,6 +1172,22 @@ export const api = {
         categoryGroup: item.category_group,
         originalImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/original` : undefined,
         processedImageUrl: item.id ? `/api/v1/clothing/${item.id}/image/processed` : undefined,
+        wearCountSinceWash: item.wear_count_since_wash ?? 0,
+        wear_count_since_wash: item.wear_count_since_wash ?? 0,
+        lastWornOn: item.last_worn_on,
+        last_worn_on: item.last_worn_on,
+        laundryStatus: item.laundry_status || 'clean',
+        laundry_status: item.laundry_status || 'clean',
+        laundryStartedOn: item.laundry_started_on,
+        laundry_started_on: item.laundry_started_on,
+        availableFrom: item.available_from,
+        available_from: item.available_from,
+        maxWearsOverride: item.max_wears_override,
+        max_wears_override: item.max_wears_override,
+        washDaysOverride: item.wash_days_override,
+        wash_days_override: item.wash_days_override,
+        trackLaundry: item.track_laundry !== false,
+        track_laundry: item.track_laundry !== false,
       }));
     },
 
@@ -1478,6 +1590,11 @@ export const api = {
       await request<void>(`/saved?${params.toString()}`, { method: 'POST' });
     },
 
+    async saveOutfit(outfitId: string): Promise<void> {
+      const params = new URLSearchParams({ item_type: 'outfit', item_id: outfitId });
+      await request<void>(`/saved?${params.toString()}`, { method: 'POST' });
+    },
+
     async unsavePost(postId: string): Promise<void> {
       await request<void>(`/saved/by-item/post/${postId}`, { method: 'DELETE' });
     },
@@ -1675,15 +1792,35 @@ export const api = {
       country?: string;
       preferred_language?: string;
       preferred_styles?: string[];
+      disliked_styles?: string[];
       preferred_categories?: string[];
       preferred_colors?: string[];
+      disliked_colors?: string[];
+      avoided_colors?: string[];
       preferred_occasions?: string[];
+      preferred_fits?: string[];
       preferred_fit?: string;
       styling_preference?: string;
       budget_preference?: string;
+      lifestyle_occupation?: any;
+      occupation_details?: any;
+      weekly_routine?: any[];
+      shopping_preferences?: any;
+      recommendation_settings?: any;
     }): Promise<any> {
       return request<any>('/users/me/onboarding', {
         method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getStylingProfile(): Promise<any> {
+      return request<any>('/users/me/styling-profile');
+    },
+
+    async updateStylingProfile(data: any): Promise<any> {
+      return request<any>('/users/me/styling-profile', {
+        method: 'PATCH',
         body: JSON.stringify(data),
       });
     },
@@ -1778,6 +1915,27 @@ export const api = {
 
   // --- RECOMMENDATIONS / DAILY FIT ---
   recommendations: {
+    async getActive(
+      occasion: string = 'Everyday',
+      targetDate?: string,
+      calendarEventId?: string
+    ): Promise<Recommendation | null> {
+      const q = new URLSearchParams({ occasion });
+      if (targetDate) q.set('target_date', targetDate);
+      if (calendarEventId) q.set('calendar_event_id', calendarEventId);
+      try {
+        const raw = await request<any>(`/recommendations/active?${q.toString()}`);
+        if (!raw) return null;
+        if (!raw.outfit && raw.status !== 'no_items') return null;
+        return mapApiRecommendation(raw);
+      } catch (err: any) {
+        if (err instanceof ApiError && err.status === 404) {
+          return null;
+        }
+        return null;
+      }
+    },
+
     async generate(params: {
       calendarEventId?: string;
       recommendationMode?: 'calendar' | 'occasion' | 'general';
@@ -1800,6 +1958,7 @@ export const api = {
       latitude?: number;
       longitude?: number;
       limit?: number;
+      forceRegenerate?: boolean;
     }): Promise<Recommendation[]> {
       const q = new URLSearchParams();
       if (params.city) q.set('city', params.city);
@@ -1829,54 +1988,10 @@ export const api = {
           avoided_colors: params.avoidedColors || [],
           specific_clothing_id: params.specificClothingId,
           limit: params.limit !== undefined ? params.limit : 1,
+          force_regenerate: params.forceRegenerate || false,
         }),
       });
-      return (rawList || []).map((rec) => {
-        const outfit = rec.outfit || {};
-        const pieces = (outfit.clothing_items || []).map((ci: any) => ({
-          id: String(ci.id),
-          name: ci.name,
-          category: ci.category,
-          color: ci.color,
-          style: ci.occasion || 'Casual',
-          season: ci.season || 'All-Season',
-          brand: ci.brand,
-          image: ci.preferred_image_url || ci.image_url || (ci.id ? `/api/v1/clothing/${ci.id}/image/processed` : ''),
-          preferredImageUrl: ci.preferred_image_url,
-          createdAt: ci.created_at || new Date().toISOString(),
-        }));
-        const outfitImg = outfit.image_url || (pieces.length > 0 ? pieces[0].image : '');
-        const score = Math.round((rec.score || 0.9) * 100);
-        return {
-          id: String(rec.id),
-          outfit: {
-            id: String(outfit.id),
-            title: outfit.name,
-            description: outfit.description,
-            pieces,
-            occasion: (outfit.occasion as Occasion) || 'Casual Daily',
-            style: outfit.style || 'Minimal',
-            season: outfit.season || 'All-Season',
-            score,
-            image: outfitImg,
-            tags: outfit.tags || [],
-            createdAt: outfit.created_at || new Date().toISOString(),
-          },
-          score,
-          weatherCompatibility: Math.round((rec.reasoning?.weather_match || 0.92) * 100),
-          styleCompatibility: Math.round((rec.reasoning?.style_compatibility || rec.reasoning?.style_match || 0.94) * 100),
-          occasionCompatibility: Math.round((rec.reasoning?.occasion_match || 0.90) * 100),
-          explanation: {
-            weatherMatch: typeof rec.reasoning?.weather_match === 'string' ? rec.reasoning.weather_match : 'Optimized for current weather and seasonal comfort.',
-            styleMatch: typeof rec.reasoning?.style_match === 'string' ? rec.reasoning.style_match : 'Harmonized with your personal aesthetic.',
-            wardrobeMatch: typeof rec.reasoning?.wardrobe_match === 'string' ? rec.reasoning.wardrobe_match : 'Rotates your signature wardrobe pieces.',
-            occasionMatch: typeof rec.reasoning?.occasion_match === 'string' ? rec.reasoning.occasion_match : 'Calibrated for your planned occasion.',
-          },
-          reasons: rec.context?.reasons || rec.reasons || ['Weather compatible', 'High color harmony', 'Matches preferred aesthetic'],
-          wornStatus: rec.worn_status || 'suggested',
-          recommendedAt: rec.created_at || new Date().toISOString(),
-        };
-      });
+      return (rawList || []).map(mapApiRecommendation);
     },
 
     async list(limit: number = 20, offset: number = 0): Promise<Recommendation[]> {
@@ -2073,6 +2188,84 @@ export const api = {
       apiCache.invalidate('wardrobe');
       return request<any>(`/recommendations/${recommendationId}/wear`, {
         method: 'POST',
+      });
+    },
+  },
+
+  // --- LAUNDRY & WEAR TRACKING ---
+  laundry: {
+    async getSettings(): Promise<LaundrySettings> {
+      return request<LaundrySettings>('/settings/laundry');
+    },
+
+    async updateSettings(data: Partial<LaundrySettings>): Promise<LaundrySettings> {
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('daily_fit');
+      return request<LaundrySettings>('/settings/laundry', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async recordWear(data: {
+      item_ids?: string[];
+      outfit_id?: string;
+      date?: string;
+      source?: string;
+    }): Promise<{
+      success: boolean;
+      worn_date?: string;
+      laundry_notifications: string[];
+      items: any[];
+    }> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('daily_fit');
+      apiCache.invalidate('planner');
+      return request<any>('/wear', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async undoWear(data: {
+      item_ids?: string[];
+      outfit_id?: string;
+      date?: string;
+    }): Promise<{
+      success: boolean;
+      undone_date?: string;
+      items: any[];
+    }> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('daily_fit');
+      apiCache.invalidate('planner');
+      return request<any>('/wear/undo', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async itemAction(
+      clothingId: string,
+      action: 'wash_now' | 'send_to_laundry' | 'mark_unavailable' | 'restore',
+      returnDate?: string
+    ): Promise<{
+      success: boolean;
+      id: string;
+      name: string;
+      laundry_status: string;
+      wear_count_since_wash: number;
+      available_from?: string;
+    }> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('recommendation');
+      apiCache.invalidate('daily_fit');
+      apiCache.invalidate('planner');
+      return request<any>(`/clothing/${clothingId}/laundry`, {
+        method: 'POST',
+        body: JSON.stringify({ action, return_date: returnDate }),
       });
     },
   },
@@ -2578,6 +2771,27 @@ export const api = {
       return request<WardrobeGapAnalysis>('/wardrobe/gap-analysis/refresh', {
         method: 'POST',
       });
+    },
+
+    async getShoppingRecommendations(limit: number = 8): Promise<any> {
+      return request<any>(`/wardrobe/shopping-recommendations?limit=${limit}`);
+    },
+
+    async getTrending(limit: number = 6): Promise<any> {
+      return request<any>(`/wardrobe/trending?limit=${limit}`);
+    },
+
+    async saveProduct(productId: string): Promise<any> {
+      return request<any>(`/wardrobe/shopping-products/${productId}/save`, { method: 'POST' });
+    },
+
+    async dismissProduct(productId: string): Promise<any> {
+      return request<any>(`/wardrobe/shopping-products/${productId}/dismiss`, { method: 'POST' });
+    },
+
+    async markAlreadyOwned(productId: string, category?: string): Promise<any> {
+      const q = category ? `?category=${encodeURIComponent(category)}` : '';
+      return request<any>(`/wardrobe/shopping-products/${productId}/already-own${q}`, { method: 'POST' });
     },
   },
 

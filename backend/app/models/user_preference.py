@@ -169,4 +169,123 @@ class UserPreference(Base):
         data["onboarding_completed"] = bool(value)
         self.preferred_fits = data
 
+    @property
+    def lifestyle_occupation(self) -> dict:
+        if isinstance(self.preferred_fits, dict):
+            val = self.preferred_fits.get("lifestyle_occupation")
+            if isinstance(val, dict):
+                return val
+            elif isinstance(val, str):
+                return {"occupation": val, "details": {}}
+        return {"occupation": "prefer_not_to_say", "details": {}}
+
+    @lifestyle_occupation.setter
+    def lifestyle_occupation(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        if isinstance(value, dict):
+            data["lifestyle_occupation"] = value
+        elif isinstance(value, str):
+            data["lifestyle_occupation"] = {"occupation": value, "details": {}}
+        self.preferred_fits = data
+
+    @property
+    def occupation_details(self) -> dict:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("occupation_details", {})
+        return {}
+
+    @property
+    def weekly_routine(self) -> list:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("weekly_routine", [])
+        return []
+
+    @weekly_routine.setter
+    def weekly_routine(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["weekly_routine"] = value if isinstance(value, list) else []
+        self.preferred_fits = data
+
+    @property
+    def shopping_preferences(self) -> dict:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("shopping_preferences", {
+                "budget_tier": "mid_range",
+                "budget_per_item": None,
+                "shopping_philosophy": "balanced",
+                "preferred_categories": [],
+                "preferred_platforms": []
+            })
+        return {
+            "budget_tier": "mid_range",
+            "budget_per_item": None,
+            "shopping_philosophy": "balanced",
+            "preferred_categories": [],
+            "preferred_platforms": []
+        }
+
+    @shopping_preferences.setter
+    def shopping_preferences(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["shopping_preferences"] = value if isinstance(value, dict) else {}
+        self.preferred_fits = data
+
+    @property
+    def recommendation_settings(self) -> dict:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("recommendation_settings", {
+                "comfort_priority": 0.5,
+                "familiar_vs_new": "balanced",
+                "repeat_frequency": "moderate",
+                "variety_preference": "balanced"
+            })
+        return {
+            "comfort_priority": 0.5,
+            "familiar_vs_new": "balanced",
+            "repeat_frequency": "moderate",
+            "variety_preference": "balanced"
+        }
+
+    @recommendation_settings.setter
+    def recommendation_settings(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["recommendation_settings"] = value if isinstance(value, dict) else {}
+        self.preferred_fits = data
+
+    @property
+    def saved_products(self) -> list:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("saved_products", [])
+        return []
+
+    @saved_products.setter
+    def saved_products(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["saved_products"] = value if isinstance(value, list) else []
+        self.preferred_fits = data
+
+    @property
+    def dismissed_products(self) -> list:
+        if isinstance(self.preferred_fits, dict):
+            return self.preferred_fits.get("dismissed_products", [])
+        return []
+
+    @dismissed_products.setter
+    def dismissed_products(self, value):
+        if not isinstance(self.preferred_fits, dict):
+            self.preferred_fits = {"fits": self.preferred_fits or []}
+        data = dict(self.preferred_fits)
+        data["dismissed_products"] = value if isinstance(value, list) else []
+        self.preferred_fits = data
+
     user = relationship("User", back_populates="preference")

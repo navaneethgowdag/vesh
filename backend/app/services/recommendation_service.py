@@ -1,6 +1,7 @@
 import random
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from typing import List, Dict, Any, Optional, Tuple, Set
+import uuid
 from uuid import UUID
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
@@ -17,6 +18,11 @@ from app.repositories.calendar_repository import CalendarRepository
 from app.services.weather_service import weather_service
 from app.services.personalization_service import PersonalizationService
 from app.services.color_coordination_service import ColorCoordinationService
+from app.services.laundry_service import LaundryService
+from app.core.occasion_profiles import get_occasion_profile, OCCASION_PROFILES
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # -------------------------------------------------------------------------
@@ -180,6 +186,88 @@ def get_garment_formality(item: Clothing) -> float:
     return round(base, 2)
 
 
+def score_garment_for_occasion(item: Clothing, occasion: str, custom_text: Optional[str] = None) -> float:
+    """
+    Computes an occasion-alignment score (0.05 to 0.99) for an individual wardrobe item.
+    Used to sort candidate buckets before archetype combination generation.
+    """
+    occ = (occasion or "").lower()
+    c_type = classify_garment(item)
+    name = (item.name or "").lower()
+    sub = (getattr(item, "subcategory", "") or "").lower()
+    style = (getattr(item, "style", "") or "").lower()
+    f = get_garment_formality(item)
+
+    score = 0.50
+
+    # 1. Gym / Sports
+    if any(k in occ for k in ["sport", "gym", "workout", "athletic", "fitness"]):
+        if any(w in name or w in style or w in sub for w in ["athletic", "gym", "sport", "workout", "runner", "track", "shorts", "sweat", "jogger", "training"]):
+            score += 0.45
+        elif any(w in name or w in sub for w in ["t-shirt", "t_shirt", "tee", "tank", "sneakers"]):
+            score += 0.30
+        if f > 0.55 or any(w in name or w in sub for w in ["blazer", "suit", "oxford", "trousers", "slacks", "loafer", "dress", "saree"]):
+            score -= 0.40
+
+    # 2. Office / Work
+    elif any(k in occ for k in ["work", "office"]):
+        if any(w in name or w in sub or w in style for w in ["shirt", "oxford", "trousers", "slacks", "chinos", "blazer", "formal", "smart", "polo"]):
+            score += 0.42
+        elif c_type in ("indian_kurta", "indian_kurti", "western_dress") and f >= 0.60:
+            score += 0.35
+        elif c_type == "footwear" and any(w in name or w in sub for w in ["loafer", "derby", "oxford", "formal"]):
+            score += 0.35
+        if f < 0.40 or any(w in name for w in ["gym", "athletic", "distressed", "ripped", "sweat"]):
+            score -= 0.35
+
+    # 3. Business meeting / Presentation / Interview / Formal event
+    elif any(k in occ for k in ["business", "presentation", "interview", "formal"]):
+        if any(w in name or w in sub or w in style for w in ["blazer", "suit", "tuxedo", "oxford", "formal", "dress shirt", "tailored"]):
+            score += 0.45
+        elif any(w in name or w in sub for w in ["trousers", "slacks", "loafer", "derby"]):
+            score += 0.35
+        if f < 0.60 or any(w in name for w in ["gym", "casual", "t-shirt", "tee", "shorts", "sneakers", "hoodie"]):
+            score -= 0.40
+
+    # 4. Wedding / Festival
+    elif any(k in occ for k in ["wedding", "festive", "traditional", "festival"]):
+        if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani", "indian_blouse", "indian_dupatta"):
+            score += 0.50
+        elif c_type in ("indian_kurta", "indian_kurti") or any(w in style for w in ["ethnic", "traditional"]):
+            score += 0.40
+        elif "blazer" in name or "suit" in name or f >= 0.85:
+            score += 0.30
+        if any(w in name for w in ["gym", "sport", "shorts", "distressed"]):
+            score -= 0.40
+
+    # 5. Party
+    elif "party" in occ:
+        if any(w in style or w in name for w in ["party", "chic", "bold", "leather", "black", "silk", "cocktail", "blazer", "chelsea", "statement"]):
+            score += 0.42
+        elif c_type in ("western_dress", "outerwear"):
+            score += 0.30
+        if any(w in name for w in ["gym", "athletic", "sweatpants", "lounge"]):
+            score -= 0.35
+
+    # 6. Date
+    elif "date" in occ:
+        if any(w in style or w in name for w in ["chic", "elegant", "smart", "knit", "blazer", "fitted", "dark denim", "chelsea", "loafer"]):
+            score += 0.38
+        elif c_type in ("western_dress", "western_top") and f >= 0.50:
+            score += 0.25
+        if any(w in name for w in ["gym", "sweatpants", "flip", "distressed"]):
+            score -= 0.35
+
+    # 7. College / Everyday / Casual outing / Travel
+    elif any(k in occ for k in ["college", "everyday", "outing", "travel", "casual"]):
+        if any(w in name or w in sub or w in style for w in ["tee", "t_shirt", "jeans", "chinos", "sneakers", "casual", "hoodie", "polo", "kurti", "flats"]):
+            score += 0.35
+        if f > 0.85 or any(w in name for w in ["tuxedo", "ballgown", "sherwani"]):
+            score -= 0.35
+
+    return max(0.05, min(0.99, score))
+
+
 # -------------------------------------------------------------------------
 # RecommendationService
 # -------------------------------------------------------------------------
@@ -222,6 +310,7 @@ class RecommendationService:
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         item_ids_worn_yesterday: Optional[Set[UUID]] = None,
+        force_regenerate: bool = False,
     ) -> List[Recommendation]:
         """
         Wardrobe-Based AI Outfit Recommendation Engine.
@@ -282,7 +371,32 @@ class RecommendationService:
         target_event_formality = formality if formality is not None else day_event_context["formality"]
         event_rationale = day_event_context["rationale"]
 
-        if occasion and occasion not in ("Casual Daily", ""):
+        # -----------------------------------------------------------------
+        # CONTEXT PRIORITY RESOLUTION:
+        # 1. Calendar event for today
+        # 2. Selected occasion (explicit user override)
+        # 3. User styling preferences & Weekly routine
+        # 4. Lifestyle & occupation fallback
+        # 5. Weather conditions
+        # 6. Wardrobe availability
+        # 7. Wear history
+        # -----------------------------------------------------------------
+        user_pref = self.user_repo.get_preferences(user_id)
+        weekday_name = target_date.strftime("%A") if target_date else datetime.now().strftime("%A")
+
+        routine_entry = None
+        if user_pref and user_pref.weekly_routine:
+            for r in user_pref.weekly_routine:
+                if isinstance(r, dict) and r.get("day", "").lower() == weekday_name.lower():
+                    routine_entry = r
+                    break
+
+        lifestyle = user_pref.lifestyle_occupation if user_pref else {}
+        occupation = (lifestyle.get("occupation") or "").lower() if isinstance(lifestyle, dict) else ""
+
+        has_explicit_occasion = bool(occasion and str(occasion).strip() and str(occasion).strip().lower() != "general")
+
+        if has_explicit_occasion:
             if occasion in ("Custom occasion", "Custom") or custom_occasion:
                 target_occasion = custom_occasion or "Custom occasion"
             else:
@@ -291,8 +405,158 @@ class RecommendationService:
             target_occasion = event.occasion
         elif day_events and target_event_category != "other":
             target_occasion = target_event_category.replace("_", " ").title()
+        elif routine_entry:
+            act = routine_entry.get("activity", "")
+            dc = routine_entry.get("dress_code", "")
+            if act in ("Work", "Office"):
+                target_occasion = "Office"
+            elif act in ("College", "Study"):
+                target_occasion = "College"
+            elif act in ("Gym", "Sports", "Workout"):
+                target_occasion = "Gym / Sports"
+            elif act in ("Outing", "Party"):
+                target_occasion = "Casual outing"
+            elif dc:
+                target_occasion = dc
+            else:
+                target_occasion = "Everyday"
+            if dc and not target_event_dress_code:
+                target_event_dress_code = dc
+        elif occupation:
+            if occupation == "student":
+                target_occasion = "College"
+            elif occupation in ("working_professional", "freelancer"):
+                target_occasion = "Office"
+            else:
+                target_occasion = "Everyday"
         else:
-            target_occasion = "Casual Daily"
+            target_occasion = "Everyday"
+
+        # Align event classifier parameters with resolved target occasion
+        occ_lower = target_occasion.lower()
+        if any(k in occ_lower for k in ["gym", "sport", "workout", "athletic"]):
+            target_event_category = "sports_fitness"
+            target_event_dress_code = target_event_dress_code or "athletic"
+            target_event_formality = 0.15 if formality is None else formality
+        elif any(k in occ_lower for k in ["business meeting", "interview"]):
+            target_event_category = "business_meeting"
+            target_event_dress_code = target_event_dress_code or "formal"
+            target_event_formality = 0.85 if formality is None else formality
+        elif any(k in occ_lower for k in ["office", "work", "presentation"]):
+            target_event_category = "work_office"
+            target_event_dress_code = target_event_dress_code or "smart_casual"
+            target_event_formality = 0.75 if formality is None else formality
+        elif any(k in occ_lower for k in ["wedding"]):
+            target_event_category = "wedding"
+            target_event_dress_code = target_event_dress_code or "festive"
+            target_event_formality = 0.95 if formality is None else formality
+        elif any(k in occ_lower for k in ["festival", "festive"]):
+            target_event_category = "festival"
+            target_event_dress_code = target_event_dress_code or "festive"
+            target_event_formality = 0.90 if formality is None else formality
+        elif any(k in occ_lower for k in ["party"]):
+            target_event_category = "party_nightlife"
+            target_event_dress_code = target_event_dress_code or "party"
+            target_event_formality = 0.70 if formality is None else formality
+        elif any(k in occ_lower for k in ["date"]):
+            target_event_category = "date_romantic"
+            target_event_dress_code = target_event_dress_code or "smart_casual"
+            target_event_formality = 0.65 if formality is None else formality
+        elif any(k in occ_lower for k in ["formal event", "black tie", "gala"]):
+            target_event_category = "formal_event"
+            target_event_dress_code = target_event_dress_code or "black_tie"
+            target_event_formality = 0.95 if formality is None else formality
+        elif any(k in occ_lower for k in ["travel"]):
+            target_event_category = "travel_trip"
+            target_event_dress_code = target_event_dress_code or "comfortable_casual"
+            target_event_formality = 0.40 if formality is None else formality
+        elif any(k in occ_lower for k in ["college"]):
+            target_event_category = "college_campus"
+            target_event_dress_code = target_event_dress_code or "casual"
+            target_event_formality = 0.35 if formality is None else formality
+        elif any(k in occ_lower for k in ["casual outing", "family"]):
+            target_event_category = "casual_outing"
+            target_event_dress_code = target_event_dress_code or "casual"
+            target_event_formality = 0.45 if formality is None else formality
+        else:
+            target_event_category = "casual_daily"
+            target_event_dress_code = target_event_dress_code or "casual"
+            target_event_formality = 0.40 if formality is None else formality
+
+        # 1. CONTEXT RESOLUTION & LAUNDRY LAZY RETURNS
+        laundry_service = LaundryService(self.db)
+        laundry_service.apply_lazy_returns(user_id, target_date)
+        laundry_settings = laundry_service.get_settings(user_id)
+        occasion_prof = get_occasion_profile(target_occasion)
+
+        # Check for unexpired recommendation for this exact user, date, and occasion
+        if not force_regenerate and limit == 1 and not preferred_item_ids and not excluded_item_ids and not specific_clothing_id:
+            active_rec = self.get_active_recommendation(
+                user_id=user_id,
+                occasion=target_occasion,
+                target_date=target_date,
+                calendar_event_id=calendar_event_id,
+            )
+            if active_rec:
+                return [active_rec]
+
+        # 2. WEATHER CALIBRATION (Step 1)
+        if weather_preference == "ignore":
+            temp = 22.0
+            feels_like = 22.0
+            humidity = 50
+            rain_prob = 0
+            wind_speed = 5.0
+            condition = "Pleasant (Ignored)"
+            target_season = "All-Season"
+            weather = {
+                "city": city,
+                "temp": temp,
+                "feels_like": feels_like,
+                "humidity": humidity,
+                "rain_probability": rain_prob,
+                "wind_speed": wind_speed,
+                "condition": condition,
+                "weather_ignored": True,
+            }
+        else:
+            try:
+                weather = await weather_service.get_current_weather(
+                    city=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                )
+                temp = float(weather.get("temp", 22.0))
+                feels_like = float(weather.get("feels_like", temp))
+                humidity = int(weather.get("humidity", 50))
+                rain_prob = int(weather.get("rain_probability", 0))
+                wind_speed = float(weather.get("wind_speed", 0.0))
+                condition = weather.get("condition", "Pleasant")
+            except Exception:
+                temp = 22.0
+                feels_like = 22.0
+                humidity = 50
+                rain_prob = 10
+                wind_speed = 5.0
+                condition = "Pleasant"
+                weather = {
+                    "city": city,
+                    "temp": temp,
+                    "feels_like": feels_like,
+                    "humidity": humidity,
+                    "rain_probability": rain_prob,
+                    "wind_speed": wind_speed,
+                    "condition": condition,
+                }
+
+            if temp >= 25.0:
+                target_season = "Summer"
+            elif temp <= 12.0:
+                target_season = "Winter"
+            elif temp <= 18.0:
+                target_season = "Autumn"
+            else:
+                target_season = "Spring"
 
         # Query wear history in the past 14 days for repetition avoidance
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
@@ -331,25 +595,72 @@ class RecommendationService:
 
         item_ids_worn_yesterday = item_ids_worn_yesterday_set
 
-        # 2. WARDROBE RETRIEVAL & SUFFICIENCY AUDIT
+        # 3. WARDROBE RETRIEVAL & STEP 2 HARD FILTERS (with removal counters)
         raw_wardrobe = self.wardrobe_repo.list_for_user(user_id, limit=300)
-        if not raw_wardrobe:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="Your wardrobe is empty. Add clothing items to receive AI outfit recommendations.",
-            )
+        filter_counts: Dict[str, Any] = {
+            "pending_review": 0,
+            "not_accepted": 0,
+            "in_laundry": 0,
+            "unavailable": 0,
+            "category_mismatch": 0,
+            "formality_mismatch": 0,
+            "weather_rule": 0,
+            "earliest_laundry_return": None,
+        }
 
-        # Filter out failed items or items without basic metadata
-        eligible_wardrobe = [
-            i for i in raw_wardrobe
-            if getattr(i, "processing_status", "") != "failed"
-        ]
+        eligible_wardrobe: List[Clothing] = []
 
-        if not eligible_wardrobe:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="No eligible clothing items found in your wardrobe. Items undergoing processing or in failed states cannot be styled.",
-            )
+        for item in (raw_wardrobe or []):
+            # 1. Review required
+            if getattr(item, "review_required", False):
+                filter_counts["pending_review"] += 1
+                continue
+
+            # 2. Not accepted or failed
+            if getattr(item, "processing_status", "") == "failed" or getattr(item, "is_finalized", True) is False:
+                filter_counts["not_accepted"] += 1
+                continue
+
+            # 3. Availability for target_date (Single source of truth)
+            is_avail, avail_reason, avail_from = laundry_service.is_available(item, target_date, laundry_settings)
+            if not is_avail:
+                if avail_reason == "in_laundry":
+                    filter_counts["in_laundry"] += 1
+                    if avail_from:
+                        if filter_counts["earliest_laundry_return"] is None or avail_from < filter_counts["earliest_laundry_return"]:
+                            filter_counts["earliest_laundry_return"] = avail_from
+                else:
+                    filter_counts["unavailable"] += 1
+                continue
+
+            # 4. Occasion disallowed categories
+            c_type = classify_garment(item)
+            cat_name = (item.category or "").lower()
+            subcat_name = (item.subcategory or "").lower()
+            disallowed = occasion_prof.get("disallowed_categories", set())
+            if c_type in disallowed or any(d in cat_name or d in subcat_name for d in disallowed):
+                filter_counts["category_mismatch"] += 1
+                continue
+
+            # 5. Formality within range
+            item_form = getattr(item, "formality", None)
+            if item_form is not None:
+                if item_form < occasion_prof["min_formality"] - 0.15 or item_form > occasion_prof["max_formality"] + 0.15:
+                    if c_type not in occasion_prof.get("preferred_categories", set()):
+                        filter_counts["formality_mismatch"] += 1
+                        continue
+
+            # 6. Weather hard rules
+            if rain_prob > 40 and c_type == "footwear":
+                if any(k in subcat_name or k in (item.name or "").lower() for k in ["sandal", "flip_flop", "slider", "open"]):
+                    filter_counts["weather_rule"] += 1
+                    continue
+            if temp < 15 and c_type == "western_bottom":
+                if "short" in subcat_name or "short" in (item.name or "").lower():
+                    filter_counts["weather_rule"] += 1
+                    continue
+
+            eligible_wardrobe.append(item)
 
         # Classify items into taxonomy buckets
         buckets: Dict[str, List[Clothing]] = {
@@ -374,7 +685,7 @@ class RecommendationService:
             if c_type in buckets:
                 buckets[c_type].append(item)
 
-        # Audit if ANY valid outfit template can be constructed (Footwear is OPTIONAL)
+        # Audit if ANY valid outfit template can be constructed
         can_western_two_piece = bool(buckets["western_top"] and buckets["western_bottom"])
         can_western_dress = bool(buckets["western_dress"])
         can_indian_saree = bool(buckets["indian_saree"])
@@ -393,81 +704,75 @@ class RecommendationService:
             can_indian_sherwani,
         ])
 
-        if not any_archetype_possible:
-            missing_parts = []
-            if not buckets["western_top"] and not buckets["western_dress"] and not buckets["indian_saree"] and not buckets["indian_kurta"] and not buckets["indian_kurti"]:
-                missing_parts.append("tops, shirts, kurtas, or dresses")
-            if not buckets["western_bottom"] and not buckets["indian_bottom"] and not buckets["western_dress"] and not buckets["indian_saree"]:
-                missing_parts.append("bottoms, jeans, or trousers")
+        # RULE 4.4a: NO ITEMS FOUND / EMPTY STATE
+        if not eligible_wardrobe or not any_archetype_possible:
+            earliest_dt = filter_counts["earliest_laundry_return"]
+            earliest_str = earliest_dt.strftime("%a") if isinstance(earliest_dt, date) else ""
 
-            detail_msg = (
-                f"Insufficient wardrobe items to construct a complete outfit. "
-                f"Please add {', '.join(missing_parts) if missing_parts else 'complementary pieces'} "
-                f"to enable outfit synthesis."
-            )
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=detail_msg,
-            )
-
-        # 3. WEATHER CALIBRATION (Optional, Graceful Fallback)
-        if weather_preference == "ignore":
-            temp = 22.0
-            feels_like = 22.0
-            humidity = 50
-            rain_prob = 0
-            wind_speed = 5.0
-            condition = "Pleasant (Ignored)"
-            target_season = "All-Season"
-            weather = {
-                "city": city,
-                "temp": temp,
-                "feels_like": feels_like,
-                "humidity": humidity,
-                "rain_probability": rain_prob,
-                "wind_speed": wind_speed,
-                "condition": condition,
-                "weather_ignored": True,
-            }
-        else:
-            try:
-                weather = await weather_service.get_current_weather(
-                    city=city,
-                    latitude=latitude,
-                    longitude=longitude,
-                )
-                temp = float(weather.get("temp", 22.0))
-                feels_like = float(weather.get("feels_like", temp))
-                humidity = int(weather.get("humidity", 50))
-                rain_prob = int(weather.get("rain_probability", 0))
-                wind_speed = float(weather.get("wind_speed", 0.0))
-                condition = weather.get("condition", "Pleasant")
-            except Exception:
-                # Engine remains weather-neutral gracefully without error
-                temp = 22.0
-                feels_like = 22.0
-                humidity = 50
-                rain_prob = 10
-                wind_speed = 5.0
-                condition = "Pleasant"
-                weather = {
-                    "city": city,
-                    "temp": temp,
-                    "feels_like": feels_like,
-                    "humidity": humidity,
-                    "rain_probability": rain_prob,
-                    "wind_speed": wind_speed,
-                    "condition": condition,
-                }
-
-            if temp >= 25.0:
-                target_season = "Summer"
-            elif temp <= 12.0:
-                target_season = "Winter"
-            elif temp <= 18.0:
-                target_season = "Autumn"
+            if filter_counts["in_laundry"] > 0 and (not eligible_wardrobe or filter_counts["in_laundry"] >= len(eligible_wardrobe)):
+                msg = f"All your {target_occasion} clothes are in laundry or unavailable."
+                if earliest_str:
+                    msg += f" Back on {earliest_str}."
+                action_type = "laundry"
+            elif filter_counts["pending_review"] > 0 and not eligible_wardrobe:
+                msg = f"You have {filter_counts['pending_review']} items waiting for review."
+                action_type = "review_pending"
+            elif filter_counts["weather_rule"] > 0 and not eligible_wardrobe:
+                msg = f"No clothes found for {target_occasion} suitable for current weather conditions."
+                action_type = "weather"
             else:
-                target_season = "Spring"
+                msg = f"Your wardrobe has no {target_occasion}-suitable clothes yet."
+                action_type = "gap_analysis"
+
+            empty_rec = Recommendation(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                outfit_id=None,
+                temperature=temp,
+                feels_like_temperature=feels_like,
+                humidity=float(humidity),
+                weather_condition=condition,
+                rain_probability=float(rain_prob),
+                occasion=target_occasion,
+                season=target_season,
+                recommendation_score=0.0,
+            )
+            empty_rec.status = "no_items"
+            empty_rec.can_wear = False
+            filter_counts_serializable = {
+                k: (v.isoformat() if isinstance(v, date) else v)
+                for k, v in filter_counts.items()
+            }
+            empty_rec.empty_reason = {
+                "message": msg,
+                "action": action_type,
+                "earliest_return": earliest_str,
+                "filter_counts": filter_counts_serializable,
+            }
+            empty_rec.filter_counts = filter_counts_serializable
+            empty_rec._custom_reasons = [msg]
+            empty_rec._custom_context = {
+                "occasion": target_occasion,
+                "reasons": [msg],
+                "status": "no_items",
+                "empty_reason": empty_rec.empty_reason,
+            }
+            empty_rec._custom_reasoning = {
+                "compatibility": 0.0,
+                "occasion": target_occasion,
+            }
+
+            # Persist empty state cache
+            laundry_service.repo.save_daily_recommendation(
+                user_id=user_id,
+                rec_date=target_date,
+                occasion=target_occasion,
+                item_ids=[],
+                status="no_items",
+                empty_reason=empty_rec.empty_reason,
+                regenerate_counter=0,
+            )
+            return [empty_rec]
 
         # 4. CANDIDATE COMBINATION GENERATOR
         candidates = self._generate_archetype_candidates(
@@ -475,6 +780,9 @@ class RecommendationService:
             outfit_preference=(outfit_preference or "any").lower(),
             temp=temp,
             rain_prob=rain_prob,
+            target_occasion=target_occasion,
+            custom_occasion=custom_occasion,
+            excluded_item_ids=set(excluded_item_ids or []),
         )
 
         if not candidates:
@@ -493,10 +801,55 @@ class RecommendationService:
             if fallback:
                 candidates = [fallback]
             else:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                    detail="Unable to assemble valid outfit combinations from eligible items.",
+                earliest_dt = filter_counts["earliest_laundry_return"]
+                earliest_str = earliest_dt.strftime("%a") if isinstance(earliest_dt, date) else ""
+                msg = f"Your wardrobe has no {target_occasion}-suitable clothes yet."
+                empty_rec = Recommendation(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    outfit_id=None,
+                    temperature=temp,
+                    feels_like_temperature=feels_like,
+                    humidity=float(humidity),
+                    weather_condition=condition,
+                    rain_probability=float(rain_prob),
+                    occasion=target_occasion,
+                    season=target_season,
+                    recommendation_score=0.0,
                 )
+                empty_rec.status = "no_items"
+                empty_rec.can_wear = False
+                empty_rec.empty_reason = {
+                    "message": msg,
+                    "action": "gap_analysis",
+                    "earliest_return": earliest_str,
+                    "filter_counts": {
+                        k: (v.isoformat() if isinstance(v, date) else v)
+                        for k, v in filter_counts.items()
+                    },
+                }
+                empty_rec.filter_counts = empty_rec.empty_reason["filter_counts"]
+                empty_rec._custom_reasons = [msg]
+                empty_rec._custom_context = {
+                    "occasion": target_occasion,
+                    "reasons": [msg],
+                    "status": "no_items",
+                    "empty_reason": empty_rec.empty_reason,
+                }
+                empty_rec._custom_reasoning = {
+                    "compatibility": 0.0,
+                    "occasion": target_occasion,
+                }
+                laundry_service.repo.save_daily_recommendation(
+                    user_id=user_id,
+                    rec_date=target_date,
+                    occasion=target_occasion,
+                    item_ids=[],
+                    status="no_items",
+                    empty_reason=empty_rec.empty_reason,
+                    regenerate_counter=0,
+                )
+                return [empty_rec]
 
         # 5. HARD FILTERING
         user_pref = self.user_repo.get_preferences(user_id)
@@ -613,10 +966,55 @@ class RecommendationService:
             if relaxed:
                 filtered_candidates = relaxed[:3]
             else:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                    detail="Wardrobe items violate style, color, or formality constraints. Please add compatible items to receive recommendations.",
+                earliest_dt = filter_counts["earliest_laundry_return"]
+                earliest_str = earliest_dt.strftime("%a") if isinstance(earliest_dt, date) else ""
+                msg = f"Your wardrobe has no {target_occasion}-suitable clothes yet."
+                empty_rec = Recommendation(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    outfit_id=None,
+                    temperature=temp,
+                    feels_like_temperature=feels_like,
+                    humidity=float(humidity),
+                    weather_condition=condition,
+                    rain_probability=float(rain_prob),
+                    occasion=target_occasion,
+                    season=target_season,
+                    recommendation_score=0.0,
                 )
+                empty_rec.status = "no_items"
+                empty_rec.can_wear = False
+                empty_rec.empty_reason = {
+                    "message": msg,
+                    "action": "gap_analysis",
+                    "earliest_return": earliest_str,
+                    "filter_counts": {
+                        k: (v.isoformat() if isinstance(v, date) else v)
+                        for k, v in filter_counts.items()
+                    },
+                }
+                empty_rec.filter_counts = empty_rec.empty_reason["filter_counts"]
+                empty_rec._custom_reasons = [msg]
+                empty_rec._custom_context = {
+                    "occasion": target_occasion,
+                    "reasons": [msg],
+                    "status": "no_items",
+                    "empty_reason": empty_rec.empty_reason,
+                }
+                empty_rec._custom_reasoning = {
+                    "compatibility": 0.0,
+                    "occasion": target_occasion,
+                }
+                laundry_service.repo.save_daily_recommendation(
+                    user_id=user_id,
+                    rec_date=target_date,
+                    occasion=target_occasion,
+                    item_ids=[],
+                    status="no_items",
+                    empty_reason=empty_rec.empty_reason,
+                    regenerate_counter=0,
+                )
+                return [empty_rec]
 
         # 6. DETERMINISTIC SCORING & EVENT-AWARE PERSONALIZED RANKING
         personalization_enabled = getattr(user_pref, "personalization_enabled", True) if user_pref else True
@@ -669,23 +1067,22 @@ class RecommendationService:
             else:
                 s_pref, s_div, p_breakdown, p_rationales = 0.50, 0.50, {}, []
 
-            # 5-Part Weighted Aggregation Formula:
-            # 0.35 * compatibility + 0.25 * event_suitability + 0.20 * weather_suitability + 0.15 * personalization + 0.05 * diversity
-            # 5. Colour Coordination (0.10 weight): Perceptual CIELAB/HSV harmony & balance
+            # 5. Genuine Occasion Suitability (Weight: 35% / 0.35)
+            score_occasion = self._compute_occasion_score(items, target_occasion, custom_occasion)
+
+            # 6. Colour Coordination (Weight: 10% / 0.10): Perceptual CIELAB/HSV harmony & balance
             color_analysis = ColorCoordinationService.analyze_palette(items)
             score_color = color_analysis["score"]
             color_explanation = color_analysis["explanation"]
 
-            # 6-Factor Weighted Aggregation Formula:
-            # 0.30 * garment_compatibility + 0.25 * event_suitability + 0.15 * weather_suitability + 0.15 * personalization + 0.10 * color_coordination + 0.05 * diversity
+            # 6-Factor Balanced Aggregation Formula (sum = 1.00):
+            # 0.35 * occasion_suitability + 0.25 * garment_compatibility + 0.15 * weather_suitability + 0.10 * color_coordination + 0.10 * personalization + 0.05 * diversity
             base_score = round(
-                0.35 * compat_score +
-                0.30 * compat_score +
-                0.25 * score_event +
-                0.20 * score_weather +
+                0.35 * score_occasion +
+                0.25 * compat_score +
                 0.15 * score_weather +
-                0.15 * s_pref +
                 0.10 * score_color +
+                0.10 * s_pref +
                 0.05 * s_div,
                 3,
             )
@@ -713,7 +1110,7 @@ class RecommendationService:
                 condition=condition,
                 delta_formality=delta_formality,
                 color_explanation=color_explanation,
-                score_occasion=score_event,
+                score_occasion=score_occasion,
             )
 
             reasons_list = [event_rationale]
@@ -777,17 +1174,70 @@ class RecommendationService:
         distinct_combinations: List[Tuple[List[Clothing], Dict[str, Any]]] = []
         seen_signatures: Set[frozenset] = set()
 
+        # When explicitly regenerating, find recent signatures to avoid immediate identical repetition
+        recent_signatures: Set[frozenset] = set()
+        if force_regenerate and recent_recs:
+            for r in recent_recs[:4]:
+                if r.outfit and r.outfit.clothing_items:
+                    recent_signatures.add(frozenset(ci.id for ci in r.outfit.clothing_items))
+
         for items, score_data in scored_candidates:
             sig = frozenset(i.id for i in items)
+            if force_regenerate and sig in recent_signatures and len(scored_candidates) > len(recent_signatures):
+                # Skip previously shown look on explicit regeneration if alternative looks exist
+                continue
             if sig not in seen_signatures:
                 seen_signatures.add(sig)
                 distinct_combinations.append((items, score_data))
                 if len(distinct_combinations) >= limit:
                     break
 
+        if not distinct_combinations and scored_candidates:
+            distinct_combinations.append(scored_candidates[0])
+
         created_recommendations: List[Recommendation] = []
 
+        # Check occasion-specific wardrobe gap deficiency
+        has_blazer = any("blazer" in (i.name or "").lower() or (i.category or "").lower() == "outerwear" for i in eligible_wardrobe)
+        has_ethnic = any(classify_garment(i) in ("indian_saree", "indian_kurta", "indian_lehenga", "indian_sherwani") for i in eligible_wardrobe)
+        has_formal_shoe = any(classify_garment(i) == "footwear" and any(k in (i.name or "").lower() for k in ["oxford", "derby", "loafer", "formal"]) for i in eligible_wardrobe)
+
+        gap_warning = None
+        suggested_gap_cat = None
+        if target_occasion in ("Business meeting", "Office", "Interview", "Presentation") and not has_blazer:
+            gap_warning = "Your wardrobe is missing a formal blazer to complete authoritative professional looks."
+            suggested_gap_cat = "Outerwear & Blazers"
+        elif target_occasion in ("Wedding", "Festival") and not has_ethnic:
+            gap_warning = "Your wardrobe is missing traditional festive ethnic wear for this celebration."
+            suggested_gap_cat = "Indian Ethnic"
+        elif target_occasion in ("Business meeting", "Formal event", "Interview") and not has_formal_shoe:
+            gap_warning = "A classic dress shoe or leather loafer would elevate this formal outfit."
+            suggested_gap_cat = "Footwear"
+
         for idx, (selected_items, s_data) in enumerate(distinct_combinations):
+            if gap_warning:
+                s_data["context"]["gap_warning"] = gap_warning
+                s_data["context"]["suggested_gap_category"] = suggested_gap_cat
+
+            # Check if footwear slot is filled
+            has_footwear = any(classify_garment(i) == "footwear" for i in selected_items)
+            if not has_footwear:
+                rec_status = "partial_outfit"
+                missing_slots = ["footwear"]
+                can_wear = False
+                notice = f"No footwear found for {target_occasion}"
+                if notice not in s_data["reasons"]:
+                    s_data["reasons"] = [notice] + s_data["reasons"]
+                s_data["context"]["missing_slots"] = missing_slots
+                s_data["context"]["can_wear"] = False
+                s_data["context"]["notice"] = notice
+                empty_reason_data = {"missing_slots": missing_slots, "message": notice}
+            else:
+                rec_status = "active"
+                missing_slots = None
+                can_wear = True
+                empty_reason_data = None
+
             outfit_name = f"{target_occasion} Look" if len(distinct_combinations) == 1 else f"{target_occasion} Look {idx + 1}"
             clothing_ids = [i.id for i in selected_items]
 
@@ -817,11 +1267,27 @@ class RecommendationService:
             )
 
             # Attach transient deterministic explanations for API serialization
+            rec.status = rec_status
+            rec.can_wear = can_wear
+            rec.missing_slots = missing_slots
+            rec.empty_reason = empty_reason_data
             rec._custom_reasoning = s_data["reasoning"]
             rec._custom_context = s_data["context"]
             rec._custom_reasons = s_data["reasons"]
             rec.outfit = outfit
             rec.outfit.clothing_items = selected_items
+
+            # Persist active recommendation in daily_recommendations table / fallback
+            laundry_service.repo.save_daily_recommendation(
+                user_id=user_id,
+                rec_date=target_date,
+                occasion=target_occasion,
+                item_ids=[str(i.id) for i in selected_items],
+                status=rec_status,
+                empty_reason=empty_reason_data,
+                outfit_hash=str(outfit.id),
+                regenerate_counter=1 if force_regenerate else 0,
+            )
 
             created_recommendations.append(rec)
 
@@ -836,14 +1302,29 @@ class RecommendationService:
         outfit_preference: str,
         temp: float,
         rain_prob: int,
+        target_occasion: str = "Everyday",
+        custom_occasion: Optional[str] = None,
+        excluded_item_ids: Optional[Set[UUID]] = None,
     ) -> List[List[Clothing]]:
         candidates = []
-        shoes = buckets["footwear"][:3] if buckets["footwear"] else [None]
+        excluded = excluded_item_ids or set()
+
+        # Pre-sort items in each bucket by occasion suitability and demote excluded items
+        for b_name in buckets:
+            buckets[b_name].sort(
+                key=lambda it: (
+                    it.id not in excluded,
+                    score_garment_for_occasion(it, target_occasion, custom_occasion),
+                ),
+                reverse=True,
+            )
+
+        shoes = buckets["footwear"][:4] if buckets["footwear"] else [None]
 
         # 1. Western Two-Piece Archetype: Top + Bottom (+ Footwear + Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
-            for top in buckets["western_top"][:4]:
-                for btm in buckets["western_bottom"][:4]:
+            for top in buckets["western_top"][:8]:
+                for btm in buckets["western_bottom"][:8]:
                     for shoe in shoes:
                         base_combo = [top, btm]
                         if shoe is not None:
@@ -853,7 +1334,7 @@ class RecommendationService:
                         candidates.append(base_combo)
 
                         if buckets["outerwear"]:
-                            for out in buckets["outerwear"][:2]:
+                            for out in buckets["outerwear"][:3]:
                                 layered_combo = [top, btm]
                                 if shoe is not None:
                                     layered_combo.append(shoe)
@@ -864,7 +1345,7 @@ class RecommendationService:
 
         # 2. Western Dress Archetype: Dress (+ Footwear + Optional Outerwear / Accessory)
         if outfit_preference in ("any", "western"):
-            for dress in buckets["western_dress"][:3]:
+            for dress in buckets["western_dress"][:5]:
                 for shoe in shoes:
                     base_combo = [dress]
                     if shoe is not None:
@@ -874,7 +1355,7 @@ class RecommendationService:
                     candidates.append(base_combo)
 
                     if buckets["outerwear"]:
-                        for out in buckets["outerwear"][:2]:
+                        for out in buckets["outerwear"][:3]:
                             layered_combo = [dress]
                             if shoe is not None:
                                 layered_combo.append(shoe)
@@ -894,10 +1375,10 @@ class RecommendationService:
                 if any(k in (i.name or "").lower() or k in (i.subcategory or "").lower() or k in (i.category or "").lower() for k in ["pants", "trouser", "slacks", "chino", "suit"])
             ]
             if blazers and trousers:
-                for blz in blazers[:2]:
-                    for top in buckets["western_top"][:3]:
-                        for tr in trousers[:2]:
-                            for shoe in shoes[:2]:
+                for blz in blazers[:3]:
+                    for top in buckets["western_top"][:5]:
+                        for tr in trousers[:4]:
+                            for shoe in shoes[:3]:
                                 c = [blz, top, tr]
                                 if shoe is not None:
                                     c.append(shoe)
@@ -1011,42 +1492,58 @@ class RecommendationService:
     # Occasion Hard Filtering
     # ---------------------------------------------------------------------
     def _passes_occasion_hard_filter(self, items: List[Clothing], occasion: str) -> bool:
-        occ = occasion.lower()
+        occ = (occasion or "").lower()
 
-        # Office / Work / Interview settings reject athletic, beachwear, shorts, distressed items
-        if any(k in occ for k in ["work", "office", "formal", "business", "interview"]):
+        # 1. Office / Business meeting / Interview / Presentation
+        if any(k in occ for k in ["work", "office", "formal", "business", "interview", "presentation"]):
             for i in items:
-                style = (i.style or "").lower()
+                style = (getattr(i, "style", "") or "").lower()
                 name = (i.name or "").lower()
                 cat = (i.category or "").lower()
-                if any(w in name or w in style for w in ["gym", "athletic", "sport", "distressed", "ripped"]):
+                sub = (getattr(i, "subcategory", "") or "").lower()
+                if any(w in name or w in style or w in sub for w in ["gym", "athletic", "sport", "distressed", "ripped", "swim", "sweat"]):
                     return False
-                if cat == "shorts" or "shorts" in name:
+                if cat == "shorts" or "shorts" in name or sub == "shorts":
+                    return False
+                if cat == "shoes" and any(w in name or w in sub for w in ["running", "sport", "trainer", "flip-flop", "sandal"]):
                     return False
 
-        # Sports / Gym settings reject formal suits, blazers, sarees, lehengas, sherwanis
+        # 2. Sports / Gym settings reject formal suits, blazers, sarees, lehengas, sherwanis, dress shoes, loafers
         if any(k in occ for k in ["sport", "gym", "workout", "athletic", "fitness"]):
             for i in items:
                 c_type = classify_garment(i)
                 name = (i.name or "").lower()
-                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani"):
+                style = (getattr(i, "style", "") or "").lower()
+                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani", "indian_blouse"):
                     return False
-                if any(w in name for w in ["blazer", "suit", "tuxedo"]):
+                if any(w in name or w in style for w in ["blazer", "suit", "tuxedo", "oxford", "loafer", "tie", "formal shirt", "chinos", "slacks"]):
                     return False
 
-        # Wedding / Festive / Traditional settings prefer ethnic or high formality; reject pure gym wear & casual shorts
+        # 3. Wedding / Festival / Festive settings prefer ethnic or high formality; reject pure gym wear & casual shorts
         if any(k in occ for k in ["wedding", "festive", "traditional", "festival", "function"]):
             for i in items:
                 name = (i.name or "").lower()
-                style = (i.style or "").lower()
-                if "gym" in name or "sport" in style or "shorts" in name:
+                style = (getattr(i, "style", "") or "").lower()
+                sub = (getattr(i, "subcategory", "") or "").lower()
+                if any(w in name or w in style or w in sub for w in ["gym", "sport", "shorts", "distressed", "ripped", "sweatpants", "flip-flop"]):
                     return False
 
-        # Casual Daily / College settings reject heavy bridal lehengas or black-tie sherwanis
-        if any(k in occ for k in ["casual", "college", "daily", "errands"]):
+        # 4. Casual Daily / Everyday / College / Travel settings reject heavy bridal lehengas or black-tie sherwanis
+        if any(k in occ for k in ["casual", "college", "daily", "errands", "everyday", "travel"]):
             for i in items:
                 c_type = classify_garment(i)
+                name = (i.name or "").lower()
                 if c_type in ("indian_sherwani", "indian_lehenga"):
+                    return False
+                if any(w in name for w in ["tuxedo", "ballgown"]):
+                    return False
+
+        # 5. Party / Date settings reject gym wear and slovenly clothes
+        if any(k in occ for k in ["party", "date"]):
+            for i in items:
+                name = (i.name or "").lower()
+                style = (getattr(i, "style", "") or "").lower()
+                if any(w in name or w in style for w in ["gym", "sweatpants", "running", "athletic shorts"]):
                     return False
 
         return True
@@ -1164,63 +1661,209 @@ class RecommendationService:
     # ---------------------------------------------------------------------
     # Individual Scoring Dimensions
     # ---------------------------------------------------------------------
-    def _compute_occasion_score(self, items: List[Clothing], occasion: str) -> float:
-        occ = occasion.lower()
+    def _compute_occasion_score(self, items: List[Clothing], occasion: str, custom_occasion: Optional[str] = None) -> float:
+        occ = (occasion or "").lower()
+        custom_txt = (custom_occasion or "").lower()
         scores = []
         for i in items:
             it_occ = (i.occasion or "").lower()
-            it_style = (i.style or "").lower()
+            it_style = (getattr(i, "style", "") or "").lower()
             c_type = classify_garment(i)
             name = (i.name or "").lower()
+            sub = (getattr(i, "subcategory", "") or "").lower()
+            f = get_garment_formality(i)
 
-            if any(k in occ for k in ["work", "office", "interview"]):
-                if c_type in ("outerwear", "western_top", "western_bottom") and any(k in name for k in ["shirt", "pants", "trousers", "blazer", "suit"]):
+            # 1. Business meeting: structured, formal, commanding
+            if "business" in occ:
+                if c_type == "outerwear" and "blazer" in name:
+                    scores.append(0.99)
+                elif c_type == "western_top" and any(k in name or k in sub for k in ["shirt", "oxford", "button"]):
                     scores.append(0.98)
-                elif c_type in ("indian_kurti", "indian_kurta"):
-                    scores.append(0.94)
-                elif c_type == "western_dress" and "formal" in it_style:
-                    scores.append(0.95)
+                elif c_type == "western_bottom" and any(k in name or k in sub for k in ["trouser", "pant", "slacks", "chino"]):
+                    scores.append(0.97)
+                elif c_type == "footwear" and any(k in name or k in sub for k in ["oxford", "derby", "loafer", "formal"]):
+                    scores.append(0.98)
+                elif f >= 0.70:
+                    scores.append(0.88)
+                elif f >= 0.50:
+                    scores.append(0.60)
                 else:
-                    scores.append(0.85)
-            elif any(k in occ for k in ["wedding", "festive", "traditional", "festival", "function"]):
-                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani", "indian_blouse", "indian_dupatta"):
+                    scores.append(0.20)
+
+            # 2. Presentation: neat, authoritative, well-coordinated
+            elif "presentation" in occ:
+                if c_type == "outerwear" and "blazer" in name:
                     scores.append(0.98)
-                elif c_type in ("indian_kurta", "indian_kurti"):
-                    scores.append(0.93)
-                elif c_type == "outerwear" and "blazer" in name:
+                elif c_type in ("western_top", "western_dress") and any(k in name or k in it_style or k in sub for k in ["shirt", "blouse", "formal", "tailored"]):
+                    scores.append(0.97)
+                elif c_type in ("western_bottom", "indian_kurta"):
+                    scores.append(0.95)
+                elif f >= 0.65:
+                    scores.append(0.88)
+                else:
+                    scores.append(0.30)
+
+            # 3. Interview: conservative, highly polished, formal
+            elif "interview" in occ:
+                if c_type == "outerwear" and any(k in name for k in ["blazer", "suit"]):
+                    scores.append(0.99)
+                elif c_type == "western_top" and any(k in name or k in sub for k in ["shirt", "white", "blue", "formal"]):
+                    scores.append(0.98)
+                elif c_type == "western_bottom" and any(k in name or k in sub for k in ["trouser", "pant", "slacks"]):
+                    scores.append(0.98)
+                elif f >= 0.75:
                     scores.append(0.90)
                 else:
+                    scores.append(0.20)
+
+            # 4. Formal event: black-tie, high elegance, gala
+            elif any(k in occ for k in ["formal event", "black tie", "gala"]):
+                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani"):
+                    scores.append(0.99)
+                elif c_type == "outerwear" and any(k in name for k in ["blazer", "suit", "tuxedo"]):
+                    scores.append(0.98)
+                elif c_type == "western_dress" and f >= 0.80:
+                    scores.append(0.98)
+                elif f >= 0.80:
+                    scores.append(0.92)
+                else:
+                    scores.append(0.25)
+
+            # 5. Office / Work: smart casual, polished everyday professional
+            elif any(k in occ for k in ["work", "office"]):
+                if c_type in ("outerwear", "western_top", "western_bottom") and any(k in name or k in sub for k in ["shirt", "pants", "trousers", "blazer", "chino", "polo"]):
+                    scores.append(0.98)
+                elif c_type in ("indian_kurti", "indian_kurta"):
+                    scores.append(0.95)
+                elif c_type == "western_dress" and f >= 0.60:
+                    scores.append(0.96)
+                elif c_type == "western_bottom" and "jeans" in name and not any(k in name for k in ["ripped", "distressed"]):
                     scores.append(0.75)
+                elif f >= 0.55:
+                    scores.append(0.85)
+                else:
+                    scores.append(0.25)
+
+            # 6. Wedding: rich textures, ethnic attire, high celebration
+            elif "wedding" in occ:
+                if c_type in ("indian_saree", "indian_lehenga", "indian_sherwani", "indian_blouse", "indian_dupatta"):
+                    scores.append(0.99)
+                elif c_type in ("indian_kurta", "indian_kurti"):
+                    scores.append(0.95)
+                elif c_type == "outerwear" and any(k in name for k in ["blazer", "suit"]):
+                    scores.append(0.92)
+                elif f >= 0.85:
+                    scores.append(0.85)
+                else:
+                    scores.append(0.25)
+
+            # 7. Festival: festive ethnic, vibrant drapes & kurtas
+            elif any(k in occ for k in ["festival", "festive", "traditional"]):
+                if c_type in ("indian_kurta", "indian_kurti", "indian_saree", "indian_bottom"):
+                    scores.append(0.98)
+                elif "ethnic" in it_style or "traditional" in it_style:
+                    scores.append(0.96)
+                elif f >= 0.70:
+                    scores.append(0.85)
+                else:
+                    scores.append(0.35)
+
+            # 8. Party: chic statement pieces, evening elegance
+            elif "party" in occ:
+                if c_type in ("western_dress", "outerwear") or any(k in it_style for k in ["party", "chic", "bold"]):
+                    scores.append(0.98)
+                elif any(k in name for k in ["blazer", "jacket", "leather", "black", "silk", "chelsea", "boot"]):
+                    scores.append(0.96)
+                elif c_type == "western_bottom" and any(k in name for k in ["black", "dark"]):
+                    scores.append(0.90)
+                elif f >= 0.50 and not any(k in name for k in ["gym", "athletic", "track"]):
+                    scores.append(0.80)
+                else:
+                    scores.append(0.25)
+
+            # 9. Date: flattering, coordinated, elegant
             elif any(k in occ for k in ["date", "dinner"]):
                 if "chic" in it_style or "elegant" in it_style or c_type in ("western_dress", "indian_saree"):
                     scores.append(0.98)
-                elif c_type in ("outerwear", "western_top") and any(k in name for k in ["blazer", "shirt", "blouse"]):
+                elif c_type in ("outerwear", "western_top") and any(k in name for k in ["blazer", "shirt", "blouse", "knit", "polo"]):
+                    scores.append(0.96)
+                elif c_type in ("western_bottom", "footwear") and any(k in name for k in ["chino", "trouser", "dark", "chelsea", "loafer"]):
                     scores.append(0.95)
+                elif f >= 0.45 and not any(k in name for k in ["gym", "sweat"]):
+                    scores.append(0.80)
                 else:
-                    scores.append(0.88)
-            elif "party" in occ:
-                if c_type in ("western_dress", "outerwear") or "party" in it_style or "chic" in it_style:
-                    scores.append(0.98)
-                else:
-                    scores.append(0.90)
-            elif any(k in occ for k in ["sport", "gym", "workout"]):
-                if any(k in name or k in it_style for k in ["athletic", "gym", "sport", "runner", "sneakers", "hoodie", "shorts", "tee"]):
-                    scores.append(0.98)
-                else:
-                    scores.append(0.70)
-            elif any(k in occ for k in ["travel", "college"]):
-                if any(k in name or k in it_style for k in ["casual", "sneakers", "jeans", "tee", "kurti", "hoodie", "comfortable"]):
-                    scores.append(0.96)
-                else:
-                    scores.append(0.90)
+                    scores.append(0.25)
+
+            # 10. Family gathering: comfortable smart-casual or neat ethnic
             elif "family" in occ:
-                if c_type in ("indian_kurta", "indian_kurti", "western_dress") or "modest" in it_style or "casual" in it_style:
-                    scores.append(0.96)
+                if c_type in ("indian_kurta", "indian_kurti", "western_dress") or any(k in it_style for k in ["modest", "casual", "smart"]):
+                    scores.append(0.97)
+                elif any(k in name for k in ["polo", "shirt", "chino"]):
+                    scores.append(0.95)
+                elif f >= 0.40 and f <= 0.75:
+                    scores.append(0.88)
                 else:
-                    scores.append(0.90)
+                    scores.append(0.40)
+
+            # 11. Gym / Sports: activewear, athletic tees, track pants
+            elif any(k in occ for k in ["sport", "gym", "workout", "athletic", "fitness"]):
+                if any(k in name or k in it_style or k in sub for k in ["athletic", "gym", "sport", "runner", "sneakers", "hoodie", "shorts", "tee", "active", "track"]):
+                    scores.append(0.99)
+                elif c_type in ("western_top", "western_bottom") and f <= 0.35:
+                    scores.append(0.85)
+                else:
+                    scores.append(0.15)
+
+            # 12. Travel: breathable, stretchy, comfortable layers
+            elif "travel" in occ:
+                if any(k in name or k in it_style or k in sub for k in ["casual", "sneakers", "jeans", "hoodie", "jacket", "comfortable", "overshirt", "chinos"]):
+                    scores.append(0.98)
+                elif f <= 0.55:
+                    scores.append(0.88)
+                else:
+                    scores.append(0.25)
+
+            # 13. College: youth, casual ease, denim, sneakers, kurtis
+            elif "college" in occ:
+                if any(k in name or k in it_style or k in sub for k in ["casual", "sneakers", "jeans", "tee", "kurti", "hoodie", "streetwear", "polo", "chinos"]):
+                    scores.append(0.98)
+                elif f <= 0.60:
+                    scores.append(0.88)
+                else:
+                    scores.append(0.25)
+
+            # 14. Casual outing: relaxed weekend aesthetics, smart casual
+            elif any(k in occ for k in ["outing", "casual outing"]):
+                if any(k in name or k in it_style or k in sub for k in ["casual", "smart", "sneakers", "jeans", "overshirt", "polo", "linen", "chino"]):
+                    scores.append(0.98)
+                elif f <= 0.65:
+                    scores.append(0.88)
+                else:
+                    scores.append(0.30)
+
+            # 15. Custom occasion: keyword-driven scoring
+            elif "custom" in occ and custom_txt:
+                if any(w in custom_txt for w in ["beach", "pool", "summer"]) and any(w in name for w in ["shorts", "linen", "tee", "sandal"]):
+                    scores.append(0.98)
+                elif any(w in custom_txt for w in ["gala", "dinner", "formal"]) and f >= 0.75:
+                    scores.append(0.98)
+                elif any(w in custom_txt for w in ["hike", "trek", "outdoor"]) and any(w in name for w in ["sport", "athletic", "sneaker", "jacket"]):
+                    scores.append(0.98)
+                elif f <= 0.65:
+                    scores.append(0.88)
+                else:
+                    scores.append(0.50)
+
+            # 16. Everyday: comfortable versatile capsule
             else:
-                # Casual daily / General
-                scores.append(0.94)
+                if f <= 0.60 and not any(k in name for k in ["tuxedo", "bridal", "sherwani"]):
+                    scores.append(0.96)
+                elif f <= 0.80:
+                    scores.append(0.75)
+                else:
+                    scores.append(0.25)
+
+        return sum(scores) / len(scores) if scores else 0.85
 
         return sum(scores) / len(scores) if scores else 0.90
 
@@ -1737,6 +2380,15 @@ class RecommendationService:
                 reason=None,
             )
 
+        # 3. Synchronize with Laundry & Wear Tracking Service (Rule 3.1 & 3.4)
+        laundry_service = LaundryService(self.db)
+        laundry_res = laundry_service.record_wear(
+            user_id=user_id,
+            outfit_id=outfit.id,
+            target_date=date.today(),
+            source="daily_fit",
+        )
+
         item_ids = [item.id for item in (outfit.clothing_items or [])]
         return {
             "success": True,
@@ -1745,8 +2397,140 @@ class RecommendationService:
             "worn_at": wear_entry.worn_at if wear_entry else datetime.now(timezone.utc),
             "wear_count_updated": is_new,
             "clothing_items_updated": item_ids if is_new else [],
+            "laundry_notifications": laundry_res.get("laundry_notifications", []),
             "message": "Outfit marked as worn. Wear history and personalization updated." if is_new else "Outfit was already marked as worn today.",
         }
 
     def get_feedback_history(self, user_id: UUID, limit: int = 50) -> List[Any]:
         return self.rec_repo.get_feedback_for_user(user_id=user_id, limit=limit)
+
+    def get_active_recommendation(
+        self,
+        user_id: UUID,
+        occasion: str = "Everyday",
+        target_date: Optional[date] = None,
+        calendar_event_id: Optional[UUID] = None,
+    ) -> Optional[Recommendation]:
+        """
+        Retrieves the active persisted recommendation for this user, date, and occasion.
+        Ensures stability across page navigation, occasion switching, and remounts.
+        """
+        import uuid
+        target_date = target_date or date.today()
+        laundry_service = LaundryService(self.db)
+        laundry_service.apply_lazy_returns(user_id, target_date)
+
+        # 1. Check daily_recommendations persistent storage (Rule 4.3)
+        stored = laundry_service.repo.get_daily_recommendation(user_id, target_date, occasion)
+        if stored:
+            if stored.status == "no_items":
+                empty_rec = Recommendation(
+                    id=stored.id,
+                    user_id=user_id,
+                    outfit_id=None,
+                    occasion=occasion,
+                    recommendation_score=0.0,
+                )
+                empty_rec.status = "no_items"
+                empty_rec.can_wear = False
+                empty_rec.empty_reason = stored.empty_reason
+                msg = (stored.empty_reason or {}).get("message") or f"No clothes found for {occasion}."
+                empty_rec._custom_reasons = [msg]
+                empty_rec._custom_context = {
+                    "occasion": occasion,
+                    "reasons": [msg],
+                    "status": "no_items",
+                    "empty_reason": stored.empty_reason,
+                }
+                empty_rec.filter_counts = (stored.empty_reason or {}).get("filter_counts")
+                return empty_rec
+            elif stored.status in ("active", "partial_outfit", "stale"):
+                if stored.item_ids:
+                    items = (
+                        self.db.query(Clothing)
+                        .filter(
+                            Clothing.user_id == user_id,
+                            Clothing.id.in_([UUID(i) for i in stored.item_ids]),
+                        )
+                        .all()
+                    )
+                    if len(items) == len(stored.item_ids):
+                        laundry_settings = laundry_service.get_settings(user_id)
+                        is_stale = stored.status == "stale" or any(
+                            not laundry_service.is_available(it, target_date, laundry_settings)[0]
+                            for it in items
+                        )
+                        outfit = None
+                        if stored.outfit_hash:
+                            try:
+                                outfit = self.outfit_repo.get_by_id(UUID(stored.outfit_hash), user_id=user_id)
+                            except Exception:
+                                outfit = None
+                        if not outfit:
+                            outfit = Outfit(
+                                id=UUID(stored.outfit_hash) if stored.outfit_hash else uuid.uuid4(),
+                                user_id=user_id,
+                                name=f"{occasion} Look",
+                                occasion=occasion,
+                            )
+                        outfit.clothing_items = items
+                        rec = self.db.query(Recommendation).filter(Recommendation.outfit_id == outfit.id).first()
+                        if not rec:
+                            rec = Recommendation(
+                                id=stored.id,
+                                user_id=user_id,
+                                outfit_id=outfit.id,
+                                occasion=occasion,
+                                recommendation_score=0.92,
+                            )
+                        rec.outfit = outfit
+                        rec.status = "stale" if is_stale else stored.status
+                        rec.can_wear = rec.status == "active"
+                        rec.missing_slots = (stored.empty_reason or {}).get("missing_slots")
+                        rec.empty_reason = stored.empty_reason
+                        rec._custom_reasons = getattr(rec, "_custom_reasons", None) or [f"Active curated look for {occasion}."]
+                        rec._custom_context = {
+                            "occasion": occasion,
+                            "reasons": rec._custom_reasons,
+                            "status": rec.status,
+                            "can_wear": rec.can_wear,
+                        }
+                        return rec
+
+        # 2. Fallback to querying recent recommendation records
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        query = (
+            self.db.query(Recommendation)
+            .filter(
+                Recommendation.user_id == user_id,
+                Recommendation.occasion == occasion,
+                Recommendation.created_at >= cutoff,
+            )
+        )
+        if calendar_event_id:
+            try:
+                event = self.calendar_repo.get_by_id(calendar_event_id, user_id=user_id)
+                if event and getattr(event, "recommendation_id", None):
+                    query = query.filter(Recommendation.id == event.recommendation_id)
+            except Exception:
+                pass
+        rec = query.order_by(Recommendation.created_at.desc()).first()
+        if rec and rec.outfit and rec.outfit.clothing_items:
+            items = rec.outfit.clothing_items
+            if all(
+                getattr(i, "processing_status", "") != "failed"
+                and not getattr(i, "review_required", False)
+                and getattr(i, "is_finalized", True) is not False
+                for i in items
+            ):
+                rec._custom_reasoning = getattr(rec, "_custom_reasoning", {}) or {
+                    "compatibility": round(rec.recommendation_score or 0.9, 2),
+                    "occasion": occasion,
+                }
+                rec._custom_context = getattr(rec, "_custom_context", {}) or {
+                    "occasion": occasion,
+                    "reasons": [f"Active curated look for {occasion}."],
+                }
+                rec._custom_reasons = getattr(rec, "_custom_reasons", []) or [f"Active curated look for {occasion}."]
+                return rec
+        return None

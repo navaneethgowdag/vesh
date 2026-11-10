@@ -1,0 +1,50 @@
+<USER_REQUEST>
+# TailorBird – Fix, Cleanup and Core Feature Implementation
+
+You are a senior full-stack engineer, recommender-systems engineer and QA lead working on the EXISTING TailorBird repository. Keep the current stack and architecture. Do not rewrite from scratch.
+
+## 0. Working rules
+- First verify the repo yourself. Do not assume anything was built because it was discussed earlier. [PASTE AUDIT REPORT HERE IF AVAILABLE; otherwise re-run a quick audit of: auth, onboarding, wardrobe upload/review, Daily Fit, Home, Calendar, Planner, Insights, Wardrobe Gap, Settings.]
+- All DB changes must be additive migrations (new columns/tables, defaults, backfill). Never drop user data or tables.
+- No dummy, mock or fabricated data anywhere (products, prices, trends, weather, outfits). If data or an external source is unavailable, show an honest empty/blocked state.
+- Every user-scoped query must filter by authenticated user_id (ownership checks on all endpoints).
+- Work in phases (Section 7). After each phase: run build, typecheck, lint and tests, then report what changed, what was verified and what is still open.
+- Clearly separate verified facts from assumptions.
+
+## 1. Features NOT required (remove from UI, disable routes, keep data)
+- Community, Explore, Messages, standalone Saved page: remove from navigation and frontend routes. Put them behind a disabled feature flag on the backend. DO NOT drop tables or delete user data. Saved outfits remain accessible from Daily Fit ("Saved outfits" tab) and Profile.
+- Any mock/placeholder data, hardcoded shopping products, fake trends, fake prices, unused demo pages and dead components (list them in the report before deleting).
+- Defer (hide behind flags, do not build now): Trending clothing discovery, product comparison, "Before You Buy", social sharing.
+
+Final primary navigation: Home, Daily Fit, My Wardrobe, Calendar, Weekly Planner, Wardrobe Insights, Wardrobe Gap, Notifications, Profile, Settings.
+Keep the 24-hour Moments section on Home as secondary content.
+
+## 2. Fi
+<truncated 13232 bytes>
+nly, weather rule).
+- Missing slot: a wardrobe with no footwear returns a partial outfit naming the missing slot and disables "Wear This Outfit".
+- Switching occasion: moving from an occasion with clothes to one without shows the empty state and keeps the first occasion's stored outfit intact.
+- The API response never contains placeholder or fabricated items in an empty state.
+
+Acceptance: all 8 user journeys from the audit (register -> onboarding, upload -> review -> accept, occasion -> outfit, wear -> history, revisit Home -> same outfit, event -> event-aware outfit, gap -> real suggestion or honest blocked state, edit profile -> updated recommendations) pass manually and via tests. Report each as Implemented and verified / Partially implemented / Blocked / Broken with evidence.
+
+## 7. Phases
+1. Cleanup and removal (Section 1) and P0 fixes (Section 2).
+2. Laundry/wear data model, is_available, wear/undo APIs, Settings UI (Section 3).
+3. Recommendation engine, occasion configs, persistence, actions, empty states (Section 4).
+4. Planner simulation, Home integration, Insights and Gap (Sections 4.5 and 5).
+5. Test completion, regression run, final report: features verified / partial / blocked / broken, tests executed, remaining blockers.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-09T21:49:13+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\pages\WardrobeGap.tsx (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 34
+Other open documents:
+- c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\pages\Onboarding.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\pages\Profile.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\pages\DailyFit.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\pages\Home.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\user 2\Desktop\ai-wardrobe\frontend\src\components\layout\MobileNavigation.tsx (LANGUAGE_UNSPECIFIED)
+</ADDITIONAL_METADATA>

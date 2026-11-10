@@ -1,0 +1,306 @@
+"""
+TailorBird Occasion Configuration Profiles.
+Stores occasion profiles as structured data (not scattered if-statements) per Section 4.2:
+- Everyday: formality 1-2 (0.1 - 0.4), comfort and preferences highest weight, wide colour freedom.
+- College: formality 1-2 (0.1 - 0.4), comfort and practicality, layers by weather, avoid very formal and party wear.
+- Office: formality 3-4 (0.5 - 0.8), colour_harmony and formality_coherence highest, conservative colours, no gym/party items.
+- Party: formality 2-4 (0.4 - 0.8), expressive colours and statement pieces allowed, preference_match weight raised.
+- Wedding: formality 4-5 (0.7 - 1.0), ethnic/formal categories and rich colours preferred, penalise casual items.
+- Gym: activewear only, weather and comfort only, ignore colour harmony.
+- Travel: comfort, layering, versatile, darker mix-and-match colours, closed comfortable footwear.
+"""
+
+from typing import Dict, Any, List, Set
+
+OCCASION_PROFILES: Dict[str, Dict[str, Any]] = {
+    "Everyday": {
+        "display_name": "Everyday",
+        "min_formality": 0.10,
+        "max_formality": 0.50,
+        "target_formality": 0.30,
+        "disallowed_categories": {"formal_suit", "tuxedo", "sherwani", "bridal_lehenga"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "indian_kurti", "footwear", "outerwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "high",
+        "weights": {
+            "comfort": 0.30,
+            "preference": 0.30,
+            "weather": 0.20,
+            "color_harmony": 0.10,
+            "formality_coherence": 0.10,
+        },
+        "description": "Relaxed and practical everyday comfort with full styling freedom.",
+    },
+    "College": {
+        "display_name": "College",
+        "min_formality": 0.10,
+        "max_formality": 0.50,
+        "target_formality": 0.30,
+        "disallowed_categories": {"formal_suit", "tuxedo", "party_dress", "sherwani", "bridal_lehenga"},
+        "preferred_categories": {"western_top", "western_bottom", "indian_kurti", "footwear", "outerwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "high",
+        "weights": {
+            "comfort": 0.35,
+            "weather": 0.25,
+            "preference": 0.20,
+            "color_harmony": 0.10,
+            "formality_coherence": 0.10,
+        },
+        "description": "Comfortable, practical campus wear with smart casual layering.",
+    },
+    "Office": {
+        "display_name": "Office",
+        "min_formality": 0.50,
+        "max_formality": 0.85,
+        "target_formality": 0.70,
+        "disallowed_categories": {"activewear", "gym_top", "shorts", "flip_flops", "sweatpants", "tank_top"},
+        "preferred_categories": {"western_top", "western_bottom", "outerwear", "indian_kurta", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "moderate",
+        "weights": {
+            "formality_coherence": 0.30,
+            "color_harmony": 0.30,
+            "preference": 0.20,
+            "weather": 0.10,
+            "comfort": 0.10,
+        },
+        "description": "Polished professional attire with balanced colors and tailored silhouettes.",
+    },
+    "Business meeting": {
+        "display_name": "Business meeting",
+        "min_formality": 0.65,
+        "max_formality": 0.95,
+        "target_formality": 0.85,
+        "disallowed_categories": {"activewear", "gym_top", "shorts", "sandals", "sweatpants", "t_shirt"},
+        "preferred_categories": {"western_top", "western_bottom", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "conservative",
+        "weights": {
+            "formality_coherence": 0.40,
+            "color_harmony": 0.30,
+            "preference": 0.15,
+            "weather": 0.15,
+        },
+        "description": "Crisp executive business attire projecting focus and credibility.",
+    },
+    "Party": {
+        "display_name": "Party",
+        "min_formality": 0.35,
+        "max_formality": 0.85,
+        "target_formality": 0.65,
+        "disallowed_categories": {"activewear", "gym_top", "sweatpants", "flip_flops", "formal_scrubs"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "indian_kurti", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "expressive",
+        "weights": {
+            "preference": 0.35,
+            "color_harmony": 0.25,
+            "comfort": 0.20,
+            "weather": 0.10,
+            "formality_coherence": 0.10,
+        },
+        "description": "Expressive evening style with statement silhouettes and bold accents.",
+    },
+    "Wedding": {
+        "display_name": "Wedding",
+        "min_formality": 0.70,
+        "max_formality": 1.00,
+        "target_formality": 0.90,
+        "disallowed_categories": {"activewear", "gym_top", "jeans", "t_shirt", "shorts", "sneakers", "hoodie"},
+        "preferred_categories": {"indian_saree", "indian_lehenga", "indian_kurta", "indian_sherwani", "western_dress", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "rich_celebratory",
+        "weights": {
+            "formality_coherence": 0.40,
+            "preference": 0.30,
+            "color_harmony": 0.20,
+            "weather": 0.10,
+        },
+        "description": "Rich festive celebration wear honouring ceremonial elegance.",
+    },
+    "Gym": {
+        "display_name": "Gym",
+        "min_formality": 0.05,
+        "max_formality": 0.30,
+        "target_formality": 0.15,
+        "disallowed_categories": {
+            "formal_suit", "blazer", "chinos", "dress_shirt", "leather_shoes",
+            "heels", "saree", "kurta", "lehenga", "tie"
+        },
+        "preferred_categories": {"activewear", "gym_top", "shorts", "sweatpants", "sneakers"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "high",
+        "weights": {
+            "comfort": 0.50,
+            "weather": 0.30,
+            "preference": 0.20,
+            "color_harmony": 0.00,  # Gym ignores color harmony
+            "formality_coherence": 0.00,
+        },
+        "description": "High-mobility, breathable athletic wear built for peak performance.",
+    },
+    "Travel": {
+        "display_name": "Travel",
+        "min_formality": 0.15,
+        "max_formality": 0.55,
+        "target_formality": 0.35,
+        "disallowed_categories": {"formal_suit", "heels", "delicate_silk", "heavy_lehenga"},
+        "preferred_categories": {"western_top", "western_bottom", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "versatile_darker",
+        "weights": {
+            "comfort": 0.40,
+            "weather": 0.30,
+            "preference": 0.20,
+            "color_harmony": 0.10,
+        },
+        "description": "Wrinkle-resistant, layering-friendly travel outfit with closed walking shoes.",
+    },
+    "Date": {
+        "display_name": "Date",
+        "min_formality": 0.40,
+        "max_formality": 0.80,
+        "target_formality": 0.60,
+        "disallowed_categories": {"activewear", "gym_top", "sweatpants", "sandals_casual", "sloppy_t_shirt"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "flattering",
+        "weights": {
+            "preference": 0.35,
+            "color_harmony": 0.30,
+            "formality_coherence": 0.20,
+            "weather": 0.15,
+        },
+        "description": "Intentionally styled romantic look balancing charm, comfort, and allure.",
+    },
+    "Casual Daily": {
+        "display_name": "Casual Daily",
+        "min_formality": 0.10,
+        "max_formality": 0.50,
+        "target_formality": 0.30,
+        "disallowed_categories": {"formal_suit", "tuxedo", "sherwani", "bridal_lehenga"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "indian_kurti", "footwear", "outerwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "high",
+        "weights": {
+            "comfort": 0.30,
+            "preference": 0.30,
+            "weather": 0.20,
+            "color_harmony": 0.10,
+            "formality_coherence": 0.10,
+        },
+        "description": "Everyday casual ease with versatile styling combinations.",
+    },
+    "Casual Outing": {
+        "display_name": "Casual Outing",
+        "min_formality": 0.20,
+        "max_formality": 0.60,
+        "target_formality": 0.40,
+        "disallowed_categories": {"formal_suit", "gym_top"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "high",
+        "weights": {
+            "preference": 0.30,
+            "comfort": 0.30,
+            "weather": 0.20,
+            "color_harmony": 0.20,
+        },
+        "description": "Smart casual outing look suited for cafes, strolls, and social catch-ups.",
+    },
+    "Formal Event": {
+        "display_name": "Formal Event",
+        "min_formality": 0.75,
+        "max_formality": 1.00,
+        "target_formality": 0.90,
+        "disallowed_categories": {"activewear", "jeans", "t_shirt", "shorts", "sneakers", "sweatpants"},
+        "preferred_categories": {"western_top", "western_bottom", "western_dress", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "conservative",
+        "weights": {
+            "formality_coherence": 0.45,
+            "color_harmony": 0.30,
+            "preference": 0.15,
+            "weather": 0.10,
+        },
+        "description": "Black tie and elevated gala evening formalwear.",
+    },
+    "Festival": {
+        "display_name": "Festival",
+        "min_formality": 0.60,
+        "max_formality": 0.95,
+        "target_formality": 0.85,
+        "disallowed_categories": {"activewear", "gym_top", "sweatpants", "hoodie"},
+        "preferred_categories": {"indian_kurta", "indian_kurti", "indian_saree", "indian_lehenga", "western_dress", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "rich_celebratory",
+        "weights": {
+            "preference": 0.35,
+            "color_harmony": 0.30,
+            "formality_coherence": 0.25,
+            "weather": 0.10,
+        },
+        "description": "Vibrant traditional or festive attire celebrating cultural milestones.",
+    },
+    "Presentation": {
+        "display_name": "Presentation",
+        "min_formality": 0.60,
+        "max_formality": 0.90,
+        "target_formality": 0.75,
+        "disallowed_categories": {"activewear", "gym_top", "shorts", "distressed_jeans"},
+        "preferred_categories": {"western_top", "western_bottom", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "moderate",
+        "weights": {
+            "formality_coherence": 0.35,
+            "color_harmony": 0.30,
+            "preference": 0.20,
+            "weather": 0.15,
+        },
+        "description": "Sharp, commanding stage attire focusing audience attention.",
+    },
+    "Interview": {
+        "display_name": "Interview",
+        "min_formality": 0.70,
+        "max_formality": 0.95,
+        "target_formality": 0.85,
+        "disallowed_categories": {"activewear", "jeans", "shorts", "sandals", "t_shirt"},
+        "preferred_categories": {"western_top", "western_bottom", "outerwear", "footwear"},
+        "required_slots": ["top_or_one_piece", "bottom_if_two_piece"],
+        "recommended_slots": ["footwear"],
+        "color_freedom": "conservative",
+        "weights": {
+            "formality_coherence": 0.45,
+            "color_harmony": 0.35,
+            "preference": 0.10,
+            "weather": 0.10,
+        },
+        "description": "Impeccably tailored interview outfit making an uncompromising first impression.",
+    },
+}
+
+
+def get_occasion_profile(occasion_name: str) -> Dict[str, Any]:
+    norm = occasion_name.strip()
+    # Match exact or case-insensitive
+    for k, v in OCCASION_PROFILES.items():
+        if k.lower() == norm.lower():
+            return v
+
+    # Fallback to Everyday
+    return OCCASION_PROFILES["Everyday"]

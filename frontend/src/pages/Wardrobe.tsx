@@ -11,6 +11,7 @@ import {
   Check,
   AlertCircle,
   RefreshCw,
+  Heart,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
@@ -48,7 +49,9 @@ export const Wardrobe: React.FC = () => {
   const [wardrobeSection, setWardrobeSection] = useState<WardrobeSection>(initialSection);
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
+  const [laundryFilter, setLaundryFilter] = useState<'all' | 'clean' | 'in_laundry' | 'unavailable'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'wears' | 'name'>('recent');
@@ -126,6 +129,17 @@ export const Wardrobe: React.FC = () => {
   ).length;
   const othersCount = acceptedItems.length - (topsCount + bottomsCount + ethnicCount);
 
+  // Laundry Status Counts
+  const cleanCount = acceptedItems.filter(
+    (i) => !(i.laundryStatus || i.laundry_status) || (i.laundryStatus || i.laundry_status) === 'clean'
+  ).length;
+  const inLaundryCount = acceptedItems.filter(
+    (i) => (i.laundryStatus || i.laundry_status) === 'in_laundry'
+  ).length;
+  const unavailableCount = acceptedItems.filter(
+    (i) => (i.laundryStatus || i.laundry_status) === 'unavailable'
+  ).length;
+
   // Filter items based on current section, category, search, and sort
   const displayItems = useMemo(() => {
     const baseList =
@@ -137,6 +151,18 @@ export const Wardrobe: React.FC = () => {
 
     return baseList
       .filter((item) => {
+        if (favoritesOnly && !item.isFavorite) {
+          return false;
+        }
+
+        // Laundry status matching (applies to accepted and all tabs)
+        if (wardrobeSection !== 'pending' && laundryFilter !== 'all') {
+          const st = item.laundryStatus || item.laundry_status || 'clean';
+          if (laundryFilter === 'clean' && st !== 'clean') return false;
+          if (laundryFilter === 'in_laundry' && st !== 'in_laundry') return false;
+          if (laundryFilter === 'unavailable' && st !== 'unavailable') return false;
+        }
+
         const cat = (item.category || '').toLowerCase();
 
         // Category filter matching (applies to accepted and all tabs)
@@ -471,7 +497,45 @@ export const Wardrobe: React.FC = () => {
                 <option value="name">Alphabetical</option>
               </select>
             </div>
+
+            <button
+              onClick={() => setFavoritesOnly(!favoritesOnly)}
+              title="Filter Favorite Garments"
+              className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                favoritesOnly
+                  ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${favoritesOnly ? 'fill-rose-500 text-rose-500' : 'text-zinc-500'}`} />
+              <span>Favorites</span>
+            </button>
           </div>
+
+          {/* Laundry Status Filter Pills (Clean / In laundry / Unavailable) */}
+          {wardrobeSection !== 'pending' && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mr-1">Status:</span>
+              {[
+                { id: 'all' as const, label: 'All Items' },
+                { id: 'clean' as const, label: `Clean (${cleanCount})` },
+                { id: 'in_laundry' as const, label: `In Laundry (${inLaundryCount})` },
+                { id: 'unavailable' as const, label: `Unavailable (${unavailableCount})` },
+              ].map((pill) => (
+                <button
+                  key={pill.id}
+                  onClick={() => setLaundryFilter(pill.id)}
+                  className={`text-xs px-3 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                    laundryFilter === pill.id
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Categories Pill Bar (Hidden in Pending Review tab to keep review focused) */}
           {wardrobeSection !== 'pending' && (

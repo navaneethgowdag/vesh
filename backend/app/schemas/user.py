@@ -179,6 +179,8 @@ class OnboardingRequest(BaseModel):
     disliked_styles: List[str] = Field(default_factory=list)
     favorite_colors: List[str] = Field(default_factory=list)
     preferred_colors: List[str] = Field(default_factory=list)
+    disliked_colors: List[str] = Field(default_factory=list)
+    avoided_colors: List[str] = Field(default_factory=list)
     preferred_categories: List[str] = Field(default_factory=list)
     preferred_occasions: List[str] = Field(default_factory=list)
     preferred_fits: List[str] = Field(default_factory=list)
@@ -190,3 +192,83 @@ class OnboardingRequest(BaseModel):
     country: Optional[str] = None
     preferred_language: Optional[str] = None
     date_of_birth: Optional[str] = None
+
+    # Extended personalized styling profile & weekly routine fields
+    lifestyle_occupation: Optional[Dict[str, Any]] = None
+    occupation_details: Optional[Dict[str, Any]] = None
+    weekly_routine: Optional[List[Dict[str, Any]]] = None
+    shopping_preferences: Optional[Dict[str, Any]] = None
+    recommendation_settings: Optional[Dict[str, Any]] = None
+
+
+# ---------------------------------------------------------------------------
+# Dedicated Personalized Styling Profile Schemas
+# ---------------------------------------------------------------------------
+
+class LifestyleOccupationData(BaseModel):
+    occupation: str = "prefer_not_to_say"
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DailyRoutineItem(BaseModel):
+    day: str
+    activity: str = "Work"
+    time_range: Optional[str] = "09:00 - 17:00"
+    dress_code: str = "Smart Casual"
+
+
+class WeeklyRoutineData(BaseModel):
+    routine: List[DailyRoutineItem] = Field(default_factory=list)
+
+
+class FashionPreferencesData(BaseModel):
+    styles: List[str] = Field(default_factory=list)
+    disliked_styles: List[str] = Field(default_factory=list)
+    preferred_colors: List[str] = Field(default_factory=list)
+    disliked_colors: List[str] = Field(default_factory=list)
+    fits: List[str] = Field(default_factory=list)
+    comfort_vs_appearance: str = "balanced"
+    simple_vs_experimental: str = "balanced"
+
+
+class OccasionPreferencesData(BaseModel):
+    regular_occasions: List[str] = Field(default_factory=list)
+    occasion_notes: Dict[str, str] = Field(default_factory=dict)
+
+
+class ShoppingPreferencesData(BaseModel):
+    budget_tier: str = "mid_range"
+    budget_per_item: Optional[str] = None
+    shopping_philosophy: str = "balanced"
+    preferred_categories: List[str] = Field(default_factory=list)
+    preferred_platforms: List[str] = Field(default_factory=list)
+
+
+class RecommendationSettingsData(BaseModel):
+    comfort_priority: float = 0.5
+    familiar_vs_new: str = "balanced"
+    repeat_frequency: str = "moderate"
+    variety_preference: str = "balanced"
+
+
+class StylingProfileResponse(BaseModel):
+    user_id: UUID
+    display_name: Optional[str] = None
+    lifestyle_occupation: LifestyleOccupationData = Field(default_factory=LifestyleOccupationData)
+    weekly_routine: List[DailyRoutineItem] = Field(default_factory=list)
+    fashion_preferences: FashionPreferencesData = Field(default_factory=FashionPreferencesData)
+    occasion_preferences: OccasionPreferencesData = Field(default_factory=OccasionPreferencesData)
+    shopping_preferences: ShoppingPreferencesData = Field(default_factory=ShoppingPreferencesData)
+    recommendation_settings: RecommendationSettingsData = Field(default_factory=RecommendationSettingsData)
+    onboarding_completed: bool = False
+
+
+class StylingProfileUpdate(BaseModel):
+    display_name: Optional[str] = None
+    lifestyle_occupation: Optional[LifestyleOccupationData] = None
+    weekly_routine: Optional[List[DailyRoutineItem]] = None
+    fashion_preferences: Optional[FashionPreferencesData] = None
+    occasion_preferences: Optional[OccasionPreferencesData] = None
+    shopping_preferences: Optional[ShoppingPreferencesData] = None
+    recommendation_settings: Optional[RecommendationSettingsData] = None
+    onboarding_completed: Optional[bool] = None

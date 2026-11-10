@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status, HTTPException
@@ -67,7 +68,35 @@ async def generate_recommendations(
         city=city,
         latitude=latitude,
         longitude=longitude,
+        force_regenerate=req.force_regenerate or False,
     )
+
+
+@router.get("/active", response_model=RecommendationResponse)
+def get_active_recommendation(
+    occasion: str = Query("Everyday"),
+    target_date: Optional[date] = Query(None),
+    calendar_event_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Retrieves the currently active recommendation for the specified occasion and date.
+    Used for instant page-navigation persistence without re-generation.
+    """
+    service = RecommendationService(db)
+    rec = service.get_active_recommendation(
+        user_id=current_user.id,
+        occasion=occasion,
+        target_date=target_date,
+        calendar_event_id=calendar_event_id,
+    )
+    if not rec:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No active recommendation found for occasion '{occasion}'.",
+        )
+    return rec
 
 
 @router.get("", response_model=List[RecommendationResponse])

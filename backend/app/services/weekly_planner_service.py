@@ -24,6 +24,7 @@ from app.services.recommendation_service import RecommendationService
 from app.services.event_classifier_service import EventClassifierService
 from app.services.weather_service import weather_service
 from app.services.color_coordination_service import ColorCoordinationService
+from app.services.laundry_service import LaundryService
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +83,23 @@ class WeeklyPlannerService:
                 if day.status == "accepted" and day.outfit_id:
                     preserved_days[day.plan_date] = day
 
-        # 2. Check wardrobe sufficiency
+        # 2. Check wardrobe sufficiency & setup laundry wear simulation
         user_items_count = (
             self.db.query(Clothing)
             .filter(Clothing.user_id == user_id)
             .count()
         )
+
+        laundry_service = LaundryService(self.db)
+        laundry_settings = laundry_service.get_settings(user_id)
+        raw_items = self.db.query(Clothing).filter(Clothing.user_id == user_id).all()
+
+        # Simulated state: projected wears across the 7 days without mutating DB wear_log (Rule 4.5)
+        sim_wear_counts: Dict[UUID, int] = {i.id: (i.wear_count_since_wash or 0) for i in raw_items}
+        sim_laundry_until: Dict[UUID, Optional[date]] = {
+            i.id: i.available_from if i.laundry_status == "in_laundry" else None
+            for i in raw_items
+        }
 
         plan = existing_plan or WeeklyPlan(
             id=uuid.uuid4(),
@@ -104,12 +116,34 @@ class WeeklyPlannerService:
         for day_idx in range(7):
             cur_date = start + timedelta(days=day_idx)
 
+            # Lazy return in simulation
+            for it in raw_items:
+                ret_dt = sim_laundry_until.get(it.id)
+                if ret_dt and cur_date >= ret_dt:
+                    sim_laundry_until[it.id] = None
+                    sim_wear_counts[it.id] = 0
+
+            # Determine items excluded on cur_date due to simulated laundry limits
+            simulated_excluded: Set[UUID] = set()
+            for it in raw_items:
+                if sim_laundry_until.get(it.id) is not None:
+                    simulated_excluded.add(it.id)
+                else:
+                    max_wears, _, track_laundry = laundry_service.get_effective_limits(it, laundry_settings)
+                    if track_laundry and sim_wear_counts.get(it.id, 0) >= max_wears:
+                        simulated_excluded.add(it.id)
+
             # Preserve accepted day
             if cur_date in preserved_days:
                 preserved = preserved_days[cur_date]
                 new_days.append(preserved)
                 if preserved.outfit and preserved.outfit.clothing_items:
                     garments_assigned_yesterday = {i.id for i in preserved.outfit.clothing_items}
+                    for ci in preserved.outfit.clothing_items:
+                        sim_wear_counts[ci.id] = sim_wear_counts.get(ci.id, 0) + 1
+                        mw, wd, tl = laundry_service.get_effective_limits(ci, laundry_settings)
+                        if tl and sim_wear_counts[ci.id] >= mw:
+                            sim_laundry_until[ci.id] = cur_date + timedelta(days=wd + 1)
                 continue
 
             # Day needs generation
@@ -144,9 +178,10 @@ class WeeklyPlannerService:
                     target_date=cur_date,
                     limit=1,
                     item_ids_worn_yesterday=garments_assigned_yesterday,
+                    excluded_item_ids=list(simulated_excluded),
                 )
 
-                if recs and recs[0].outfit:
+                if recs and recs[0].outfit and recs[0].status != "no_items":
                     rec = recs[0]
                     outfit = rec.outfit
                     explanation_payload = {
@@ -169,13 +204,34 @@ class WeeklyPlannerService:
                     day_entry.outfit = outfit
                     new_days.append(day_entry)
 
-                    # Update rotation tracker for next consecutive day
+                    # Update rotation tracker and simulated wear for next consecutive day
                     if outfit.clothing_items:
                         garments_assigned_yesterday = {i.id for i in outfit.clothing_items}
+                        for ci in outfit.clothing_items:
+                            sim_wear_counts[ci.id] = sim_wear_counts.get(ci.id, 0) + 1
+                            mw, wd, tl = laundry_service.get_effective_limits(ci, laundry_settings)
+                            if tl and sim_wear_counts[ci.id] >= mw:
+                                sim_laundry_until[ci.id] = cur_date + timedelta(days=wd + 1)
                     else:
                         garments_assigned_yesterday = set()
                 else:
-                    raise ValueError("No candidates found")
+                    # Rule 4.4a(6): Days with no valid outfit show "No clothes found" without repeating items beyond wear limits
+                    empty_msg = (recs[0].empty_reason.get("message") if recs and recs[0].empty_reason else "No clothes found for this day.") if recs else "No clothes found."
+                    day_entry = WeeklyPlanDay(
+                        id=uuid.uuid4(),
+                        weekly_plan_id=plan.id,
+                        plan_date=cur_date,
+                        outfit_id=None,
+                        calendar_event_id=primary_event.id if primary_event else None,
+                        status="needs_manual_selection",
+                        recommendation_explanation=json.dumps({
+                            "summary": empty_msg,
+                            "reasons": [empty_msg],
+                            "needs_items": True,
+                        }),
+                    )
+                    new_days.append(day_entry)
+                    garments_assigned_yesterday = set()
 
             except Exception as e:
                 logger.info(f"Day {cur_date} recommendation needs manual selection: {e}")
@@ -348,10 +404,17 @@ class WeeklyPlannerService:
         target_day.status = new_status
         target_day.updated_at = datetime.now(timezone.utc)
 
-        # Idempotently record wear history if marked worn
+        # Idempotently record wear history and update laundry tracking if marked worn
         if new_status == "worn" and target_day.outfit_id:
             try:
                 self.rec_service.mark_outfit_as_worn(user_id=user_id, outfit_id=target_day.outfit_id)
+                laundry_service = LaundryService(self.db)
+                laundry_service.record_wear(
+                    user_id=user_id,
+                    outfit_id=target_day.outfit_id,
+                    target_date=target_day.plan_date,
+                    source="planner",
+                )
             except Exception as e:
                 logger.warning(f"Could not record wear history: {e}")
 

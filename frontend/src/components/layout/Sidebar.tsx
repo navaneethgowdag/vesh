@@ -3,40 +3,36 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   Sparkles,
+  Shirt,
   Calendar as CalendarIcon,
   CalendarDays,
-  Compass,
-  MessageSquare,
-  Shirt,
-  PlusCircle,
-  Bookmark,
+  BarChart2,
+  Layers,
   Bell,
   User as UserIcon,
   Settings,
-  Layers,
   LogOut,
 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../../utils/cn';
-import { api } from '../../services/api';
 
 export const Sidebar: React.FC = () => {
-  const { unreadNotifsCount, unreadMessagesCount, wardrobe, logout, showToast } = useApp();
+  const { unreadNotifsCount, wardrobe, logout, showToast } = useApp();
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
 
-  const navItems = [
+  const mainNavItems = [
     { name: 'Home', path: '/home', icon: Home },
     { name: 'Daily Fit', path: '/daily-fit', icon: Sparkles, badge: 'AI' },
+    { name: 'My Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
     { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
     { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
-    { name: 'Explore', path: '/explore', icon: Compass },
-    { name: 'Messages', path: '/inbox', icon: MessageSquare, count: unreadMessagesCount },
-    { name: 'Wardrobe', path: '/wardrobe', icon: Shirt, count: wardrobe.length },
+    { name: 'Wardrobe Insights', path: '/insights', icon: BarChart2 },
     { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
-    { name: 'Create', path: '/create', icon: PlusCircle, highlight: true },
-    { name: 'Saved', path: '/saved', icon: Bookmark },
+  ];
+
+  const accountNavItems = [
     { name: 'Notifications', path: '/notifications', icon: Bell, count: unreadNotifsCount },
     { name: 'Profile', path: '/profile', icon: UserIcon },
     { name: 'Settings', path: '/settings', icon: Settings },
@@ -56,70 +52,132 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 bg-white dark:bg-[#18181B] border-r border-zinc-200 dark:border-zinc-800 px-5 py-6 justify-between select-none transition-colors">
-      {/* Brand Header */}
-      <div>
+      {/* Brand Header & Nav */}
+      <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
+        {/* Brand Header */}
         <div
           onClick={() => navigate('/home')}
           className="cursor-pointer group flex items-center gap-3 px-2 py-1 mb-6"
         >
-          <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-base transition-colors">
+          <div className="w-9 h-9 rounded-md bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-white dark:text-zinc-900 font-bold text-base transition-colors shadow-sm">
             T
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 transition-colors">
               TailorBird
             </span>
+            <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-medium tracking-wide">
+              AI Wardrobe Stylist
+            </p>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
+        {/* Main Navigation Section */}
+        <div className="mb-6">
+          <p className="px-3 mb-2 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            Stylist & Wardrobe
+          </p>
+          <nav className="space-y-1">
+            {mainNavItems.map((item) => {
+              const Icon = item.icon;
 
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
-                    isActive
-                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60',
-                    item.highlight && !isActive && 'text-amber-800 dark:text-amber-400 font-semibold bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20'
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <Icon
-                        className={cn(
-                          'w-4 h-4 transition-transform group-hover:scale-105',
-                          isActive
-                            ? 'text-white dark:text-zinc-900'
-                            : item.highlight
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : 'text-zinc-500 dark:text-zinc-400'
-                        )}
-                      />
-                      <span>{item.name}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {item.badge && (
-                        <span
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    cn(
+                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
+                      isActive
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Icon
                           className={cn(
-                            'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
+                            'w-4 h-4 transition-transform group-hover:scale-105',
                             isActive
-                              ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                              ? 'text-white dark:text-zinc-900'
+                              : 'text-zinc-500 dark:text-zinc-400'
                           )}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
+                        />
+                        <span>{item.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {item.badge && (
+                          <span
+                            className={cn(
+                              'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
+                              isActive
+                                ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
+                                : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                            )}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+
+                        {typeof item.count === 'number' && item.count > 0 && (
+                          <span
+                            className={cn(
+                              'text-xs px-2 py-0.5 rounded font-semibold',
+                              isActive
+                                ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
+                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                            )}
+                          >
+                            {item.count}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Account Navigation Section */}
+        <div>
+          <p className="px-3 mb-2 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+            Account
+          </p>
+          <nav className="space-y-1">
+            {accountNavItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    cn(
+                      'group flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-[14px] font-medium transition-colors',
+                      isActive
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Icon
+                          className={cn(
+                            'w-4 h-4 transition-transform group-hover:scale-105',
+                            isActive
+                              ? 'text-white dark:text-zinc-900'
+                              : 'text-zinc-500 dark:text-zinc-400'
+                          )}
+                        />
+                        <span>{item.name}</span>
+                      </div>
 
                       {typeof item.count === 'number' && item.count > 0 && (
                         <span
@@ -127,19 +185,19 @@ export const Sidebar: React.FC = () => {
                             'text-xs px-2 py-0.5 rounded font-semibold',
                             isActive
                               ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900'
-                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                              : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
                           )}
                         >
                           {item.count}
                         </span>
                       )}
-                    </div>
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
       {/* User Card at Bottom */}

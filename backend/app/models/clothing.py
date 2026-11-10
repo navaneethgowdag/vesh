@@ -40,26 +40,152 @@ class Clothing(Base):
 
     @property
     def last_worn(self):
+        return self.last_worn_on.isoformat() if self.last_worn_on else None
+
+    # Laundry & Wear Tracking properties (persisted via feature_vector["laundry"])
+    @property
+    def laundry_data(self) -> dict:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            return self.analysis.feature_vector.get("laundry", {})
+        return getattr(self, "_laundry_dict", {})
+
+    def _update_laundry_data(self, key: str, val: Any):
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            fv = dict(self.analysis.feature_vector)
+            laundry = dict(fv.get("laundry", {}))
+            laundry[key] = val
+            fv["laundry"] = laundry
+            self.analysis.feature_vector = fv
+        else:
+            if not hasattr(self, "_laundry_dict"):
+                self._laundry_dict = {}
+            self._laundry_dict[key] = val
+
+    @property
+    def wear_count_since_wash(self) -> int:
+        return int(self.laundry_data.get("wear_count_since_wash", 0))
+
+    @wear_count_since_wash.setter
+    def wear_count_since_wash(self, val: int):
+        self._update_laundry_data("wear_count_since_wash", int(val))
+
+    @property
+    def last_worn_on(self):
+        raw = self.laundry_data.get("last_worn_on")
+        if raw:
+            from datetime import date
+            return date.fromisoformat(raw) if isinstance(raw, str) else raw
         return None
+
+    @last_worn_on.setter
+    def last_worn_on(self, val):
+        from datetime import date
+        self._update_laundry_data("last_worn_on", val.isoformat() if isinstance(val, date) else val)
+
+    @property
+    def laundry_status(self) -> str:
+        return self.laundry_data.get("laundry_status", "clean")
+
+    @laundry_status.setter
+    def laundry_status(self, val: str):
+        self._update_laundry_data("laundry_status", str(val))
+
+    @property
+    def laundry_started_on(self):
+        raw = self.laundry_data.get("laundry_started_on")
+        if raw:
+            from datetime import date
+            return date.fromisoformat(raw) if isinstance(raw, str) else raw
+        return None
+
+    @laundry_started_on.setter
+    def laundry_started_on(self, val):
+        from datetime import date
+        self._update_laundry_data("laundry_started_on", val.isoformat() if isinstance(val, date) else val)
+
+    @property
+    def available_from(self):
+        raw = self.laundry_data.get("available_from")
+        if raw:
+            from datetime import date
+            return date.fromisoformat(raw) if isinstance(raw, str) else raw
+        return None
+
+    @available_from.setter
+    def available_from(self, val):
+        from datetime import date
+        self._update_laundry_data("available_from", val.isoformat() if isinstance(val, date) else val)
+
+    @property
+    def max_wears_override(self) -> Optional[int]:
+        val = self.laundry_data.get("max_wears_override")
+        return int(val) if val is not None else None
+
+    @max_wears_override.setter
+    def max_wears_override(self, val: Optional[int]):
+        self._update_laundry_data("max_wears_override", int(val) if val is not None else None)
+
+    @property
+    def wash_days_override(self) -> Optional[int]:
+        val = self.laundry_data.get("wash_days_override")
+        return int(val) if val is not None else None
+
+    @wash_days_override.setter
+    def wash_days_override(self, val: Optional[int]):
+        self._update_laundry_data("wash_days_override", int(val) if val is not None else None)
+
+    @property
+    def track_laundry(self) -> bool:
+        if "track_laundry" in self.laundry_data:
+            return bool(self.laundry_data["track_laundry"])
+        cat = (self.category or "").lower().strip()
+        non_launderable = {
+            "footwear", "shoes", "shoe", "sneakers", "bag", "bags",
+            "belt", "belts", "watch", "watches", "jewellery", "jewelry",
+            "accessories", "sunglasses", "glasses"
+        }
+        return cat not in non_launderable
+
+    @track_laundry.setter
+    def track_laundry(self, val: bool):
+        self._update_laundry_data("track_laundry", bool(val))
 
     # Processing metadata properties (backed by ClothingAnalysis or in-memory metadata)
     @property
     def processing_status(self) -> str:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             return self.analysis.feature_vector.get("processing_status", "completed")
+        if hasattr(self, "_laundry_dict") and "processing_status" in self._laundry_dict:
+            return self._laundry_dict["processing_status"]
         return "completed" if self.image_url else "uploaded"
+
+    @processing_status.setter
+    def processing_status(self, val: str):
+        self._update_laundry_data("processing_status", str(val))
 
     @property
     def processing_stage(self) -> str:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             return self.analysis.feature_vector.get("processing_stage", "completed")
+        if hasattr(self, "_laundry_dict") and "processing_stage" in self._laundry_dict:
+            return self._laundry_dict["processing_stage"]
         return "completed" if self.image_url else "uploaded"
+
+    @processing_stage.setter
+    def processing_stage(self, val: str):
+        self._update_laundry_data("processing_stage", str(val))
 
     @property
     def review_required(self) -> bool:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             return bool(self.analysis.feature_vector.get("review_required", False))
+        if hasattr(self, "_laundry_dict") and "review_required" in self._laundry_dict:
+            return bool(self._laundry_dict["review_required"])
         return False
+
+    @review_required.setter
+    def review_required(self, val: bool):
+        self._update_laundry_data("review_required", bool(val))
 
     @property
     def is_processed_available(self) -> bool:
@@ -87,7 +213,13 @@ class Clothing(Base):
                 return bool(fv["is_finalized"])
             if fv.get("review_required") or fv.get("processing_status") in ("predictions_ready", "ready_for_review", "queued", "processing", "failed"):
                 return False
+        if hasattr(self, "_laundry_dict") and "is_finalized" in self._laundry_dict:
+            return bool(self._laundry_dict["is_finalized"])
         return True
+
+    @is_finalized.setter
+    def is_finalized(self, val: bool):
+        self._update_laundry_data("is_finalized", bool(val))
 
     @property
     def style(self) -> str:

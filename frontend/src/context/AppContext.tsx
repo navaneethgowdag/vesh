@@ -12,6 +12,7 @@ import {
   CreatePollPayload,
 } from '../types';
 import { api, ApiError, tokenStorage } from '../services/api';
+import { recommendationCache } from '../utils/recommendationCache';
 
 export type WeatherStatus =
   | 'idle'
@@ -42,10 +43,15 @@ interface AppContextType {
   notifications: Notification[];
   unreadNotifsCount: number;
   dailyFit: Recommendation | null;
+  setDailyFit: React.Dispatch<React.SetStateAction<Recommendation | null>>;
   dailyFitHistory: Recommendation[];
   dailyFitError: string | null;
   isGeneratingDailyFit: boolean;
   generateDailyFit: (targetVariation?: number, targetOccasion?: Occasion) => Promise<Recommendation | null>;
+  activeOccasion: string;
+  setActiveOccasion: (occ: string) => Promise<Recommendation | null>;
+  loadActiveDailyFit: (targetOccasion?: string) => Promise<Recommendation | null>;
+  regenerateDailyFit: (targetOccasion?: string, excludedItemIds?: string[]) => Promise<Recommendation | null>;
   weather: Weather;
   weatherStatus: WeatherStatus;
   isWeatherLoading: boolean;
@@ -191,6 +197,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [liveCoordinates, setLiveCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [dailyFitVariation, setDailyFitVariation] = useState<number>(0);
   const [dailyFit, setDailyFit] = useState<Recommendation | null>(null);
+  const [activeOccasion, setActiveOccasionState] = useState<string>('Everyday');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
   const refreshDataPromiseRef = React.useRef<Promise<void> | null>(null);
 
@@ -673,6 +680,108 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast('Generated fresh combination', 'info');
   }, [dailyFitVariation, generateDailyFit, selectedOccasion, showToast]);
 
+  // Load or restore active recommendation for a given occasion & target date
+  const loadActiveDailyFit = useCallback(
+    async (targetOccasion?: string): Promise<Recommendation | null> => {
+      if (!currentUser || wardrobe.length === 0) {
+        setDailyFit(null);
+        return null;
+      }
+      const occ = targetOccasion || activeOccasion || 'Everyday';
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // 1. Instant Cache check
+      const cached = recommendationCache.get(currentUser.id, todayStr, occ);
+      if (cached) {
+        setDailyFit(cached);
+        setActiveOccasionState(occ);
+        return cached;
+      }
+
+      setIsGeneratingDailyFit(true);
+      setDailyFitError(null);
+      try {
+        // 2. Check Backend Active Recommendation
+        const active = await api.recommendations.getActive(occ, todayStr);
+        if (active) {
+          recommendationCache.set(currentUser.id, todayStr, occ, active);
+          setDailyFit(active);
+          setActiveOccasionState(occ);
+          return active;
+        }
+
+        // 3. Otherwise generate fresh recommendation
+        const recs = await api.recommendations.generate({
+          limit: 1,
+          recommendationMode: 'occasion',
+          occasion: occ,
+          targetDate: todayStr,
+          city: selectedCity.trim() || currentUser?.location?.trim() || undefined,
+        });
+        if (recs && recs.length > 0) {
+          recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          setDailyFit(recs[0]);
+          setActiveOccasionState(occ);
+          return recs[0];
+        }
+        return null;
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : 'Could not curate outfit';
+        setDailyFitError(msg);
+        return null;
+      } finally {
+        setIsGeneratingDailyFit(false);
+      }
+    },
+    [currentUser, wardrobe.length, activeOccasion, selectedCity]
+  );
+
+  const setActiveOccasion = useCallback(
+    async (occ: string): Promise<Recommendation | null> => {
+      setActiveOccasionState(occ);
+      return loadActiveDailyFit(occ);
+    },
+    [loadActiveDailyFit]
+  );
+
+  const regenerateDailyFit = useCallback(
+    async (targetOccasion?: string, excludedItemIds?: string[]): Promise<Recommendation | null> => {
+      if (!currentUser || wardrobe.length === 0) return null;
+      const occ = targetOccasion || activeOccasion || 'Everyday';
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      setIsGeneratingDailyFit(true);
+      setDailyFitError(null);
+      try {
+        const recs = await api.recommendations.generate({
+          limit: 1,
+          recommendationMode: 'occasion',
+          occasion: occ,
+          targetDate: todayStr,
+          forceRegenerate: true,
+          excludedItemIds: excludedItemIds || [],
+          city: selectedCity.trim() || currentUser?.location?.trim() || undefined,
+        });
+        if (recs && recs.length > 0) {
+          recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          setDailyFit(recs[0]);
+          setActiveOccasionState(occ);
+          showToast(`Fresh outfit curated for ${occ}!`, 'success');
+          return recs[0];
+        }
+        return null;
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : 'Could not curate outfit';
+        showToast(msg, 'info');
+        setDailyFitError(msg);
+        return null;
+      } finally {
+        setIsGeneratingDailyFit(false);
+      }
+    },
+    [currentUser, wardrobe.length, activeOccasion, selectedCity, showToast]
+  );
+
   // --- Auth ---------------------------------------------------------------
   const login = async (emailOrUsername: string, password: string) => {
     setAuthError(null);
@@ -730,6 +839,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // quiet fallback
     }
     tokenStorage.clear();
+    recommendationCache.clearAll();
     setCurrentUserState(null);
     setWardrobe([]);
     setPosts([]);
@@ -745,6 +855,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addClothingItem = async (itemData: Omit<ClothingItem, 'id' | 'createdAt' | 'timesWorn'>) => {
     const created = await api.wardrobe.create(itemData);
     setWardrobe((prev) => [created, ...prev]);
+    if (currentUser) {
+      recommendationCache.invalidateUser(currentUser.id);
+    }
     showToast(`Added "${created.name}" to your wardrobe!`, 'success');
     return created;
   };
@@ -752,6 +865,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateClothingItem = async (item: ClothingItem) => {
     const updated = await api.wardrobe.update(item.id, item);
     setWardrobe((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    if (currentUser) {
+      recommendationCache.invalidateUser(currentUser.id);
+    }
     showToast(`Updated "${updated.name}"`, 'success');
   };
 
@@ -761,6 +877,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setWardrobe((prev) => prev.filter((i) => i.id !== id));
     if (currentUser) {
       setCurrentUserState({ ...currentUser, wardrobeCount: Math.max(0, (currentUser.wardrobeCount || 1) - 1) });
+      recommendationCache.invalidateUser(currentUser.id);
     }
     showToast(`Removed "${itemToDelete?.name || 'Item'}" from wardrobe`, 'info');
   };
@@ -986,13 +1103,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return followingIds.includes(userId);
   };
 
-  // Daily fit actions (feedback persisted in Neon; wear counts updated server-side)
+  // Daily fit actions (feedback persisted in Neon; wear counts and laundry updated server-side)
   const wearDailyFit = async () => {
     if (!dailyFit) return;
-    await api.recommendations.sendFeedback(dailyFit.id, 'wear');
-    setDailyFit((prev) => (prev ? { ...prev, wornStatus: 'worn' as const } : prev));
+    try {
+      const wearRes = await api.laundry.recordWear({
+        outfit_id: dailyFit.outfit?.id,
+        date: new Date().toISOString().split('T')[0],
+        source: 'daily_fit',
+      });
+      if (wearRes?.laundry_notifications?.length) {
+        wearRes.laundry_notifications.forEach((note) => showToast(note, 'info'));
+      }
+    } catch {
+      try {
+        await api.recommendations.sendFeedback(dailyFit.id, 'wear');
+      } catch {
+        // quiet fallback
+      }
+    }
+    const updated: Recommendation = { ...dailyFit, wornStatus: 'worn' as const };
+    setDailyFit(updated);
+    if (currentUser) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      recommendationCache.set(currentUser.id, todayStr, activeOccasion, updated);
+    }
     setDailyFitHistory((prev) => [
-      { ...dailyFit, wornStatus: 'worn' as const },
+      updated,
       ...prev.filter((h) => h.id !== dailyFit.id),
     ]);
     // Re-fetch wardrobe so server-side wear_count increments are reflected.
@@ -1094,10 +1231,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         notifications,
         unreadNotifsCount,
         dailyFit,
+        setDailyFit,
         dailyFitHistory,
         dailyFitError,
         isGeneratingDailyFit,
         generateDailyFit,
+        activeOccasion,
+        setActiveOccasion,
+        loadActiveDailyFit,
+        regenerateDailyFit,
         weather,
         weatherStatus,
         isWeatherLoading,

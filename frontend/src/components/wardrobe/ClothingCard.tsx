@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Edit3, Sparkles } from 'lucide-react';
+import { Trash2, Edit3, Sparkles, Shirt, RotateCcw, Check, Ban } from 'lucide-react';
 import { ClothingItem } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../../utils/imageUrl';
 import { useAsyncLock } from '../../hooks/useAsyncLock';
+import { api } from '../../services/api';
 
 interface ClothingCardProps {
   item: ClothingItem;
@@ -13,8 +14,38 @@ interface ClothingCardProps {
 
 export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
   const navigate = useNavigate();
-  const { deleteClothingItem } = useApp();
+  const { deleteClothingItem, refreshData, showToast } = useApp();
   const { execute: runDelete, isLocked: isDeleting } = useAsyncLock();
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
+  const laundryStatus = item.laundryStatus || item.laundry_status || 'clean';
+  const trackLaundry = item.trackLaundry !== false && item.track_laundry !== false;
+  const wearCount = item.wearCountSinceWash ?? item.wear_count_since_wash ?? 0;
+  const maxWears = item.maxWearsOverride || item.max_wears_override || 2;
+  const availableFrom = item.availableFrom || item.available_from;
+  let returnDayStr = '';
+  if (availableFrom) {
+    try {
+      returnDayStr = new Date(availableFrom).toLocaleDateString(undefined, { weekday: 'short' });
+    } catch {}
+  }
+
+  const handleLaundryAction = async (e: React.MouseEvent, action: 'wash_now' | 'send_to_laundry' | 'mark_unavailable' | 'restore') => {
+    e.stopPropagation();
+    setIsActionLoading(true);
+    try {
+      await api.laundry.itemAction(item.id, action);
+      if (action === 'wash_now') showToast(`Marked "${item.name}" as washed clean.`, 'success');
+      else if (action === 'send_to_laundry') showToast(`Sent "${item.name}" to laundry.`, 'info');
+      else if (action === 'mark_unavailable') showToast(`Marked "${item.name}" as unavailable.`, 'info');
+      else if (action === 'restore') showToast(`Restored "${item.name}" to clean status.`, 'success');
+      await refreshData();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update laundry status', 'info');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,10 +103,26 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
           </span>
         )}
 
-        {/* Times Worn Badge */}
-        <span className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded">
-          {item.timesWorn || 0} wears
-        </span>
+        {/* Laundry & Wear Badges */}
+        {laundryStatus === 'in_laundry' ? (
+          <span className="absolute top-2.5 right-2.5 bg-amber-600/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+            In Laundry {returnDayStr ? `(Back ${returnDayStr})` : ''}
+          </span>
+        ) : laundryStatus === 'unavailable' ? (
+          <span className="absolute top-2.5 right-2.5 bg-zinc-700/95 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+            Unavailable
+          </span>
+        ) : trackLaundry ? (
+          <span className={`absolute top-2.5 right-2.5 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm ${
+            wearCount >= maxWears - 1 ? 'bg-amber-600/90' : 'bg-black/70'
+          }`}>
+            worn {wearCount} of {maxWears}
+          </span>
+        ) : (
+          <span className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+            {item.timesWorn || 0} wears
+          </span>
+        )}
 
         {/* AI Catalog Cut Badge */}
         {(item.isProcessedAvailable || item.image?.includes('/image/processed') || item.preferredImageUrl?.includes('/image/processed')) && (
@@ -86,7 +133,48 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
         )}
 
         {/* Quick action overlay */}
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2.5">
+          {/* Quick Laundry Status Actions */}
+          <div className="flex gap-1 flex-wrap">
+            {laundryStatus === 'clean' ? (
+              <>
+                <button
+                  onClick={(e) => handleLaundryAction(e, 'wash_now')}
+                  disabled={isActionLoading}
+                  className="px-2 py-1 text-[10px] font-bold bg-white/90 hover:bg-white text-zinc-900 rounded shadow backdrop-blur-sm transition-colors"
+                  title="Mark washed (reset wears to 0)"
+                >
+                  Mark washed
+                </button>
+                <button
+                  onClick={(e) => handleLaundryAction(e, 'send_to_laundry')}
+                  disabled={isActionLoading}
+                  className="px-2 py-1 text-[10px] font-bold bg-amber-500/90 hover:bg-amber-500 text-white rounded shadow backdrop-blur-sm transition-colors"
+                  title="Send to laundry now"
+                >
+                  Send to laundry
+                </button>
+                <button
+                  onClick={(e) => handleLaundryAction(e, 'mark_unavailable')}
+                  disabled={isActionLoading}
+                  className="px-2 py-1 text-[10px] font-bold bg-zinc-800/90 hover:bg-zinc-800 text-zinc-200 rounded shadow backdrop-blur-sm transition-colors"
+                  title="Mark unavailable (dry clean, lent, damaged)"
+                >
+                  Unavailable
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={(e) => handleLaundryAction(e, 'restore')}
+                disabled={isActionLoading}
+                className="px-2 py-1 text-[10px] font-bold bg-emerald-600/90 hover:bg-emerald-600 text-white rounded shadow backdrop-blur-sm transition-colors"
+                title="Restore as clean"
+              >
+                Mark Clean / Restore
+              </button>
+            )}
+          </div>
+
           <div className="flex gap-1.5 ml-auto">
             {onEdit && (
               <button

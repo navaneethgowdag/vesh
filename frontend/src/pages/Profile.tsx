@@ -21,6 +21,7 @@ import { Button } from '../components/ui/Button';
 import { PostCard } from '../components/feed/PostCard';
 import { EditProfileModal } from '../components/profile/EditProfileModal';
 import { UserListModal } from '../components/social/UserListModal';
+import { StylingProfileManager } from '../components/profile/StylingProfileManager';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
@@ -32,7 +33,7 @@ export const Profile: React.FC = () => {
   const currentUser = useCurrentUser();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'Posts' | 'Moments' | 'Outfits' | 'Saved' | 'Collections'>('Posts');
+  const [activeTab, setActiveTab] = useState<'Styling' | 'Posts' | 'Moments' | 'Outfits' | 'Saved' | 'Collections'>('Styling');
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [userListModalOpen, setUserListModalOpen] = useState(false);
   const [userListInitialTab, setUserListInitialTab] = useState<'followers' | 'following'>('followers');
@@ -282,6 +283,7 @@ export const Profile: React.FC = () => {
         {/* Profile Tabs Navigation */}
         <div className="flex items-center gap-6 border-b border-zinc-200 dark:border-zinc-800 mb-6 overflow-x-auto hide-scrollbar">
           {[
+            { id: 'Styling', label: 'Styling Profile & Routine', count: undefined, icon: Sparkles },
             { id: 'Posts', label: 'Lookbook Posts', count: myPosts.length, icon: Grid },
             { id: 'Moments', label: '24h Moments', count: myMoments.length, icon: Clock },
             { id: 'Saved', label: 'Saved Looks', count: posts.filter((p) => p.isSaved).length, icon: Bookmark },
@@ -303,7 +305,9 @@ export const Profile: React.FC = () => {
               >
                 <Icon className={`w-4 h-4 ${isCurrent ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500'}`} />
                 <span>{tab.label}</span>
-                <span className="text-xs text-zinc-400 ml-0.5">({tab.count})</span>
+                {typeof tab.count === 'number' && (
+                  <span className="text-xs text-zinc-400 ml-0.5">({tab.count})</span>
+                )}
                 {isCurrent && (
                   <div className="absolute bottom-0 inset-x-0 h-0.5 bg-zinc-900 dark:bg-zinc-100" />
                 )}
@@ -311,6 +315,13 @@ export const Profile: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Tab 0: Dedicated Styling Profile & Weekly Routine */}
+        {activeTab === 'Styling' && (
+          <div className="mb-12">
+            <StylingProfileManager />
+          </div>
+        )}
 
         {/* Tab 1: Lookbook Posts */}
         {activeTab === 'Posts' && (

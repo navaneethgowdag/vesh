@@ -41,12 +41,18 @@ class WardrobeGapService:
         """
         user_key = str(user_id)
 
-        # 1. Fetch user's active clothing items
-        items = (
+        # 1. Fetch user's active accepted clothing items (excluding pending AI review items)
+        raw_items = (
             self.db.query(Clothing)
             .filter(Clothing.user_id == user_id)
             .all()
         )
+        items = [
+            i for i in raw_items
+            if not getattr(i, "review_required", False)
+            and getattr(i, "is_finalized", True) is not False
+            and getattr(i, "processing_status", "") != "failed"
+        ]
         item_count = len(items)
 
         # 2. Check cache

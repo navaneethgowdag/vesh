@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
@@ -68,6 +68,16 @@ class ClothingResponse(ClothingBase):
     sleeve_type: Optional[str] = None
     neckline: Optional[str] = None
     category_group: Optional[str] = None
+
+    # Laundry & Wear Tracking
+    wear_count_since_wash: int = 0
+    last_worn_on: Optional[date] = None
+    laundry_status: str = "clean"
+    laundry_started_on: Optional[date] = None
+    available_from: Optional[date] = None
+    max_wears_override: Optional[int] = None
+    wash_days_override: Optional[int] = None
+    track_laundry: bool = True
 
     model_config = ConfigDict(from_attributes=True)
 

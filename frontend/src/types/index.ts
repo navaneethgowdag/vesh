@@ -110,6 +110,36 @@ export interface ClothingItem {
   sleeveType?: string;
   neckline?: string;
   categoryGroup?: string;
+  wearCountSinceWash?: number;
+  wear_count_since_wash?: number;
+  lastWornOn?: string;
+  last_worn_on?: string;
+  laundryStatus?: 'clean' | 'in_laundry' | 'unavailable';
+  laundry_status?: 'clean' | 'in_laundry' | 'unavailable';
+  laundryStartedOn?: string;
+  laundry_started_on?: string;
+  availableFrom?: string;
+  available_from?: string;
+  maxWearsOverride?: number | null;
+  max_wears_override?: number | null;
+  washDaysOverride?: number | null;
+  wash_days_override?: number | null;
+  trackLaundry?: boolean;
+  track_laundry?: boolean;
+}
+
+export interface CategoryLaundryOverride {
+  max_wears?: number;
+  wash_days?: number;
+  track_laundry?: boolean;
+}
+
+export interface LaundrySettings {
+  default_max_wears: number;
+  default_wash_days: number;
+  category_overrides: Record<string, CategoryLaundryOverride>;
+  same_item_cooldown_days: number;
+  auto_return_from_laundry: boolean;
 }
 
 export type ProcessingStage =
@@ -394,6 +424,27 @@ export interface Recommendation {
   reasons: string[];
   recommendedAt: string;
   wornStatus?: 'suggested' | 'worn' | 'skipped';
+  status?: 'active' | 'no_items' | 'partial_outfit' | 'stale';
+  emptyReason?: {
+    message: string;
+    action?: string;
+    earliest_return?: string;
+    missing_slots?: string[];
+    filter_counts?: Record<string, any>;
+  };
+  empty_reason?: {
+    message: string;
+    action?: string;
+    earliest_return?: string;
+    missing_slots?: string[];
+    filter_counts?: Record<string, any>;
+  };
+  canWear?: boolean;
+  can_wear?: boolean;
+  missingSlots?: string[];
+  missing_slots?: string[];
+  filterCounts?: Record<string, any>;
+  filter_counts?: Record<string, any>;
 }
 
 export interface Notification {

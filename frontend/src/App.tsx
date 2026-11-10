@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, Component, ErrorInfo, ReactNode } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth/ProtectedRoute';
@@ -30,6 +30,7 @@ const Inbox = lazy(() => import('./pages/Inbox').then((m) => ({ default: m.Inbox
 const CommunityDetail = lazy(() => import('./pages/CommunityDetail').then((m) => ({ default: m.CommunityDetail })));
 const WeeklyPlanner = lazy(() => import('./pages/WeeklyPlanner').then((m) => ({ default: m.WeeklyPlanner })));
 const WardrobeGap = lazy(() => import('./pages/WardrobeGap').then((m) => ({ default: m.WardrobeGap })));
+const WardrobeInsights = lazy(() => import('./pages/WardrobeInsights').then((m) => ({ default: m.WardrobeInsights })));
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -132,19 +133,11 @@ export const App: React.FC = () => {
                 />
                 <Route
                   path="/create"
-                  element={
-                    <ProtectedRoute>
-                      <CreatePost />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/wardrobe" replace />}
                 />
                 <Route
                   path="/explore"
-                  element={
-                    <ProtectedRoute>
-                      <Explore />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/home" replace />}
                 />
                 <Route
                   path="/daily-fit"
@@ -197,28 +190,24 @@ export const App: React.FC = () => {
                   }
                 />
                 <Route
-                  path="/communities/:slug"
+                  path="/insights"
                   element={
                     <ProtectedRoute>
-                      <CommunityDetail />
+                      <WardrobeInsights />
                     </ProtectedRoute>
                   }
+                />
+                <Route
+                  path="/communities/:slug"
+                  element={<Navigate to="/home" replace />}
                 />
                 <Route
                   path="/community/:slug"
-                  element={
-                    <ProtectedRoute>
-                      <CommunityDetail />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/home" replace />}
                 />
                 <Route
                   path="/inbox"
-                  element={
-                    <ProtectedRoute>
-                      <Inbox />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/home" replace />}
                 />
                 <Route
                   path="/wardrobe/:id"
@@ -230,11 +219,7 @@ export const App: React.FC = () => {
                 />
                 <Route
                   path="/saved"
-                  element={
-                    <ProtectedRoute>
-                      <Saved />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/daily-fit?tab=saved" replace />}
                 />
                 <Route
                   path="/notifications"

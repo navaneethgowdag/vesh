@@ -150,6 +150,12 @@ class Settings(BaseSettings):
     AI_ENABLE_ML: bool = True
     AI_ENABLE_IMAGE_ANALYSIS: bool = True
     
+    # Feature flags for non-required / deferred modules
+    ENABLE_COMMUNITIES: bool = False
+    ENABLE_MESSAGES: bool = False
+    ENABLE_EXPLORE: bool = False
+    ENABLE_TRENDING: bool = False
+    
     # Google OAuth 2.0 / OpenID Connect
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

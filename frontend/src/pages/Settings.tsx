@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Check,
   TrendingUp,
+  Shirt,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
@@ -21,7 +22,7 @@ import { useApp, useCurrentUser } from '../context/AppContext';
 import { ProfilePhotoUploader } from '../components/profile/ProfilePhotoUploader';
 import { AVATAR_OPTIONS, AvatarStyle } from '../utils/avatarHelper';
 import { useTheme } from '../context/ThemeContext';
-import { ClothingColor, StyleVibe, UserSettings, LearnedPreferences } from '../types';
+import { ClothingColor, StyleVibe, UserSettings, LearnedPreferences, LaundrySettings } from '../types';
 import { api } from '../services/api';
 
 const STYLES_ALL: StyleVibe[] = [
@@ -54,7 +55,7 @@ export const Settings: React.FC = () => {
   const { themePreference, setThemePreference } = useTheme();
 
   const [activeTab, setActiveTab] = useState<
-    'Account' | 'Preferences' | 'Personalization' | 'Notifications' | 'Appearance' | 'Privacy'
+    'Account' | 'Preferences' | 'Laundry' | 'Personalization' | 'Notifications' | 'Appearance' | 'Privacy'
   >('Account');
 
   const [formData, setFormData] = useState<UserSettings>(userSettings);
@@ -62,6 +63,16 @@ export const Settings: React.FC = () => {
   const [learnedData, setLearnedData] = useState<LearnedPreferences | null>(null);
   const [isLoadingLearned, setIsLoadingLearned] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  // Laundry Settings State
+  const [laundryData, setLaundryData] = useState<LaundrySettings>({
+    default_max_wears: 2,
+    default_wash_days: 4,
+    category_overrides: {},
+    same_item_cooldown_days: 1,
+    auto_return_from_laundry: true,
+  });
+  const [isLoadingLaundry, setIsLoadingLaundry] = useState(false);
 
   // Derived normalized confidence and feedback metrics for AI Aesthetic Profile
   const rawConfidence = learnedData?.confidence ?? learnedData?.confidenceScore ?? 0;
@@ -94,6 +105,13 @@ export const Settings: React.FC = () => {
         .then(setLearnedData)
         .catch((err) => console.error('Failed to load learned preferences', err))
         .finally(() => setIsLoadingLearned(false));
+    } else if (activeTab === 'Laundry') {
+      setIsLoadingLaundry(true);
+      api.laundry
+        .getSettings()
+        .then(setLaundryData)
+        .catch((err) => console.error('Failed to load laundry settings', err))
+        .finally(() => setIsLoadingLaundry(false));
     }
   }, [activeTab]);
 
@@ -168,13 +186,30 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleResetLaundryDefaults = () => {
+    setLaundryData({
+      default_max_wears: 2,
+      default_wash_days: 4,
+      category_overrides: {},
+      same_item_cooldown_days: 1,
+      auto_return_from_laundry: true,
+    });
+    showToast('Reset laundry parameters to default rules. Click "Save Changes" to apply.', 'info');
+  };
+
   const handleSaveAll = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await updateUserSettings(formData);
-    } catch {
-      // Surfaced via toast
+      if (activeTab === 'Laundry') {
+        const saved = await api.laundry.updateSettings(laundryData);
+        setLaundryData(saved);
+        showToast('Laundry and wear rules saved! Active recommendations marked stale.', 'success');
+      } else {
+        await updateUserSettings(formData);
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to save settings', 'info');
     } finally {
       setIsSaving(false);
     }
@@ -202,6 +237,7 @@ export const Settings: React.FC = () => {
             {[
               { id: 'Account', label: 'Account & Identity', icon: User },
               { id: 'Preferences', label: 'Style & Palette', icon: Sliders },
+              { id: 'Laundry', label: 'Laundry & Wear Rules', icon: Shirt },
               { id: 'Personalization', label: 'Adaptive AI Engine', icon: Sparkles },
               { id: 'Notifications', label: 'Notifications', icon: Bell },
               { id: 'Appearance', label: 'Theme & Appearance', icon: SunMoon },
@@ -390,7 +426,240 @@ export const Settings: React.FC = () => {
                 </div>
               )}
 
-              {/* 3. PERSONALIZATION & CONTINUOUS LEARNING ENGINE TAB */}
+              {/* 3. LAUNDRY & WEAR RULES TAB */}
+              {activeTab === 'Laundry' && (
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Shirt className="w-5 h-5 text-indigo-500" />
+                        Laundry & Wear Rules
+                      </h2>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Define wear limits before washing, clean turnaround durations, and category rules.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetLaundryDefaults}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset to Defaults</span>
+                    </button>
+                  </div>
+
+                  {/* Global Timing Card */}
+                  <div className="p-4 sm:p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-5">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                      Global Wear & Laundry Timing
+                    </h3>
+
+                    {/* Global Max Wears */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          Default Wear Limit (wears before laundry)
+                        </label>
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-700 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-600">
+                          {laundryData.default_max_wears} {laundryData.default_max_wears === 1 ? 'wear' : 'wears'}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={30}
+                        value={laundryData.default_max_wears}
+                        onChange={(e) =>
+                          setLaundryData({ ...laundryData, default_max_wears: parseInt(e.target.value) || 1 })
+                        }
+                        className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-zinc-100"
+                      />
+                      <div className="flex justify-between text-[10px] text-zinc-400 mt-0.5">
+                        <span>1 wear (wash immediately)</span>
+                        <span>Default: 2 wears</span>
+                        <span>30 wears</span>
+                      </div>
+                    </div>
+
+                    {/* Global Wash Days */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          Laundry Turnaround Duration (unavailable days)
+                        </label>
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-700 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-600">
+                          {laundryData.default_wash_days} {laundryData.default_wash_days === 1 ? 'day' : 'days'}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={14}
+                        value={laundryData.default_wash_days}
+                        onChange={(e) =>
+                          setLaundryData({ ...laundryData, default_wash_days: parseInt(e.target.value) || 0 })
+                        }
+                        className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-zinc-100"
+                      />
+                      <div className="flex justify-between text-[10px] text-zinc-400 mt-0.5">
+                        <span>0 days (same-day wash)</span>
+                        <span>Default: 4 days</span>
+                        <span>14 days</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                        Exact day rule: reaching the limit on Monday with 4 wash days keeps the item unavailable Tue–Fri, returning clean Saturday.
+                      </p>
+                    </div>
+
+                    {/* Cooldown Days */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          Same-Item Rest Cooldown (soft penalty for consecutive wearing)
+                        </label>
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-700 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-600">
+                          {laundryData.same_item_cooldown_days} {laundryData.same_item_cooldown_days === 1 ? 'day' : 'days'}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={7}
+                        value={laundryData.same_item_cooldown_days}
+                        onChange={(e) =>
+                          setLaundryData({ ...laundryData, same_item_cooldown_days: parseInt(e.target.value) || 0 })
+                        }
+                        className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-zinc-100"
+                      />
+                    </div>
+
+                    {/* Auto-return toggle */}
+                    <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                      <div>
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 block">
+                          Automatic Return from Laundry
+                        </span>
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          Automatically mark clothes clean once their turnaround date arrives.
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={laundryData.auto_return_from_laundry}
+                          onChange={(e) =>
+                            setLaundryData({ ...laundryData, auto_return_from_laundry: e.target.checked })
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-zinc-900 dark:peer-checked:bg-zinc-100 dark:peer-checked:after:bg-zinc-900" />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Category Overrides Table */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                        Category Overrides
+                      </h3>
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Resolution: Item Override &gt; Category Override &gt; Global Default
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 uppercase tracking-wider font-semibold">
+                          <tr>
+                            <th className="px-3.5 py-2.5">Category</th>
+                            <th className="px-3.5 py-2.5">Track for Laundry</th>
+                            <th className="px-3.5 py-2.5">Max Wears</th>
+                            <th className="px-3.5 py-2.5">Wash Days</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                          {[
+                            { key: 'tops', label: 'Tops & Shirts', defaultTrack: true },
+                            { key: 'bottoms', label: 'Bottoms & Jeans', defaultTrack: true },
+                            { key: 'outerwear', label: 'Outerwear & Blazers', defaultTrack: true },
+                            { key: 'footwear', label: 'Footwear & Shoes', defaultTrack: false },
+                            { key: 'accessories', label: 'Bags & Accessories', defaultTrack: false },
+                          ].map((cat) => {
+                            const current = laundryData.category_overrides[cat.key] || {};
+                            const isTracked = current.track_laundry !== undefined ? current.track_laundry : cat.defaultTrack;
+                            const wearsVal = current.max_wears !== undefined ? current.max_wears : '';
+                            const washDaysVal = current.wash_days !== undefined ? current.wash_days : '';
+
+                            const updateCat = (field: string, val: any) => {
+                              const nextOverrides = { ...laundryData.category_overrides };
+                              const catObj = { ...(nextOverrides[cat.key] || {}) };
+                              if (val === '' || val === undefined) {
+                                delete (catObj as any)[field];
+                              } else {
+                                (catObj as any)[field] = val;
+                              }
+                              if (Object.keys(catObj).length === 0) {
+                                delete nextOverrides[cat.key];
+                              } else {
+                                nextOverrides[cat.key] = catObj;
+                              }
+                              setLaundryData({ ...laundryData, category_overrides: nextOverrides });
+                            };
+
+                            return (
+                              <tr key={cat.key} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                                <td className="px-3.5 py-2.5 font-medium text-zinc-900 dark:text-zinc-100">
+                                  {cat.label}
+                                </td>
+                                <td className="px-3.5 py-2.5">
+                                  <input
+                                    type="checkbox"
+                                    checked={isTracked}
+                                    onChange={(e) => updateCat('track_laundry', e.target.checked)}
+                                    className="w-4 h-4 rounded text-zinc-900 focus:ring-zinc-900 border-zinc-300 dark:border-zinc-700"
+                                  />
+                                </td>
+                                <td className="px-3.5 py-2.5">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={30}
+                                    placeholder={`${laundryData.default_max_wears} (global)`}
+                                    value={wearsVal}
+                                    disabled={!isTracked}
+                                    onChange={(e) =>
+                                      updateCat('max_wears', e.target.value === '' ? undefined : parseInt(e.target.value))
+                                    }
+                                    className="w-24 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 disabled:opacity-40"
+                                  />
+                                </td>
+                                <td className="px-3.5 py-2.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={14}
+                                    placeholder={`${laundryData.default_wash_days} (global)`}
+                                    value={washDaysVal}
+                                    disabled={!isTracked}
+                                    onChange={(e) =>
+                                      updateCat('wash_days', e.target.value === '' ? undefined : parseInt(e.target.value))
+                                    }
+                                    className="w-24 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 disabled:opacity-40"
+                                  />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. PERSONALIZATION & CONTINUOUS LEARNING ENGINE TAB */}
               {activeTab === 'Personalization' && (
                 <div className="space-y-6">
                   <div>
