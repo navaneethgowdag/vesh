@@ -296,11 +296,29 @@ OCCASION_PROFILES: Dict[str, Dict[str, Any]] = {
 
 
 def get_occasion_profile(occasion_name: str) -> Dict[str, Any]:
+    """
+    Returns the occasion profile dict for any occasion string, alias, or legacy name.
+    Uses canonical taxonomy from app.core.taxonomy.
+    """
+    if not occasion_name:
+        return OCCASION_PROFILES["Everyday"]
+
+    # 1. First check if it matches in canonical taxonomy
+    try:
+        from app.core.taxonomy import get_occasion_profile_dict
+        return get_occasion_profile_dict(occasion_name)
+    except Exception:
+        pass
+
     norm = occasion_name.strip()
-    # Match exact or case-insensitive
+    # 2. Case-insensitive exact match in existing dictionary
     for k, v in OCCASION_PROFILES.items():
         if k.lower() == norm.lower():
             return v
 
-    # Fallback to Everyday
-    return OCCASION_PROFILES["Everyday"]
+    # Fallback to Everyday only if explicitly 'general' or 'everyday'
+    if norm.lower() in ("everyday", "general", "daily", "any"):
+        return OCCASION_PROFILES["Everyday"]
+
+    # Raise ValueError for unknown occasions so callers know it's unsupported
+    raise ValueError(f"Unsupported occasion: '{occasion_name}'")

@@ -50,16 +50,24 @@ class Clothing(Base):
         return getattr(self, "_laundry_dict", {})
 
     def _update_laundry_data(self, key: str, val: Any):
-        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+        if not self.analysis:
+            from app.models.clothing_analysis import ClothingAnalysis
+            self.analysis = ClothingAnalysis(
+                clothing_id=self.id,
+                feature_vector={"laundry": {key: val}},
+            )
+        elif isinstance(self.analysis.feature_vector, dict):
             fv = dict(self.analysis.feature_vector)
             laundry = dict(fv.get("laundry", {}))
             laundry[key] = val
             fv["laundry"] = laundry
             self.analysis.feature_vector = fv
         else:
-            if not hasattr(self, "_laundry_dict"):
-                self._laundry_dict = {}
-            self._laundry_dict[key] = val
+            self.analysis.feature_vector = {"laundry": {key: val}}
+
+        if not hasattr(self, "_laundry_dict"):
+            self._laundry_dict = {}
+        self._laundry_dict[key] = val
 
     @property
     def wear_count_since_wash(self) -> int:
@@ -233,6 +241,206 @@ class Clothing(Base):
             val = self.analysis.feature_vector.get("formality")
             if val is not None:
                 return float(val)
+        val = self.vault_data.get("formality_score")
+        if val is not None:
+            return float(val)
+        return None
+
+    @formality.setter
+    def formality(self, val: Optional[float]):
+        if val is not None:
+            self._update_vault_data("formality_score", float(val))
+            if self.analysis and isinstance(self.analysis.feature_vector, dict):
+                fv = dict(self.analysis.feature_vector)
+                fv["formality"] = float(val)
+                self.analysis.feature_vector = fv
+
+    # Occasion Vault & Wardrobe Group properties
+    @property
+    def vault_data(self) -> dict:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            return self.analysis.feature_vector.get("vault", {})
+        return getattr(self, "_vault_dict", {})
+
+    def _update_vault_data(self, key: str, val: Any):
+        if not self.analysis:
+            from app.models.clothing_analysis import ClothingAnalysis
+            self.analysis = ClothingAnalysis(
+                clothing_id=self.id,
+                feature_vector={"vault": {key: val}},
+            )
+        elif isinstance(self.analysis.feature_vector, dict):
+            fv = dict(self.analysis.feature_vector)
+            vault = dict(fv.get("vault", {}))
+            vault[key] = val
+            fv["vault"] = vault
+            self.analysis.feature_vector = fv
+        else:
+            self.analysis.feature_vector = {"vault": {key: val}}
+
+        if not hasattr(self, "_vault_dict"):
+            self._vault_dict = {}
+        self._vault_dict[key] = val
+
+    @property
+    def wear_tier(self) -> str:
+        val = self.vault_data.get("wear_tier")
+        if val:
+            return str(val)
+        name_l = (self.name or "").lower()
+        sub_l = (self.subcategory or "").lower()
+        cat_l = (self.category or "").lower()
+        occ_l = (self.occasion or "").lower()
+        if any(w in name_l or w in sub_l or w in cat_l for w in ["tuxedo", "ballgown", "sherwani", "lehenga", "saree", "bridal"]):
+            return "luxury_special"
+        if any(w in name_l or w in sub_l or w in cat_l for w in ["blazer", "suit", "oxford", "derby"]):
+            return "elevated"
+        if "formal" in occ_l or "wedding" in occ_l:
+            return "elevated"
+        return "daily"
+
+    @wear_tier.setter
+    def wear_tier(self, val: str):
+        self._update_vault_data("wear_tier", str(val))
+
+    @property
+    def is_luxury(self) -> bool:
+        if "is_luxury" in self.vault_data:
+            return bool(self.vault_data["is_luxury"])
+        return self.wear_tier == "luxury_special"
+
+    @is_luxury.setter
+    def is_luxury(self, val: bool):
+        self._update_vault_data("is_luxury", bool(val))
+
+    @property
+    def wardrobe_groups(self) -> List[str]:
+        val = self.vault_data.get("wardrobe_groups")
+        if isinstance(val, list) and val:
+            return val
+        tier = self.wear_tier
+        if tier == "luxury_special":
+            return ["luxury_special"]
+        occ_l = (self.occasion or "").lower()
+        if "party" in occ_l or "date" in occ_l:
+            return ["party_evening"]
+        return ["daily_work"]
+
+    @wardrobe_groups.setter
+    def wardrobe_groups(self, val: List[str]):
+        if isinstance(val, (list, set, tuple)):
+            clean_groups = list({str(g).strip().lower() for g in val if str(g).strip()})
+            self._update_vault_data("wardrobe_groups", clean_groups)
+
+    @property
+    def suitable_occasions(self) -> List[str]:
+        val = self.vault_data.get("suitable_occasions")
+        if isinstance(val, list):
+            return val
+        return []
+
+    @suitable_occasions.setter
+    def suitable_occasions(self, val: List[str]):
+        if isinstance(val, (list, set, tuple)):
+            clean = list({str(o).strip().lower() for o in val if str(o).strip()})
+            self._update_vault_data("suitable_occasions", clean)
+
+    @property
+    def purchase_price(self) -> Optional[float]:
+        val = self.vault_data.get("purchase_price")
+        if val is not None:
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+        return None
+
+    @purchase_price.setter
+    def purchase_price(self, val: Optional[float]):
+        self._update_vault_data("purchase_price", float(val) if val is not None else None)
+
+    @property
+    def purchase_date(self) -> Optional[str]:
+        return self.vault_data.get("purchase_date")
+
+    @purchase_date.setter
+    def purchase_date(self, val: Optional[Any]):
+        if val is None:
+            self._update_vault_data("purchase_date", None)
+        else:
+            self._update_vault_data("purchase_date", val.isoformat() if hasattr(val, "isoformat") else str(val))
+
+    @property
+    def care_type(self) -> str:
+        val = self.vault_data.get("care_type")
+        if val:
+            return str(val)
+        sub_l = (self.subcategory or "").lower()
+        name_l = (self.name or "").lower()
+        mat_l = (self.material or "").lower()
+        if any(w in mat_l or w in sub_l or w in name_l for w in ["silk", "wool", "cashmere", "leather", "suede", "suit", "blazer", "tuxedo", "sherwani", "lehenga"]):
+            return "dry_clean_only"
+        return "machine_wash"
+
+    @care_type.setter
+    def care_type(self, val: str):
+        self._update_vault_data("care_type", str(val))
+
+    @property
+    def special_use_restriction(self) -> str:
+        val = self.vault_data.get("special_use_restriction")
+        if val:
+            return str(val)
+        if self.wear_tier == "luxury_special":
+            return "special_occasions_only"
+        return "none"
+
+    @special_use_restriction.setter
+    def special_use_restriction(self, val: str):
+        self._update_vault_data("special_use_restriction", str(val))
+
+    @property
+    def reserved_status(self) -> str:
+        return self.vault_data.get("reserved_status", "available")
+
+    @reserved_status.setter
+    def reserved_status(self, val: str):
+        self._update_vault_data("reserved_status", str(val))
+
+    @property
+    def notes(self) -> Optional[str]:
+        return self.vault_data.get("notes")
+
+    @notes.setter
+    def notes(self, val: Optional[str]):
+        self._update_vault_data("notes", str(val) if val else None)
+
+    @property
+    def provenance(self) -> Dict[str, str]:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            return self.analysis.feature_vector.get("provenance", {})
+        return getattr(self, "_provenance_dict", {})
+
+    def set_provenance(self, attribute_name: str, source: str):
+        """source: 'ai_predicted' | 'user_confirmed' | 'manually_entered' | 'system_derived'"""
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            fv = dict(self.analysis.feature_vector)
+            prov = dict(fv.get("provenance", {}))
+            prov[attribute_name] = source
+            fv["provenance"] = prov
+            self.analysis.feature_vector = fv
+        else:
+            if not hasattr(self, "_provenance_dict"):
+                self._provenance_dict = {}
+            self._provenance_dict[attribute_name] = source
+
+    @property
+    def cost_per_wear(self) -> Optional[float]:
+        """Calculates cost per wear if purchase price is known."""
+        price = self.purchase_price
+        if price is not None and price > 0:
+            count = max(1, self.wear_count)
+            return round(price / count, 2)
         return None
 
     @property

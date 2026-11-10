@@ -35,16 +35,9 @@ import {
 } from '../types';
 import { api } from '../services/api';
 import { cn } from '../utils/cn';
+import { CANONICAL_OCCASION_GROUPS } from '../constants/occasions';
 
-const OCCASIONS: Occasion[] = [
-  'Casual Daily',
-  'Work & Office',
-  'Date Night',
-  'Weekend Outing',
-  'Party & Evening',
-  'Travel & Airport',
-  'Formal Event',
-];
+const OCCASIONS: string[] = CANONICAL_OCCASION_GROUPS.flatMap((g) => g.occasions.map((o) => o.name));
 
 const DRESS_CODES = [
   'Casual',
@@ -1180,10 +1173,14 @@ export const Calendar: React.FC = () => {
                     onChange={(e) => setEditOccasion(e.target.value)}
                     className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
                   >
-                    {OCCASIONS.map((occ) => (
-                      <option key={occ} value={occ}>
-                        {occ}
-                      </option>
+                    {CANONICAL_OCCASION_GROUPS.map((grp) => (
+                      <optgroup key={grp.categoryKey} label={grp.name}>
+                        {grp.occasions.map((occ) => (
+                          <option key={occ.id} value={occ.name}>
+                            {occ.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
@@ -1283,10 +1280,14 @@ export const Calendar: React.FC = () => {
                     onChange={(e) => setPlanOccasion(e.target.value)}
                     className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-2.5 text-base sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer"
                   >
-                    {OCCASIONS.map((occ) => (
-                      <option key={occ} value={occ}>
-                        {occ}
-                      </option>
+                    {CANONICAL_OCCASION_GROUPS.map((grp) => (
+                      <optgroup key={grp.categoryKey} label={grp.name}>
+                        {grp.occasions.map((occ) => (
+                          <option key={occ.id} value={occ.name}>
+                            {occ.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>

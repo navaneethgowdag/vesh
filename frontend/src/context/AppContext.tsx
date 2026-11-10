@@ -50,8 +50,15 @@ interface AppContextType {
   generateDailyFit: (targetVariation?: number, targetOccasion?: Occasion) => Promise<Recommendation | null>;
   activeOccasion: string;
   setActiveOccasion: (occ: string) => Promise<Recommendation | null>;
-  loadActiveDailyFit: (targetOccasion?: string) => Promise<Recommendation | null>;
-  regenerateDailyFit: (targetOccasion?: string, excludedItemIds?: string[]) => Promise<Recommendation | null>;
+  loadActiveDailyFit: (
+    targetOccasion?: string,
+    options?: { includeLuxury?: boolean; wardrobeGroup?: string }
+  ) => Promise<Recommendation | null>;
+  regenerateDailyFit: (
+    targetOccasion?: string,
+    excludedItemIds?: string[],
+    options?: { includeLuxury?: boolean; wardrobeGroup?: string }
+  ) => Promise<Recommendation | null>;
   weather: Weather;
   weatherStatus: WeatherStatus;
   isWeatherLoading: boolean;
@@ -682,7 +689,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Load or restore active recommendation for a given occasion & target date
   const loadActiveDailyFit = useCallback(
-    async (targetOccasion?: string): Promise<Recommendation | null> => {
+    async (
+      targetOccasion?: string,
+      options?: { includeLuxury?: boolean; wardrobeGroup?: string }
+    ): Promise<Recommendation | null> => {
       if (!currentUser || wardrobe.length === 0) {
         setDailyFit(null);
         return null;
@@ -690,24 +700,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const occ = targetOccasion || activeOccasion || 'Everyday';
       const todayStr = new Date().toISOString().split('T')[0];
 
-      // 1. Instant Cache check
-      const cached = recommendationCache.get(currentUser.id, todayStr, occ);
-      if (cached) {
-        setDailyFit(cached);
-        setActiveOccasionState(occ);
-        return cached;
+      // 1. Instant Cache check (only if default options)
+      if (!options?.includeLuxury && !options?.wardrobeGroup) {
+        const cached = recommendationCache.get(currentUser.id, todayStr, occ);
+        if (cached) {
+          setDailyFit(cached);
+          setActiveOccasionState(occ);
+          return cached;
+        }
       }
 
       setIsGeneratingDailyFit(true);
       setDailyFitError(null);
       try {
-        // 2. Check Backend Active Recommendation
-        const active = await api.recommendations.getActive(occ, todayStr);
-        if (active) {
-          recommendationCache.set(currentUser.id, todayStr, occ, active);
-          setDailyFit(active);
-          setActiveOccasionState(occ);
-          return active;
+        // 2. Check Backend Active Recommendation (if no custom options)
+        if (!options?.includeLuxury && !options?.wardrobeGroup) {
+          const active = await api.recommendations.getActive(occ, todayStr);
+          if (active) {
+            recommendationCache.set(currentUser.id, todayStr, occ, active);
+            setDailyFit(active);
+            setActiveOccasionState(occ);
+            return active;
+          }
         }
 
         // 3. Otherwise generate fresh recommendation
@@ -717,9 +731,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           occasion: occ,
           targetDate: todayStr,
           city: selectedCity.trim() || currentUser?.location?.trim() || undefined,
+          includeLuxury: options?.includeLuxury,
+          wardrobeGroup: options?.wardrobeGroup,
         });
         if (recs && recs.length > 0) {
-          recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          if (!options?.includeLuxury && !options?.wardrobeGroup) {
+            recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          }
           setDailyFit(recs[0]);
           setActiveOccasionState(occ);
           return recs[0];
@@ -745,7 +763,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
 
   const regenerateDailyFit = useCallback(
-    async (targetOccasion?: string, excludedItemIds?: string[]): Promise<Recommendation | null> => {
+    async (
+      targetOccasion?: string,
+      excludedItemIds?: string[],
+      options?: { includeLuxury?: boolean; wardrobeGroup?: string }
+    ): Promise<Recommendation | null> => {
       if (!currentUser || wardrobe.length === 0) return null;
       const occ = targetOccasion || activeOccasion || 'Everyday';
       const todayStr = new Date().toISOString().split('T')[0];
@@ -761,9 +783,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           forceRegenerate: true,
           excludedItemIds: excludedItemIds || [],
           city: selectedCity.trim() || currentUser?.location?.trim() || undefined,
+          includeLuxury: options?.includeLuxury,
+          wardrobeGroup: options?.wardrobeGroup,
         });
         if (recs && recs.length > 0) {
-          recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          if (!options?.includeLuxury && !options?.wardrobeGroup) {
+            recommendationCache.set(currentUser.id, todayStr, occ, recs[0]);
+          }
           setDailyFit(recs[0]);
           setActiveOccasionState(occ);
           showToast(`Fresh outfit curated for ${occ}!`, 'success');

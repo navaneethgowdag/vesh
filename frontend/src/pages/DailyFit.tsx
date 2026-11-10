@@ -25,10 +25,13 @@ import {
   ArrowLeftRight,
   X,
   Plus,
+  Crown,
+  ChevronDown,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { WhyThisOutfitModal } from '../components/recommendation/WhyThisOutfitModal';
 import { ShareModal } from '../components/social/ShareModal';
 import { ScheduleOutfitModal } from '../components/recommendation/ScheduleOutfitModal';
@@ -38,24 +41,26 @@ import { CalendarEvent, Recommendation, ClothingItem } from '../types';
 import { api } from '../services/api';
 import { resolveImageUrl, FALLBACK_POST_IMAGE } from '../utils/imageUrl';
 import { recommendationCache } from '../utils/recommendationCache';
+import { CANONICAL_OCCASION_GROUPS, ALL_CANONICAL_OCCASIONS } from '../constants/occasions';
 
 export const OCCASIONS_FULL_LIST = [
   'Everyday',
-  'College',
   'Office',
-  'Business meeting',
+  'Business Meeting',
   'Presentation',
-  'Casual outing',
-  'Party',
-  'Date',
+  'Casual Outing',
+  'Weekend Outing',
+  'College',
+  'Date Night',
+  'Dinner',
+  'Party & Night Out',
   'Wedding',
-  'Festival',
-  'Family gathering',
-  'Gym / Sports',
-  'Travel',
-  'Interview',
-  'Formal event',
-  'Custom occasion',
+  'Gala & Black Tie',
+  'Festival & Cultural',
+  'Family Gathering',
+  'Gym & Workout',
+  'Travel & Airport',
+  'Custom Occasion',
 ] as const;
 
 export const DailyFit: React.FC = () => {
@@ -83,6 +88,10 @@ export const DailyFit: React.FC = () => {
   const recommendation = dailyFit;
   const isGenerating = isGeneratingDailyFit;
   const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Luxury pieces inclusion toggle
+  const [includeLuxury, setIncludeLuxury] = useState<boolean>(false);
+  const [showAllOccasionsModal, setShowAllOccasionsModal] = useState<boolean>(false);
 
   // Custom occasion state
   const [customOccasionInput, setCustomOccasionInput] = useState<string>('');
@@ -161,11 +170,24 @@ export const DailyFit: React.FC = () => {
 
   // Occasion selection handler with instant caching
   const handleSelectOccasion = async (occ: string) => {
-    if (occ === 'Custom occasion') {
+    if (occ === 'Custom occasion' || occ === 'Custom Occasion') {
       setShowCustomModal(true);
       return;
     }
-    await setActiveOccasion(occ);
+    setShowAllOccasionsModal(false);
+    await loadActiveDailyFit(occ, { includeLuxury });
+  };
+
+  const handleToggleLuxury = async () => {
+    const nextVal = !includeLuxury;
+    setIncludeLuxury(nextVal);
+    showToast(
+      nextVal
+        ? 'Special & luxury pieces now eligible for curation.'
+        : 'Special & luxury pieces protected in Occasion Vault.',
+      'info'
+    );
+    await regenerateDailyFit(activeOccasion, undefined, { includeLuxury: nextVal });
   };
 
   // Custom Occasion confirm handler
@@ -178,17 +200,15 @@ export const DailyFit: React.FC = () => {
       const recs = await api.recommendations.generate({
         limit: 1,
         recommendationMode: 'occasion',
-        occasion: 'Custom occasion',
+        occasion: 'Custom Occasion',
         customOccasion: customText,
         targetDate: todayStr,
         city: weather?.city || currentUser?.location || undefined,
+        includeLuxury,
       });
       if (recs && recs.length > 0) {
-        if (currentUser) {
-          recommendationCache.set(currentUser.id, todayStr, 'Custom occasion', recs[0]);
-        }
         setDailyFit(recs[0]);
-        await setActiveOccasion('Custom occasion');
+        await setActiveOccasion('Custom Occasion');
         showToast(`Curated look for "${customText}"!`, 'success');
       }
     } catch (err: any) {
@@ -199,7 +219,7 @@ export const DailyFit: React.FC = () => {
   // Explicit regeneration of the ONE outfit
   const handleRegenerate = async () => {
     if (isGeneratingDailyFit) return;
-    await regenerateDailyFit(activeOccasion);
+    await regenerateDailyFit(activeOccasion, undefined, { includeLuxury });
   };
 
   // Action: Wear this outfit
@@ -379,29 +399,87 @@ export const DailyFit: React.FC = () => {
                 </p>
               </div>
 
-              {/* 16 Occasions Selector Pills */}
-              <div className="bg-zinc-50 dark:bg-zinc-850/80 p-2 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
-                <span className="px-3 text-zinc-400 text-[11px] font-semibold uppercase tracking-wider shrink-0">
-                  Occasion:
-                </span>
-                {OCCASIONS_FULL_LIST.map((occ) => {
-                  const isSelected = activeOccasion === occ;
-                  return (
-                    <button
-                      key={occ}
-                      type="button"
-                      onClick={() => handleSelectOccasion(occ)}
-                      className={`px-3.5 py-1.5 rounded-xl font-medium shrink-0 transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
-                      }`}
-                    >
-                      {occ}
-                    </button>
-                  );
-                })}
+              {/* Canonical Occasions Selector Pills & Luxury Toggle */}
+              <div className="space-y-2">
+                <div className="bg-zinc-50 dark:bg-zinc-850/80 p-2 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
+                  {/* Luxury Protection Toggle */}
+                  <button
+                    type="button"
+                    onClick={handleToggleLuxury}
+                    className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
+                      includeLuxury
+                        ? 'bg-amber-400 text-neutral-950 font-bold shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-200/50 dark:bg-zinc-800'
+                    }`}
+                    title="Allow special-occasion and luxury attire from Occasion Vault to be recommended"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>{includeLuxury ? 'Special / Luxury (Active)' : 'Luxury Shielded'}</span>
+                  </button>
+
+                  <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700 mx-1 shrink-0" />
+
+                  <span className="px-1 text-zinc-400 text-[11px] font-semibold uppercase tracking-wider shrink-0">
+                    Occasion:
+                  </span>
+
+                  {OCCASIONS_FULL_LIST.map((occ) => {
+                    const isSelected = activeOccasion.toLowerCase() === occ.toLowerCase();
+                    return (
+                      <button
+                        key={occ}
+                        type="button"
+                        onClick={() => handleSelectOccasion(occ)}
+                        className={`px-3.5 py-1.5 rounded-xl font-medium shrink-0 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
+                        }`}
+                      >
+                        {occ}
+                      </button>
+                    );
+                  })}
+
+                  {/* All Occasions Dialog Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAllOccasionsModal(true)}
+                    className="px-3 py-1.5 rounded-xl font-medium shrink-0 transition-all cursor-pointer text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 flex items-center gap-1"
+                  >
+                    <span>All Occasions</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
+
+              {/* Structured Missing Component Alert (Missing footwear/outerwear warnings) */}
+              {((recommendation?.missingComponents && recommendation.missingComponents.length > 0) ||
+                (recommendation?.missing_components && recommendation.missing_components.length > 0)) && (
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-300 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <span className="font-bold text-amber-900 dark:text-amber-200">
+                        Missing Outfit Component:{' '}
+                      </span>
+                      <span className="text-amber-800 dark:text-amber-300">
+                        {(recommendation.missingComponents || recommendation.missing_components || [])
+                          .map((mc) => `${mc.slot.toUpperCase()}: ${mc.reason}`)
+                          .join(' · ')}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/wardrobe-gap')}
+                    className="shrink-0 text-xs font-semibold border-amber-400/60 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  >
+                    Explore Gap Solutions →
+                  </Button>
+                </div>
+              )}
 
               {/* Wardrobe Gap Warning Banner (Connects Wardrobe Gap with Daily Fit) */}
               {gapWarning && (
@@ -950,6 +1028,55 @@ export const DailyFit: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* ALL CANONICAL OCCASIONS MODAL */}
+        {/* ------------------------------------------------------------- */}
+        <Modal
+          isOpen={showAllOccasionsModal}
+          onClose={() => setShowAllOccasionsModal(false)}
+          title="Browse All Styling Occasions"
+        >
+          <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
+            {CANONICAL_OCCASION_GROUPS.map((group) => (
+              <div key={group.categoryKey} className="space-y-2">
+                <h4 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider">
+                  {group.name}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {group.occasions.map((occ) => {
+                    const isSelected =
+                      activeOccasion.toLowerCase() === occ.name.toLowerCase() ||
+                      activeOccasion.toLowerCase() === occ.id;
+                    return (
+                      <button
+                        key={occ.id}
+                        type="button"
+                        onClick={() => handleSelectOccasion(occ.name)}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-xs'
+                            : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200/80 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        }`}
+                      >
+                        <span className="font-bold text-xs">{occ.name}</span>
+                        <span
+                          className={`text-[10px] mt-1 line-clamp-2 ${
+                            isSelected
+                              ? 'text-zinc-300 dark:text-zinc-600'
+                              : 'text-zinc-500 dark:text-zinc-400'
+                          }`}
+                        >
+                          {occ.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Modal>
 
         {/* Breakdown modal */}
         {recommendation && (

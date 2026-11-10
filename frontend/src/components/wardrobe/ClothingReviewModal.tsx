@@ -11,6 +11,8 @@ import {
   Palette,
   ShieldCheck,
   Layers,
+  Crown,
+  DollarSign,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -57,6 +59,15 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
   const [season, setSeason] = useState('Summer');
   const [usage, setUsage] = useState('Casual');
   const [ageGroup, setAgeGroup] = useState('Adults-Unisex');
+
+  // Occasion Vault & Wardrobe Protection Attributes
+  const [wearTier, setWearTier] = useState<'daily' | 'elevated' | 'luxury_special'>('daily');
+  const [isLuxury, setIsLuxury] = useState<boolean>(false);
+  const [careType, setCareType] = useState<'machine_wash' | 'hand_wash' | 'dry_clean_only' | 'delicate'>('machine_wash');
+  const [purchasePrice, setPurchasePrice] = useState<string>('');
+  const [purchaseDate, setPurchaseDate] = useState<string>('');
+  const [wardrobeGroups, setWardrobeGroups] = useState<string[]>(['daily_work']);
+  const [formalityScore, setFormalityScore] = useState<number>(0.4);
 
   // Track which fields the user has manually edited
   const [editedFields, setEditedFields] = useState<Record<string, boolean>>({});
@@ -109,6 +120,15 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
         setSeason(cur.season || currentItem.season || 'Summer');
         setUsage(cur.usage || cur.occasion || (currentItem as any)?.occasion || 'Casual');
         setAgeGroup(cur.age_group || pred.age_group || 'Adults-Unisex');
+
+        // Vault fields
+        setWearTier(cur.wear_tier || currentItem.wearTier || currentItem.wear_tier || 'daily');
+        setIsLuxury(Boolean(cur.is_luxury ?? currentItem.isLuxury ?? currentItem.is_luxury ?? false));
+        setCareType(cur.care_type || currentItem.careType || currentItem.care_type || 'machine_wash');
+        setPurchasePrice(cur.purchase_price ? String(cur.purchase_price) : currentItem.purchasePrice ? String(currentItem.purchasePrice) : '');
+        setPurchaseDate(cur.purchase_date || currentItem.purchaseDate || currentItem.purchase_date || '');
+        setWardrobeGroups(cur.wardrobe_groups || currentItem.wardrobeGroups || currentItem.wardrobe_groups || ['daily_work']);
+        setFormalityScore(cur.formality ?? currentItem.formality ?? 0.4);
       })
       .catch((err) => {
         if (!isSubscribed) return;
@@ -121,6 +141,13 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
         setPattern(currentItem.pattern || 'Solid');
         setSeason(currentItem.season || 'Summer');
         setUsage((currentItem as any)?.occasion || 'Casual');
+        setWearTier(currentItem.wearTier || currentItem.wear_tier || 'daily');
+        setIsLuxury(Boolean(currentItem.isLuxury ?? currentItem.is_luxury ?? false));
+        setCareType(currentItem.careType || currentItem.care_type || 'machine_wash');
+        setPurchasePrice(currentItem.purchasePrice ? String(currentItem.purchasePrice) : '');
+        setPurchaseDate(currentItem.purchaseDate || currentItem.purchase_date || '');
+        setWardrobeGroups(currentItem.wardrobeGroups || currentItem.wardrobe_groups || ['daily_work']);
+        setFormalityScore(currentItem.formality ?? 0.4);
       })
       .finally(() => {
         if (isSubscribed) setIsLoadingAttributes(false);
@@ -192,6 +219,14 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
         season: season,
         usage: usage,
         age_group: ageGroup,
+        // Occasion Vault & Garment Protection
+        wear_tier: wearTier,
+        is_luxury: isLuxury,
+        care_type: careType,
+        purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
+        purchase_date: purchaseDate || undefined,
+        wardrobe_groups: wardrobeGroups,
+        formality: formalityScore,
         // Legacy column sync
         category: articleType,
         primary_color: baseColour,
@@ -531,6 +566,100 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     isEdited={Boolean(editedFields.age_group)}
                     placeholder="Select age group..."
                   />
+                </div>
+
+                {/* 10. Occasion Vault & Garment Protection Card */}
+                <div className="p-4 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-3.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-zinc-100">
+                      <Crown className="w-4 h-4 text-amber-500" />
+                      <span>Occasion Vault & Protection</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      Guards special pieces from casual rotation
+                    </span>
+                  </div>
+
+                  {/* Wear Tier Radio Buttons */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">
+                      Wear Tier
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { key: 'daily', label: 'Daily Rotation' },
+                        { key: 'elevated', label: 'Elevated & Smart' },
+                        { key: 'luxury_special', label: 'Special & Luxury' },
+                      ].map((t) => (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => {
+                            setWearTier(t.key as any);
+                            markFieldEdited('wear_tier');
+                          }}
+                          className={`py-1.5 px-2 rounded-lg border text-center transition-all cursor-pointer font-medium text-[11px] ${
+                            wearTier === t.key
+                              ? 'bg-amber-400/20 border-amber-500 text-amber-800 dark:text-amber-200 font-bold'
+                              : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Luxury Toggle & Price */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isLuxury}
+                        onChange={(e) => {
+                          setIsLuxury(e.target.checked);
+                          markFieldEdited('is_luxury');
+                        }}
+                        className="w-3.5 h-3.5 accent-amber-500 rounded cursor-pointer"
+                      />
+                      <span className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">
+                        Mark as Luxury Piece
+                      </span>
+                    </label>
+
+                    <div>
+                      <input
+                        type="number"
+                        value={purchasePrice}
+                        onChange={(e) => {
+                          setPurchasePrice(e.target.value);
+                          markFieldEdited('purchase_price');
+                        }}
+                        placeholder="Purchase price ($)"
+                        className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Care Type Selection */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">
+                      Care & Washing
+                    </label>
+                    <select
+                      value={careType}
+                      onChange={(e) => {
+                        setCareType(e.target.value as any);
+                        markFieldEdited('care_type');
+                      }}
+                      className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="machine_wash">Machine Wash</option>
+                      <option value="hand_wash">Hand Wash Delicate</option>
+                      <option value="dry_clean_only">Dry Clean Only</option>
+                      <option value="delicate">Special Delicate Care</option>
+                    </select>
+                  </div>
                 </div>
               </>
             )}

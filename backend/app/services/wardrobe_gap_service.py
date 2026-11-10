@@ -249,6 +249,60 @@ class WardrobeGapService:
                 "confidence": 0.94,
             })
 
+        # Gap D2: Occasion-Specific Pairing Gaps (Part 9)
+        # Check formal shirts vs casual tops
+        has_formal_shirt = any(classify_garment(i) == "western_top" and get_garment_formality(i) >= 0.65 for i in items)
+        if tops_count >= 3 and not has_formal_shirt:
+            gaps.append({
+                "category": "Formal & Occasion Wear",
+                "title": "Casual Tops Predominant, Missing Formal Shirts",
+                "priority": "High" if formal_events_count > 0 else "Medium",
+                "reason": "You have casual tops but no suitable formal office shirts or tailored blouses for business meetings.",
+                "evidence": f"{tops_count} tops cataloged with 0 formal shirts.",
+                "occasions": ["Office", "Business meeting", "Interview"],
+                "suggested_garments": [
+                    "Tailored White Button-Down Dress Shirt",
+                    "Crisp Light Blue Oxford Cotton Shirt",
+                ],
+                "confidence": 0.93,
+            })
+
+        # Check ethnic garments vs traditional footwear
+        has_ethnic_clothing = any(classify_garment(i) in ("indian_saree", "indian_kurta", "indian_lehenga", "indian_sherwani") for i in items)
+        has_ethnic_shoes = any(classify_garment(i) == "footwear" and any(k in (i.name or "").lower() for k in ["mojari", "jutti", "kolhapuri", "ethnic", "traditional"]) for i in items)
+        if has_ethnic_clothing and not has_ethnic_shoes:
+            gaps.append({
+                "category": "Traditional & Festive",
+                "title": "Traditional Outfits Missing Compatible Ethnic Footwear",
+                "priority": "Medium",
+                "reason": "You have wedding and festival outfits but no matching traditional footwear (juttis or mojaris).",
+                "evidence": "Ethnic garments present in wardrobe with 0 ethnic footwear pairs.",
+                "occasions": ["Wedding", "Festival"],
+                "suggested_garments": [
+                    "Handcrafted Leather Mojari or Jutti",
+                    "Embellished Ethnic Flat or Block Heel",
+                ],
+                "confidence": 0.91,
+            })
+
+        # Check formal trousers vs formal footwear
+        has_formal_bottoms = any(classify_garment(i) in ("western_bottom", "indian_bottom") and get_garment_formality(i) >= 0.70 for i in items)
+        has_dress_shoes = any(classify_garment(i) == "footwear" and any(k in (i.name or "").lower() for k in ["oxford", "derby", "formal", "dress shoe", "pump", "heel"]) for i in items)
+        if has_formal_bottoms and not has_dress_shoes:
+            gaps.append({
+                "category": "Professional & Academic",
+                "title": "Formal Trousers Present Without Formal Shoes",
+                "priority": "High",
+                "reason": "You have formal trousers but no compatible formal leather shoes or dress heels to anchor office attire.",
+                "evidence": "Formal bottoms present with only casual or athletic shoes.",
+                "occasions": ["Office", "Business meeting", "Interview"],
+                "suggested_garments": [
+                    "Classic Leather Oxfords or Derbies",
+                    "Polished Leather Penny Loafers",
+                ],
+                "confidence": 0.95,
+            })
+
         # Gap E: Color Balance & Neutral Saturation
         if item_count >= 6 and (neutral_count / item_count) >= 0.90:
             gaps.append({

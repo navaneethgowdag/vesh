@@ -398,10 +398,35 @@ class ClothingPredictionService:
                 pass
             elif attr == "brand":
                 clothing.brand = str(new_val)
+            elif attr == "wear_tier":
+                clothing.wear_tier = str(new_val)
+            elif attr == "is_luxury":
+                clothing.is_luxury = bool(new_val)
+            elif attr == "wardrobe_groups":
+                clothing.wardrobe_groups = new_val
+            elif attr == "suitable_occasions":
+                clothing.suitable_occasions = new_val
+            elif attr == "formality":
+                clothing.formality = float(new_val)
+            elif attr == "purchase_price":
+                clothing.purchase_price = float(new_val)
+            elif attr == "purchase_date":
+                clothing.purchase_date = new_val
+            elif attr == "care_type":
+                clothing.care_type = str(new_val)
+            elif attr == "special_use_restriction":
+                clothing.special_use_restriction = str(new_val)
+            elif attr == "reserved_status":
+                clothing.reserved_status = str(new_val)
+            elif attr == "notes":
+                clothing.notes = str(new_val)
             elif attr == "category_specific" and isinstance(new_val, dict):
                 cur_cat_spec = dict(verified_attrs.get("category_specific", {}))
                 cur_cat_spec.update(new_val)
                 verified_attrs["category_specific"] = cur_cat_spec
+
+            # Track provenance as user_confirmed
+            clothing.set_provenance(attr, "user_confirmed")
 
         fv["user_corrections"] = user_corrections
         fv["verified_attributes"] = verified_attrs

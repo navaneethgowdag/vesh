@@ -311,6 +311,9 @@ class RecommendationService:
         longitude: Optional[float] = None,
         item_ids_worn_yesterday: Optional[Set[UUID]] = None,
         force_regenerate: bool = False,
+        include_luxury: bool = False,
+        attendee_role: str = "guest",
+        wardrobe_group: Optional[str] = None,
     ) -> List[Recommendation]:
         """
         Wardrobe-Based AI Outfit Recommendation Engine.
@@ -396,15 +399,25 @@ class RecommendationService:
 
         has_explicit_occasion = bool(occasion and str(occasion).strip() and str(occasion).strip().lower() != "general")
 
+        from app.core.taxonomy import normalize_occasion
+
         if has_explicit_occasion:
             if occasion in ("Custom occasion", "Custom") or custom_occasion:
                 target_occasion = custom_occasion or "Custom occasion"
             else:
-                target_occasion = occasion
+                canon_def = normalize_occasion(occasion)
+                if not canon_def:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"Unsupported occasion: '{occasion}'. Please select a valid occasion from the supported taxonomy.",
+                    )
+                target_occasion = canon_def.display_name
         elif event and event.occasion:
-            target_occasion = event.occasion
+            canon_def = normalize_occasion(event.occasion)
+            target_occasion = canon_def.display_name if canon_def else event.occasion
         elif day_events and target_event_category != "other":
-            target_occasion = target_event_category.replace("_", " ").title()
+            canon_def = normalize_occasion(target_event_category)
+            target_occasion = canon_def.display_name if canon_def else target_event_category.replace("_", " ").title()
         elif routine_entry:
             act = routine_entry.get("activity", "")
             dc = routine_entry.get("dress_code", "")
@@ -413,11 +426,12 @@ class RecommendationService:
             elif act in ("College", "Study"):
                 target_occasion = "College"
             elif act in ("Gym", "Sports", "Workout"):
-                target_occasion = "Gym / Sports"
+                target_occasion = "Gym"
             elif act in ("Outing", "Party"):
-                target_occasion = "Casual outing"
+                target_occasion = "Casual Outing"
             elif dc:
-                target_occasion = dc
+                canon_dc = normalize_occasion(dc)
+                target_occasion = canon_dc.display_name if canon_dc else dc
             else:
                 target_occasion = "Everyday"
             if dc and not target_event_dress_code:
@@ -633,6 +647,44 @@ class RecommendationService:
                     filter_counts["unavailable"] += 1
                 continue
 
+            # 3b. Wardrobe collection group filtering (Part 5)
+            if wardrobe_group:
+                wg = wardrobe_group.lower().strip()
+                item_groups = [g.lower() for g in getattr(item, "wardrobe_groups", [])]
+                if wg not in item_groups:
+                    continue
+
+            # 3c. Occasion Vault: Reserved & In-Care status (Part 6)
+            if getattr(item, "reserved_status", "available") in ("reserved", "in_care"):
+                filter_counts["unavailable"] += 1
+                continue
+
+            # 3d. Occasion Vault: Luxury & Special Wear Tier Isolation (Part 6.3)
+            is_special = (getattr(item, "wear_tier", "daily") == "luxury_special") or getattr(item, "is_luxury", False)
+            if is_special:
+                # Protect special/luxury piece from low-formality everyday recommendations
+                if occasion_prof["target_formality"] < 0.75 and not include_luxury:
+                    filter_counts["category_mismatch"] += 1
+                    continue
+
+            # 3e. Occasion Vault: Special-use restrictions & whitelists
+            spec_rest = getattr(item, "special_use_restriction", "none")
+            if spec_rest == "special_occasions_only":
+                if occasion_prof["target_formality"] < 0.75 and not include_luxury:
+                    filter_counts["category_mismatch"] += 1
+                    continue
+            elif spec_rest == "custom_occasions_only":
+                suit_occs = [s.lower() for s in getattr(item, "suitable_occasions", [])]
+                if suit_occs and not any(k in target_occasion.lower() for k in suit_occs) and not include_luxury:
+                    filter_counts["category_mismatch"] += 1
+                    continue
+
+            suit_occs = [s.lower() for s in getattr(item, "suitable_occasions", [])]
+            if suit_occs and not include_luxury:
+                if not any(k in target_occasion.lower() or target_occasion.lower() in k for k in suit_occs):
+                    filter_counts["category_mismatch"] += 1
+                    continue
+
             # 4. Occasion disallowed categories
             c_type = classify_garment(item)
             cat_name = (item.category or "").lower()
@@ -656,7 +708,9 @@ class RecommendationService:
                     filter_counts["weather_rule"] += 1
                     continue
             if temp < 15 and c_type == "western_bottom":
-                if "short" in subcat_name or "short" in (item.name or "").lower():
+                # Gym and workout shorts are worn indoors, don't filter them out due to outdoor weather
+                is_active_occasion = any(k in (target_occasion or "").lower() for k in ["gym", "sport", "workout", "athletic", "fitness"])
+                if ("short" in subcat_name or "short" in (item.name or "").lower()) and not is_active_occasion:
                     filter_counts["weather_rule"] += 1
                     continue
 
@@ -943,8 +997,8 @@ class RecommendationService:
             filtered_candidates.append(items)
 
         if not filtered_candidates:
-            # If hard filters removed all candidates, check if any candidate can pass with a slight relaxation (delta <= 0.45)
-            # while still strictly respecting avoided colors, excluded items, and Indian Saree rules.
+            # If hard filters removed all candidates, check if any candidate can pass with a principled relaxation
+            # NEVER relax across incompatible occasions or violate luxury isolation!
             relaxed = []
             for items in candidates:
                 if excluded_set and any(i.id in excluded_set for i in items):
@@ -958,9 +1012,23 @@ class RecommendationService:
                 if any(classify_garment(i) == "indian_saree" for i in items) and any(classify_garment(i) in ("western_bottom", "western_top") for i in items):
                     continue
 
+                # Hard constraint 1: NEVER bypass occasion hard filter during relaxation
+                if not self._passes_occasion_hard_filter(items, target_occasion):
+                    continue
+
+                # Hard constraint 2: Protect luxury items from being relaxed into casual wear
+                if any((getattr(i, "wear_tier", "daily") == "luxury_special" or getattr(i, "is_luxury", False)) for i in items):
+                    if occasion_prof["target_formality"] < 0.75 and not include_luxury:
+                        continue
+
+                # Hard constraint 3: Strict minimum formality for formal events/interviews/business meetings
                 formalities = [get_garment_formality(i) for i in items]
+                avg_f = sum(formalities) / len(formalities) if formalities else 0.5
+                if occasion_prof["target_formality"] >= 0.80 and avg_f < 0.65:
+                    continue  # Interviews, formal events, business meetings reject casual wear even in relaxation
+
                 delta_formality = max(formalities) - min(formalities) if formalities else 0.0
-                if delta_formality <= 0.45:
+                if delta_formality <= 0.40:
                     relaxed.append(items)
 
             if relaxed:
@@ -1219,13 +1287,20 @@ class RecommendationService:
                 s_data["context"]["gap_warning"] = gap_warning
                 s_data["context"]["suggested_gap_category"] = suggested_gap_cat
 
-            # Check if footwear slot is filled
+            # Check if footwear slot is filled & construct missing components alerts (Part 8)
+            missing_components: List[Dict[str, Any]] = []
             has_footwear = any(classify_garment(i) == "footwear" for i in selected_items)
             if not has_footwear:
                 rec_status = "partial_outfit"
                 missing_slots = ["footwear"]
                 can_wear = False
                 notice = f"No footwear found for {target_occasion}"
+                missing_components.append({
+                    "slot": "footwear",
+                    "type": "shoes",
+                    "severity": "important" if occasion_prof["target_formality"] >= 0.60 else "recommended",
+                    "message": f"No suitable footwear found in your wardrobe for {target_occasion}.",
+                })
                 if notice not in s_data["reasons"]:
                     s_data["reasons"] = [notice] + s_data["reasons"]
                 s_data["context"]["missing_slots"] = missing_slots
@@ -1237,6 +1312,19 @@ class RecommendationService:
                 missing_slots = None
                 can_wear = True
                 empty_reason_data = None
+
+            # Cold weather outerwear check (Part 8)
+            if temp < 15.0:
+                has_outerwear = any(classify_garment(i) == "outerwear" for i in selected_items)
+                if not has_outerwear:
+                    missing_components.append({
+                        "slot": "outerwear",
+                        "type": "outerwear",
+                        "severity": "weather_warning",
+                        "message": f"Ambient temperature is {int(temp)}°C. Layering an outerwear piece or coat is recommended.",
+                    })
+
+            s_data["context"]["missing_components"] = missing_components
 
             outfit_name = f"{target_occasion} Look" if len(distinct_combinations) == 1 else f"{target_occasion} Look {idx + 1}"
             clothing_ids = [i.id for i in selected_items]
@@ -1270,6 +1358,7 @@ class RecommendationService:
             rec.status = rec_status
             rec.can_wear = can_wear
             rec.missing_slots = missing_slots
+            rec.missing_components = missing_components
             rec.empty_reason = empty_reason_data
             rec._custom_reasoning = s_data["reasoning"]
             rec._custom_context = s_data["context"]

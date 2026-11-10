@@ -23,6 +23,10 @@ class WardrobeService:
         occasion: Optional[str] = None,
         is_favorite: Optional[bool] = None,
         review_status: Optional[str] = None,
+        wardrobe_group: Optional[str] = None,
+        wear_tier: Optional[str] = None,
+        is_luxury: Optional[bool] = None,
+        reserved_status: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Clothing]:
@@ -37,6 +41,10 @@ class WardrobeService:
             occasion=occasion,
             is_favorite=is_favorite,
             review_status=review_status,
+            wardrobe_group=wardrobe_group,
+            wear_tier=wear_tier,
+            is_luxury=is_luxury,
+            reserved_status=reserved_status,
             limit=limit,
             offset=offset,
         )

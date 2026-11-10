@@ -24,6 +24,7 @@ from app.api.routes import (
     planner,
     wardrobe_gap,
     laundry,
+    vault,
 )
 
 api_router = APIRouter()
@@ -37,6 +38,7 @@ api_router.include_router(clothing_ai.router)
 api_router.include_router(outfits.router)
 api_router.include_router(recommendations.router)
 api_router.include_router(laundry.router)
+api_router.include_router(vault.router)
 api_router.include_router(weather.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)

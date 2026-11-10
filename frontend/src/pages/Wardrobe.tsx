@@ -12,6 +12,7 @@ import {
   AlertCircle,
   RefreshCw,
   Heart,
+  Crown,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
@@ -49,6 +50,7 @@ export const Wardrobe: React.FC = () => {
   const [wardrobeSection, setWardrobeSection] = useState<WardrobeSection>(initialSection);
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('All');
+  const [selectedWardrobeGroup, setSelectedWardrobeGroup] = useState<string>('all');
   const [laundryFilter, setLaundryFilter] = useState<'all' | 'clean' | 'in_laundry' | 'unavailable'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -161,6 +163,32 @@ export const Wardrobe: React.FC = () => {
           if (laundryFilter === 'clean' && st !== 'clean') return false;
           if (laundryFilter === 'in_laundry' && st !== 'in_laundry') return false;
           if (laundryFilter === 'unavailable' && st !== 'unavailable') return false;
+        }
+
+        // Wardrobe Collection Group filter
+        if (wardrobeSection !== 'pending' && selectedWardrobeGroup !== 'all') {
+          const groups = item.wardrobeGroups || item.wardrobe_groups || [];
+          const wearTier = item.wearTier || item.wear_tier;
+          const isLux = item.isLuxury || item.is_luxury;
+          const cat = (item.category || '').toLowerCase();
+          if (selectedWardrobeGroup === 'luxury_special') {
+            if (!groups.includes('luxury_special') && wearTier !== 'luxury_special' && !isLux) {
+              return false;
+            }
+          } else if (selectedWardrobeGroup === 'traditional_festive') {
+            const isEthnic = ['saree', 'blouse', 'kurta', 'kurti', 'salwar', 'churidar', 'lehenga', 'sherwani', 'dupatta'].includes(cat);
+            if (!groups.includes('traditional_festive') && !isEthnic) {
+              return false;
+            }
+          } else if (selectedWardrobeGroup === 'party_evening') {
+            if (!groups.includes('party_evening') && wearTier !== 'elevated' && !item.style?.toLowerCase().includes('party')) {
+              return false;
+            }
+          } else if (selectedWardrobeGroup === 'daily_work') {
+            if (!groups.includes('daily_work') && wearTier === 'luxury_special' && isLux) {
+              return false;
+            }
+          }
         }
 
         const cat = (item.category || '').toLowerCase();
@@ -532,6 +560,63 @@ export const Wardrobe: React.FC = () => {
                   }`}
                 >
                   {pill.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Occasion Vault Banner */}
+          {wardrobeSection !== 'pending' && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                    <span>Occasion Vault</span>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-400 text-zinc-950">
+                      Luxury & Special
+                    </span>
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-zinc-600 dark:text-zinc-400">
+                    Safeguard high-value gala attire, wedding outfits, and reserved pieces from everyday casual wear.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/vault')}
+                className="border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 whitespace-nowrap shrink-0"
+                icon={<Crown className="w-3.5 h-3.5 text-amber-500" />}
+              >
+                Open Occasion Vault
+              </Button>
+            </div>
+          )}
+
+          {/* Collection Group Filter Pills */}
+          {wardrobeSection !== 'pending' && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mr-1">Group:</span>
+              {[
+                { id: 'all', label: 'All Collections' },
+                { id: 'daily_work', label: 'Daily & Work' },
+                { id: 'party_evening', label: 'Party & Evening' },
+                { id: 'luxury_special', label: 'Luxury & Special' },
+                { id: 'traditional_festive', label: 'Traditional & Festive' },
+              ].map((grp) => (
+                <button
+                  key={grp.id}
+                  onClick={() => setSelectedWardrobeGroup(grp.id)}
+                  className={`text-xs px-3 py-1.5 rounded-full border whitespace-nowrap transition-all font-medium cursor-pointer ${
+                    selectedWardrobeGroup === grp.id
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {grp.label}
                 </button>
               ))}
             </div>

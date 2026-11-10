@@ -29,6 +29,7 @@ class RecommendationResponse(BaseModel):
     status: str = "active"  # active | no_items | partial_outfit | stale
     empty_reason: Optional[Dict[str, Any]] = None
     missing_slots: Optional[List[str]] = None
+    missing_components: Optional[List[Dict[str, Any]]] = None
     can_wear: bool = True
     filter_counts: Optional[Dict[str, Any]] = None
 
@@ -125,6 +126,18 @@ class RecommendationGenerateRequest(BaseModel):
     preferred_colors: Optional[List[str]] = Field(default_factory=list)
     avoided_colors: Optional[List[str]] = Field(default_factory=list)
     specific_clothing_id: Optional[UUID] = None
+    include_luxury: Optional[bool] = Field(
+        default=False,
+        description="Explicit user override to include reserved special/luxury occasion garments."
+    )
+    attendee_role: Optional[str] = Field(
+        default="guest",
+        description="Role for ceremonial occasions (e.g., 'guest', 'close_family', 'wedding_party', 'groom_bride')."
+    )
+    wardrobe_group: Optional[str] = Field(
+        default=None,
+        description="Filter by wardrobe collection group (e.g. 'daily_work', 'party_evening', 'luxury_special')."
+    )
     force_regenerate: Optional[bool] = Field(
         default=False,
         description="Force generating a new recommendation rather than reusing an active persisted look for today."

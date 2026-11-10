@@ -31,6 +31,10 @@ class WardrobeRepository:
         occasion: Optional[str] = None,
         is_favorite: Optional[bool] = None,
         review_status: Optional[str] = None,
+        wardrobe_group: Optional[str] = None,
+        wear_tier: Optional[str] = None,
+        is_luxury: Optional[bool] = None,
+        reserved_status: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Clothing]:
@@ -70,6 +74,19 @@ class WardrobeRepository:
                 if i.is_finalized and not i.review_required and i.processing_status not in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
             ]
 
+        # Occasion Vault & Wardrobe Groups Filtering
+        if wardrobe_group:
+            wg = wardrobe_group.lower().strip()
+            items = [i for i in items if wg in [g.lower() for g in getattr(i, "wardrobe_groups", [])]]
+        if wear_tier:
+            wt = wear_tier.lower().strip()
+            items = [i for i in items if getattr(i, "wear_tier", "daily").lower() == wt]
+        if is_luxury is not None:
+            items = [i for i in items if getattr(i, "is_luxury", False) == is_luxury]
+        if reserved_status:
+            rs = reserved_status.lower().strip()
+            items = [i for i in items if getattr(i, "reserved_status", "available").lower() == rs]
+
         return items[offset:offset + limit]
 
     def create(self, user_id: UUID, **kwargs) -> Clothing:
@@ -78,8 +95,16 @@ class WardrobeRepository:
             "pattern", "material", "fit", "brand", "size", "season", "occasion",
             "image_url", "description", "is_favorite", "wear_count"
         }
+        vault_fields = {
+            "wear_tier", "is_luxury", "purchase_price", "purchase_date",
+            "care_type", "special_use_restriction", "reserved_status",
+            "notes", "wardrobe_groups", "suitable_occasions", "formality"
+        }
         filtered = {k: v for k, v in kwargs.items() if k in valid_fields and v is not None}
         item = Clothing(user_id=user_id, **filtered)
+        for key, value in kwargs.items():
+            if value is not None and key in vault_fields:
+                setattr(item, key, value)
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
@@ -91,8 +116,13 @@ class WardrobeRepository:
             "pattern", "material", "fit", "brand", "size", "season", "occasion",
             "image_url", "description", "is_favorite", "wear_count"
         }
+        vault_fields = {
+            "wear_tier", "is_luxury", "purchase_price", "purchase_date",
+            "care_type", "special_use_restriction", "reserved_status",
+            "notes", "wardrobe_groups", "suitable_occasions", "formality"
+        }
         for key, value in kwargs.items():
-            if value is not None and key in valid_fields:
+            if value is not None and (key in valid_fields or key in vault_fields):
                 setattr(item, key, value)
         self.db.commit()
         self.db.refresh(item)

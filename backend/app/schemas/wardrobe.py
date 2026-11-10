@@ -45,6 +45,18 @@ class ClothingUpdate(BaseModel):
     description: Optional[str] = None
     is_favorite: Optional[bool] = None
     wear_count: Optional[int] = None
+    # Occasion Vault & Groups
+    wear_tier: Optional[str] = None
+    is_luxury: Optional[bool] = None
+    formality: Optional[float] = None
+    wardrobe_groups: Optional[List[str]] = None
+    suitable_occasions: Optional[List[str]] = None
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[str] = None
+    care_type: Optional[str] = None
+    special_use_restriction: Optional[str] = None
+    reserved_status: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class ClothingResponse(ClothingBase):
@@ -78,6 +90,20 @@ class ClothingResponse(ClothingBase):
     max_wears_override: Optional[int] = None
     wash_days_override: Optional[int] = None
     track_laundry: bool = True
+
+    # Occasion Vault & Wardrobe Groups
+    wear_tier: Optional[str] = "daily"
+    is_luxury: Optional[bool] = False
+    wardrobe_groups: List[str] = Field(default_factory=lambda: ["daily_work"])
+    suitable_occasions: List[str] = Field(default_factory=list)
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[str] = None
+    care_type: Optional[str] = "machine_wash"
+    special_use_restriction: Optional[str] = "none"
+    reserved_status: Optional[str] = "available"
+    notes: Optional[str] = None
+    provenance: Optional[dict] = Field(default_factory=dict)
+    cost_per_wear: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -150,6 +176,17 @@ class ClothingAttributesUpdateRequest(BaseModel):
     fabric: Optional[str] = None
     brand: Optional[str] = None
     category_specific: Optional[dict] = None
+    # Occasion Vault & Groups
+    wear_tier: Optional[str] = None
+    is_luxury: Optional[bool] = None
+    wardrobe_groups: Optional[List[str]] = None
+    suitable_occasions: Optional[List[str]] = None
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[str] = None
+    care_type: Optional[str] = None
+    special_use_restriction: Optional[str] = None
+    reserved_status: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class ClothingAttributesResponse(BaseModel):
@@ -233,5 +270,62 @@ class BatchStatusResponse(BaseModel):
     progress_percentage: float
     current_processing_item: Optional[dict] = None
     items: List[BatchItemStatus] = Field(default_factory=list)
+
+
+# -----------------------------------------------------------------------------
+# Occasion Vault Schemas
+# -----------------------------------------------------------------------------
+
+class VaultSettingsUpdateRequest(BaseModel):
+    wear_tier: Optional[str] = None  # 'daily', 'elevated', 'luxury_special'
+    is_luxury: Optional[bool] = None
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[str] = None
+    care_type: Optional[str] = None  # 'machine_wash', 'hand_wash', 'dry_clean_only', 'delicate'
+    special_use_restriction: Optional[str] = None  # 'none', 'special_occasions_only', 'custom_occasions_only'
+    reserved_status: Optional[str] = None  # 'available', 'reserved', 'in_care'
+    suitable_occasions: Optional[List[str]] = None
+    wardrobe_groups: Optional[List[str]] = None
+    notes: Optional[str] = None
+
+
+class VaultReserveToggleRequest(BaseModel):
+    reserved_status: str = "reserved"  # 'available', 'reserved', 'in_care'
+    notes: Optional[str] = None
+
+
+class VaultEventPrepRequest(BaseModel):
+    event_id: Optional[UUID] = None
+    occasion: Optional[str] = None
+    event_date: Optional[date] = None
+    attendee_role: Optional[str] = "guest"  # 'guest', 'close_family', 'wedding_party', 'groom_bride', 'formal_guest', 'traditional_guest'
+
+
+class VaultEventPrepResponse(BaseModel):
+    occasion: str
+    event_date: Optional[date] = None
+    attendee_role: str = "guest"
+    target_formality: float
+    eligible_vault_items: List[ClothingResponse] = Field(default_factory=list)
+    recommended_combinations: List[dict] = Field(default_factory=list)
+    missing_components: List[dict] = Field(default_factory=list)
+    care_reminders: List[str] = Field(default_factory=list)
+    weather_note: Optional[str] = None
+    readiness_status: str  # 'ready', 'partial', 'needs_attention'
+
+
+class VaultAnalyticsResponse(BaseModel):
+    total_vault_items: int
+    luxury_items_count: int
+    elevated_items_count: int
+    reserved_count: int
+    in_care_count: int
+    most_used_special_items: List[dict] = Field(default_factory=list)
+    never_worn_special_items: List[dict] = Field(default_factory=list)
+    total_vault_valuation: Optional[float] = None
+    items_with_price_count: int
+    average_cost_per_wear: Optional[float] = None
+    care_type_breakdown: dict = Field(default_factory=dict)
+
 
 

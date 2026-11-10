@@ -69,7 +69,22 @@ async def generate_recommendations(
         latitude=latitude,
         longitude=longitude,
         force_regenerate=req.force_regenerate or False,
+        include_luxury=getattr(req, "include_luxury", False) or False,
+        attendee_role=getattr(req, "attendee_role", "guest") or "guest",
+        wardrobe_group=getattr(req, "wardrobe_group", None),
     )
+
+
+@router.get("/taxonomy")
+def get_occasion_taxonomy():
+    """
+    Returns canonical occasions grouped by parent category with formality bounds and descriptions.
+    """
+    from app.core.taxonomy import list_grouped_occasions, PARENT_CATEGORIES
+    return {
+        "parent_categories": PARENT_CATEGORIES,
+        "grouped_occasions": list_grouped_occasions(),
+    }
 
 
 @router.get("/active", response_model=RecommendationResponse)

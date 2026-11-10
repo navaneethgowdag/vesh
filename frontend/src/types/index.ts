@@ -29,7 +29,34 @@ export type Occasion =
   | 'Party & Evening'
   | 'Travel & Airport'
   | 'Gym & Active'
-  | 'Formal Event';
+  | 'Formal Event'
+  | 'Everyday'
+  | 'Home'
+  | 'Casual Outing'
+  | 'College'
+  | 'Family Gathering'
+  | 'Office'
+  | 'Business Meeting'
+  | 'Presentation'
+  | 'Interview'
+  | 'Conference'
+  | 'Professional Event'
+  | 'Dinner'
+  | 'Party & Night Out'
+  | 'Birthday & Celebration'
+  | 'Gala & Black Tie'
+  | 'Wedding'
+  | 'Wedding Reception'
+  | 'Engagement'
+  | 'Festival & Cultural'
+  | 'Cultural Event'
+  | 'Gym & Workout'
+  | 'Running'
+  | 'Sports'
+  | 'Vacation'
+  | 'Solemn & Memorial'
+  | 'Custom Occasion'
+  | (string & {});
 
 export type Season = 'Spring' | 'Summer' | 'Autumn' | 'Winter' | 'All-Season';
 
@@ -126,6 +153,27 @@ export interface ClothingItem {
   wash_days_override?: number | null;
   trackLaundry?: boolean;
   track_laundry?: boolean;
+  wearTier?: 'daily' | 'elevated' | 'luxury_special';
+  wear_tier?: 'daily' | 'elevated' | 'luxury_special';
+  isLuxury?: boolean;
+  is_luxury?: boolean;
+  wardrobeGroups?: string[];
+  wardrobe_groups?: string[];
+  suitableOccasions?: string[];
+  suitable_occasions?: string[];
+  purchasePrice?: number;
+  purchase_price?: number;
+  purchaseDate?: string;
+  purchase_date?: string;
+  careType?: 'machine_wash' | 'hand_wash' | 'dry_clean_only' | 'delicate';
+  care_type?: 'machine_wash' | 'hand_wash' | 'dry_clean_only' | 'delicate';
+  specialUseRestriction?: 'none' | 'special_occasions_only' | 'custom_occasions_only';
+  special_use_restriction?: 'none' | 'special_occasions_only' | 'custom_occasions_only';
+  reservedStatus?: 'available' | 'reserved' | 'in_care';
+  reserved_status?: 'available' | 'reserved' | 'in_care';
+  costPerWear?: number;
+  cost_per_wear?: number;
+  provenance?: Record<string, 'ai_predicted' | 'user_confirmed' | 'manually_entered' | string>;
 }
 
 export interface CategoryLaundryOverride {
@@ -443,6 +491,8 @@ export interface Recommendation {
   can_wear?: boolean;
   missingSlots?: string[];
   missing_slots?: string[];
+  missingComponents?: Array<{ slot: string; reason: string; suggested_type?: string }>;
+  missing_components?: Array<{ slot: string; reason: string; suggested_type?: string }>;
   filterCounts?: Record<string, any>;
   filter_counts?: Record<string, any>;
 }
@@ -860,5 +910,72 @@ export interface ColorSwatch {
   hex: string;
   is_neutral: boolean;
   category: string;
+}
+
+// ---------------------------------------------------------------------------
+// Occasion Vault Types
+// ---------------------------------------------------------------------------
+export interface VaultSettingsUpdate {
+  wear_tier?: 'daily' | 'elevated' | 'luxury_special';
+  is_luxury?: boolean;
+  purchase_price?: number;
+  purchase_date?: string;
+  care_type?: 'machine_wash' | 'hand_wash' | 'dry_clean_only' | 'delicate';
+  special_use_restriction?: 'none' | 'special_occasions_only' | 'custom_occasions_only';
+  reserved_status?: 'available' | 'reserved' | 'in_care';
+  notes?: string;
+  wardrobe_groups?: string[];
+  suitable_occasions?: string[];
+}
+
+export interface VaultReserveToggleRequest {
+  reserved: boolean;
+  reserved_for_event_id?: string;
+  reserved_date?: string;
+}
+
+export interface VaultEventPrepRequest {
+  event_name: string;
+  occasion: string;
+  attendee_role?: string;
+  event_date?: string;
+  calendar_event_id?: string;
+}
+
+export interface VaultEventPrepResponse {
+  event_name: string;
+  occasion: string;
+  readiness_score: number;
+  status: 'ready' | 'needs_prep' | 'action_required';
+  recommended_combinations: Array<{
+    pieces: ClothingItem[];
+    style_notes: string;
+  }>;
+  care_reminders: Array<{
+    item_id: string;
+    item_name: string;
+    care_type: string;
+    action: string;
+  }>;
+  missing_components: Array<{
+    slot: string;
+    reason: string;
+  }>;
+}
+
+export interface VaultAnalyticsResponse {
+  total_vault_items: number;
+  luxury_items_count: number;
+  elevated_items_count: number;
+  reserved_items_count: number;
+  total_valuation: number;
+  average_cost_per_wear: number;
+  care_type_breakdown: Record<string, number>;
+  most_worn_luxury: Array<{
+    id: string;
+    name: string;
+    times_worn: number;
+    cost_per_wear: number;
+  }>;
 }
 

@@ -40,6 +40,11 @@ import {
   WeeklyDayStatus,
   LaundrySettings,
   WardrobeGapAnalysis,
+  VaultSettingsUpdate,
+  VaultReserveToggleRequest,
+  VaultEventPrepRequest,
+  VaultEventPrepResponse,
+  VaultAnalyticsResponse,
 } from '../types';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
@@ -501,6 +506,8 @@ function mapApiRecommendation(rec: any): Recommendation {
     can_wear: canWear,
     missingSlots,
     missing_slots: missingSlots,
+    missingComponents: rec.missing_components || [],
+    missing_components: rec.missing_components || [],
     filterCounts,
     filter_counts: filterCounts,
   };
@@ -623,6 +630,10 @@ export const api = {
       occasion?: string;
       isFavorite?: boolean;
       reviewStatus?: 'all' | 'pending' | 'accepted';
+      wardrobeGroup?: string;
+      wearTier?: string;
+      isLuxury?: boolean;
+      reservedStatus?: string;
     }): Promise<ClothingItem[]> {
       let endpoint = '/wardrobe';
       if (filters) {
@@ -636,6 +647,10 @@ export const api = {
         if (filters.occasion) p.append('occasion', filters.occasion);
         if (filters.isFavorite !== undefined) p.append('is_favorite', String(filters.isFavorite));
         if (filters.reviewStatus) p.append('review_status', filters.reviewStatus);
+        if (filters.wardrobeGroup) p.append('wardrobe_group', filters.wardrobeGroup);
+        if (filters.wearTier) p.append('wear_tier', filters.wearTier);
+        if (filters.isLuxury !== undefined) p.append('is_luxury', String(filters.isLuxury));
+        if (filters.reservedStatus) p.append('reserved_status', filters.reservedStatus);
         const qs = p.toString();
         if (qs) endpoint += '?' + qs;
       }
@@ -692,6 +707,27 @@ export const api = {
         wash_days_override: item.wash_days_override,
         trackLaundry: item.track_laundry !== false,
         track_laundry: item.track_laundry !== false,
+        wearTier: item.wear_tier,
+        wear_tier: item.wear_tier,
+        isLuxury: item.is_luxury,
+        is_luxury: item.is_luxury,
+        wardrobeGroups: item.wardrobe_groups || [],
+        wardrobe_groups: item.wardrobe_groups || [],
+        suitableOccasions: item.suitable_occasions || [],
+        suitable_occasions: item.suitable_occasions || [],
+        purchasePrice: item.purchase_price,
+        purchase_price: item.purchase_price,
+        purchaseDate: item.purchase_date,
+        purchase_date: item.purchase_date,
+        careType: item.care_type,
+        care_type: item.care_type,
+        specialUseRestriction: item.special_use_restriction,
+        special_use_restriction: item.special_use_restriction,
+        reservedStatus: item.reserved_status || 'available',
+        reserved_status: item.reserved_status || 'available',
+        costPerWear: item.cost_per_wear,
+        cost_per_wear: item.cost_per_wear,
+        provenance: item.provenance || {},
       }));
     },
 
@@ -1959,6 +1995,9 @@ export const api = {
       longitude?: number;
       limit?: number;
       forceRegenerate?: boolean;
+      includeLuxury?: boolean;
+      attendeeRole?: string;
+      wardrobeGroup?: string;
     }): Promise<Recommendation[]> {
       const q = new URLSearchParams();
       if (params.city) q.set('city', params.city);
@@ -1987,6 +2026,9 @@ export const api = {
           preferred_colors: params.preferredColors || [],
           avoided_colors: params.avoidedColors || [],
           specific_clothing_id: params.specificClothingId,
+          include_luxury: params.includeLuxury || false,
+          attendee_role: params.attendeeRole || null,
+          wardrobe_group: params.wardrobeGroup || null,
           limit: params.limit !== undefined ? params.limit : 1,
           force_regenerate: params.forceRegenerate || false,
         }),
@@ -2116,6 +2158,9 @@ export const api = {
       seed: number = 0,
       latitude?: number,
       longitude?: number,
+      includeLuxury?: boolean,
+      attendeeRole?: string,
+      wardrobeGroup?: string,
     ): Promise<Recommendation> {
       const params = new URLSearchParams({
         city,
@@ -2124,47 +2169,11 @@ export const api = {
       });
       if (latitude !== undefined && latitude !== null) params.set('latitude', String(latitude));
       if (longitude !== undefined && longitude !== null) params.set('longitude', String(longitude));
+      if (includeLuxury) params.set('include_luxury', 'true');
+      if (attendeeRole) params.set('attendee_role', attendeeRole);
+      if (wardrobeGroup) params.set('wardrobe_group', wardrobeGroup);
       const rec = await request<any>(`/recommendations/daily-fit?${params.toString()}`);
-      const outfit = rec.outfit;
-      return {
-        id: String(rec.id),
-        outfit: {
-          id: String(outfit.id),
-          title: outfit.name,
-          description: outfit.description,
-          pieces: (outfit.clothing_items || []).map((ci: any) => ({
-            id: String(ci.id),
-            name: ci.name,
-            category: ci.category,
-            color: ci.color,
-            style: ci.occasion || 'Casual',
-            season: ci.season || 'All-Season',
-            brand: ci.brand,
-            image: ci.image_url,
-            createdAt: ci.created_at || new Date().toISOString(),
-          })),
-          occasion: (outfit.occasion as Occasion) || 'Casual Daily',
-          style: outfit.style || 'Minimal',
-          season: outfit.season || 'All-Season',
-          score: Math.round((outfit.compatibility_score || 0.9) * 100),
-          image: outfit.image_url,
-          tags: outfit.tags || [],
-          createdAt: outfit.created_at || new Date().toISOString(),
-        },
-        score: Math.round((rec.score || 0.9) * 100),
-        weatherCompatibility: 94,
-        styleCompatibility: 96,
-        occasionCompatibility: 92,
-        explanation: {
-          weatherMatch: rec.reasoning?.weather_match || 'Optimized for current weather conditions.',
-          styleMatch: rec.reasoning?.style_match || 'Aligned with your aesthetic preferences.',
-          wardrobeMatch: rec.reasoning?.wardrobe_match || 'Utilizes your staple wardrobe pieces.',
-          occasionMatch: rec.reasoning?.occasion_match || 'Matches the requested occasion.',
-        },
-        reasons: rec.context?.reasons || rec.reasons || ['Weather compatible', 'High color harmony', 'Matches preferred aesthetic'],
-        wornStatus: rec.worn_status || 'suggested',
-        recommendedAt: rec.created_at || new Date().toISOString(),
-      };
+      return mapApiRecommendation(rec);
     },
 
     async sendFeedback(
@@ -2792,6 +2801,131 @@ export const api = {
     async markAlreadyOwned(productId: string, category?: string): Promise<any> {
       const q = category ? `?category=${encodeURIComponent(category)}` : '';
       return request<any>(`/wardrobe/shopping-products/${productId}/already-own${q}`, { method: 'POST' });
+    },
+  },
+
+  // --- OCCASION VAULT ---
+  vault: {
+    async getItems(filters?: {
+      wear_tier?: string;
+      is_luxury?: boolean;
+      reserved_status?: string;
+    }): Promise<ClothingItem[]> {
+      const p = new URLSearchParams();
+      if (filters?.wear_tier) p.append('wear_tier', filters.wear_tier);
+      if (filters?.is_luxury !== undefined) p.append('is_luxury', String(filters.is_luxury));
+      if (filters?.reserved_status) p.append('reserved_status', filters.reserved_status);
+      const qs = p.toString() ? `?${p.toString()}` : '';
+      const items = await request<any[]>(`/vault/items${qs}`);
+      return items.map((item) => ({
+        id: String(item.id),
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        secondaryColor: item.secondary_color,
+        pattern: item.pattern,
+        style: item.occasion || 'Casual',
+        season: item.season || 'All-Season',
+        brand: item.brand,
+        image: resolveImageUrl(
+          (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
+            ? `/api/v1/clothing/${item.id}/image/processed`
+            : (item.image_url || `/api/v1/clothing/${item.id}/image/original`)
+        ),
+        material: item.material,
+        createdAt: item.created_at || new Date().toISOString(),
+        timesWorn: item.wear_count || 0,
+        lastWorn: item.last_worn,
+        tags: item.style_tags || [],
+        isFavorite: item.is_favorite || false,
+        formality: item.formality,
+        wearTier: item.wear_tier,
+        wear_tier: item.wear_tier,
+        isLuxury: item.is_luxury,
+        is_luxury: item.is_luxury,
+        wardrobeGroups: item.wardrobe_groups || [],
+        wardrobe_groups: item.wardrobe_groups || [],
+        suitableOccasions: item.suitable_occasions || [],
+        suitable_occasions: item.suitable_occasions || [],
+        purchasePrice: item.purchase_price,
+        purchase_price: item.purchase_price,
+        purchaseDate: item.purchase_date,
+        purchase_date: item.purchase_date,
+        careType: item.care_type,
+        care_type: item.care_type,
+        specialUseRestriction: item.special_use_restriction,
+        special_use_restriction: item.special_use_restriction,
+        reservedStatus: item.reserved_status || 'available',
+        reserved_status: item.reserved_status || 'available',
+        costPerWear: item.cost_per_wear,
+        cost_per_wear: item.cost_per_wear,
+        provenance: item.provenance || {},
+      }));
+    },
+
+    async updateSettings(itemId: string, settings: VaultSettingsUpdate): Promise<ClothingItem> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('vault');
+      const res = await request<any>(`/vault/items/${itemId}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(settings),
+      });
+      return {
+        id: String(res.id),
+        name: res.name,
+        category: res.category,
+        color: res.color,
+        style: res.occasion || 'Casual',
+        season: res.season || 'All-Season',
+        brand: res.brand,
+        image: resolveImageUrl(res.image_url),
+        createdAt: res.created_at,
+        timesWorn: res.wear_count || 0,
+        tags: res.style_tags || [],
+        isFavorite: res.is_favorite || false,
+        formality: res.formality,
+        wearTier: res.wear_tier,
+        wear_tier: res.wear_tier,
+        isLuxury: res.is_luxury,
+        is_luxury: res.is_luxury,
+        wardrobeGroups: res.wardrobe_groups || [],
+        wardrobe_groups: res.wardrobe_groups || [],
+        suitableOccasions: res.suitable_occasions || [],
+        suitable_occasions: res.suitable_occasions || [],
+        purchasePrice: res.purchase_price,
+        purchase_price: res.purchase_price,
+        purchaseDate: res.purchase_date,
+        purchase_date: res.purchase_date,
+        careType: res.care_type,
+        care_type: res.care_type,
+        specialUseRestriction: res.special_use_restriction,
+        special_use_restriction: res.special_use_restriction,
+        reservedStatus: res.reserved_status || 'available',
+        reserved_status: res.reserved_status || 'available',
+        costPerWear: res.cost_per_wear,
+        cost_per_wear: res.cost_per_wear,
+        provenance: res.provenance || {},
+      };
+    },
+
+    async toggleReserve(itemId: string, data: VaultReserveToggleRequest): Promise<any> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('vault');
+      return request<any>(`/vault/items/${itemId}/reserve`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async eventPrep(data: VaultEventPrepRequest): Promise<VaultEventPrepResponse> {
+      return request<VaultEventPrepResponse>('/vault/event-prep', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getAnalytics(): Promise<VaultAnalyticsResponse> {
+      return request<VaultAnalyticsResponse>('/vault/analytics');
     },
   },
 
