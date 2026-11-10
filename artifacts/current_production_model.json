@@ -1,0 +1,9 @@
+{
+  "version_tag": "v1.0.0",
+  "model_name": "efficientnet_b0_multitask",
+  "checkpoint_path": "C:\\Users\\user 2\\Desktop\\ai-wardrobe\\artifacts\\best_model.pt",
+  "status": "production",
+  "rolled_back_from": "v1.0.0",
+  "promoted_at": "2026-11-10T11:31:31.781235+00:00",
+  "notes": "Rolled back from v1.0.0 by owner."
+}

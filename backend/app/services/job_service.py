@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_QUEUE_NAME = "stylesphere-default"
 
+# In-memory job cache for robust background job tracking
+_IN_MEMORY_JOBS: Dict[str, BackgroundJob] = {}
+
 
 class JobService:
     def __init__(self, db: Session):
@@ -57,6 +60,7 @@ class JobService:
             payload_ref=payload_ref,
             retry_count=0,
         )
+        _IN_MEMORY_JOBS[str(job_id)] = job
         if self._has_table:
             try:
                 self.db.add(job)
@@ -155,6 +159,7 @@ class JobService:
             payload_ref=payload_ref,
             retry_count=0,
         )
+        _IN_MEMORY_JOBS[str(job_id)] = job
         if self._has_table:
             try:
                 self.db.add(job)
@@ -219,12 +224,99 @@ class JobService:
         logger.info(f"[JobService:StartedFallbackThread] job_id={job_id_str}, clothing_id={clothing_id_str}")
         return job
 
+    def enqueue_training_job(
+        self,
+        user_id: UUID,
+        training_config: Optional[Dict[str, Any]] = None,
+    ) -> BackgroundJob:
+        """
+        Durable training job creation:
+        1. Persists BackgroundJob with job_type='model_training' and status='queued'.
+        2. Enqueues job to Redis queue if workers active.
+        3. If Redis/RQ is offline or unavailable, runs in dedicated background thread.
+        """
+        from app.jobs.training_jobs import execute_personal_training_job
+
+        job_id = uuid.uuid4()
+        config = training_config or {}
+
+        job = BackgroundJob(
+            id=job_id,
+            user_id=user_id,
+            job_type="model_training",
+            status="queued",
+            payload_ref={"config": config, "logs": []},
+            retry_count=0,
+        )
+        _IN_MEMORY_JOBS[str(job_id)] = job
+        if self._has_table:
+            try:
+                self.db.add(job)
+                self.db.commit()
+                self.db.refresh(job)
+            except Exception as e:
+                logger.warning(f"Could not persist model_training job to DB: {e}")
+                self.db.rollback()
+
+        job_id_str = str(job_id)
+        user_id_str = str(user_id)
+
+        # Attempt Redis RQ enqueue
+        enqueued_to_redis = False
+        try:
+            r = get_rq_redis_client()
+            if r is not None:
+                q = Queue(DEFAULT_QUEUE_NAME, connection=r)
+                active_workers = Worker.all(connection=r)
+                has_active = any(w.state != "busy" or True for w in active_workers) if active_workers else False
+                if has_active:
+                    q.enqueue(
+                        execute_personal_training_job,
+                        job_id=job_id_str,
+                        user_id=user_id_str,
+                        training_config=config,
+                        job_timeout=1800,  # 30 minute timeout
+                    )
+                    enqueued_to_redis = True
+                    logger.info(f"[JobService:TrainingEnqueued] job_id={job_id_str} to Redis queue '{DEFAULT_QUEUE_NAME}'")
+        except Exception as redis_exc:
+            logger.warning(f"[JobService] Redis enqueue unavailable for training ({redis_exc}). Falling back to thread.")
+
+        if not enqueued_to_redis:
+            # Fallback daemon background thread
+            def _run_training_worker():
+                try:
+                    execute_personal_training_job(
+                        job_id=job_id_str,
+                        user_id=user_id_str,
+                        training_config=config,
+                    )
+                except Exception as exc:
+                    logger.error(f"[JobService] Training thread error for {job_id_str}: {exc}")
+
+            t = threading.Thread(
+                target=_run_training_worker,
+                name=f"train-job-{job_id_str[:8]}",
+                daemon=True,
+            )
+            t.start()
+            logger.info(f"[JobService:StartedTrainingThread] job_id={job_id_str}")
+
+        return job
+
     def get_job_status(self, job_id: UUID, user_id: UUID) -> Optional[BackgroundJob]:
         """Fetch job record from PostgreSQL with strict user ownership authorization."""
         if not self._has_table:
-            return None
+            job = _IN_MEMORY_JOBS.get(str(job_id))
+            if not job:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+            if job.user_id != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this job")
+            return job
         try:
             job = self.db.query(BackgroundJob).filter(BackgroundJob.id == job_id).first()
+            if not job:
+                job = _IN_MEMORY_JOBS.get(str(job_id))
             if not job:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
             if job.user_id != user_id:
@@ -234,20 +326,28 @@ class JobService:
             raise
         except Exception as e:
             logger.warning(f"Database error querying BackgroundJob: {e}")
+            job = _IN_MEMORY_JOBS.get(str(job_id))
+            if job and job.user_id == user_id:
+                return job
             return None
 
     def list_jobs_for_user(self, user_id: UUID, limit: int = 20) -> List[BackgroundJob]:
         """List user's recent background jobs."""
         if not self._has_table:
-            return []
+            return [j for j in _IN_MEMORY_JOBS.values() if j.user_id == user_id][:limit]
         try:
-            return (
+            db_jobs = (
                 self.db.query(BackgroundJob)
                 .filter(BackgroundJob.user_id == user_id)
                 .order_by(BackgroundJob.created_at.desc())
                 .limit(limit)
                 .all()
             )
+            if db_jobs:
+                return db_jobs
+            return [j for j in _IN_MEMORY_JOBS.values() if j.user_id == user_id][:limit]
         except Exception as e:
+            logger.warning(f"Database error querying BackgroundJob list: {e}")
+            return [j for j in _IN_MEMORY_JOBS.values() if j.user_id == user_id][:limit]
             logger.warning(f"Database error querying BackgroundJob list: {e}")
             return []

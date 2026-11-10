@@ -13,6 +13,8 @@ import {
   Layers,
   Crown,
   DollarSign,
+  Cpu,
+  X,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -72,7 +74,15 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
   // Track which fields the user has manually edited
   const [editedFields, setEditedFields] = useState<Record<string, boolean>>({});
 
+  // System A: Track unconfirmed heads and training exclusion
+  const [unconfirmedHeads, setUnconfirmedHeads] = useState<Record<string, boolean>>({});
+  const [excludeFromTraining, setExcludeFromTraining] = useState<boolean>(false);
+
   const currentItem = items[currentIndex];
+
+  const toggleUnconfirmed = (head: string) => {
+    setUnconfirmedHeads((prev) => ({ ...prev, [head]: !prev[head] }));
+  };
 
   // Sync index when initialIndex changes or modal opens
   useEffect(() => {
@@ -202,6 +212,26 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
     }
   };
 
+  // Reject / Delete garment
+  const handleReject = async () => {
+    if (!currentItem) return;
+    setIsSaving(true);
+    try {
+      await api.clothing.delete(currentItem.id);
+      showToast('Garment rejected and removed from your wardrobe.', 'info');
+      await refreshData();
+      if (currentIndex < items.length - 1) {
+        setCurrentIndex((prev) => prev);
+      } else {
+        onClose();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to reject garment.', 'info');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Confirm and Accept garment
   const handleAccept = async () => {
     if (!currentItem) return;
@@ -233,7 +263,38 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
         occasion: usage,
       };
 
-      await api.clothing.finalize(currentItem.id, verifiedAttributes);
+      // Submit explicit decisions to System A review service
+      const decisions: Record<string, any> = {
+        article_type: { status: unconfirmedHeads.article_type ? 'unconfirmed' : editedFields.article_type ? 'corrected' : 'accepted', value: articleType },
+        master_category: { status: unconfirmedHeads.master_category ? 'unconfirmed' : editedFields.master_category ? 'corrected' : 'accepted', value: masterCategory },
+        sub_category: { status: unconfirmedHeads.sub_category ? 'unconfirmed' : editedFields.sub_category ? 'corrected' : 'accepted', value: subCategory },
+        gender: { status: unconfirmedHeads.gender ? 'unconfirmed' : editedFields.gender ? 'corrected' : 'accepted', value: gender },
+        base_colour: { status: unconfirmedHeads.base_colour ? 'unconfirmed' : editedFields.base_colour ? 'corrected' : 'accepted', value: baseColour },
+        season: { status: unconfirmedHeads.season ? 'unconfirmed' : editedFields.season ? 'corrected' : 'accepted', value: season },
+        usage: { status: unconfirmedHeads.usage ? 'unconfirmed' : editedFields.usage ? 'corrected' : 'accepted', value: usage },
+        pattern: { status: unconfirmedHeads.pattern ? 'unconfirmed' : editedFields.pattern ? 'corrected' : 'accepted', value: pattern },
+        age_group: { status: unconfirmedHeads.age_group ? 'unconfirmed' : editedFields.age_group ? 'corrected' : 'accepted', value: ageGroup },
+      };
+
+      await Promise.all([
+        api.modelLearning.submitReview(currentItem.id, {
+          attribute_decisions: decisions,
+          exclude_from_training: excludeFromTraining,
+          name: verifiedAttributes.name,
+          finalize: true,
+          vault_updates: {
+            wear_tier: wearTier,
+            is_luxury: isLuxury,
+            care_type: careType,
+            purchase_price: verifiedAttributes.purchase_price,
+            purchase_date: verifiedAttributes.purchase_date,
+            wardrobe_groups: wardrobeGroups,
+            formality: formalityScore,
+          },
+        }).catch((e) => console.warn('Model learning review record warning:', e)),
+        api.clothing.finalize(currentItem.id, verifiedAttributes),
+      ]);
+
       showToast(`"${verifiedAttributes.name}" accepted and added to your wardrobe!`, 'success');
 
       if (onItemAccepted) {
@@ -434,6 +495,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                   confidence={getHeadConfidence('article_type')}
                   alternatives={getHeadAlternatives('article_type')}
                   isEdited={Boolean(editedFields.article_type)}
+                  isUnconfirmed={Boolean(unconfirmedHeads.article_type)}
+                  onToggleUnconfirmed={() => toggleUnconfirmed('article_type')}
                   placeholder="Select article type (e.g. Shirts, Jeans, Dresses)..."
                   required
                 />
@@ -451,6 +514,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('master_category')}
                     alternatives={getHeadAlternatives('master_category')}
                     isEdited={Boolean(editedFields.master_category)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.master_category)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('master_category')}
                     placeholder="Select master category..."
                     required
                   />
@@ -466,6 +531,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('sub_category')}
                     alternatives={getHeadAlternatives('sub_category')}
                     isEdited={Boolean(editedFields.sub_category)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.sub_category)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('sub_category')}
                     placeholder="Select sub-category..."
                     required
                   />
@@ -484,6 +551,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('base_colour')}
                     alternatives={getHeadAlternatives('base_colour')}
                     isEdited={Boolean(editedFields.base_colour)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.base_colour)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('base_colour')}
                     placeholder="Select colour..."
                     required
                   />
@@ -499,6 +568,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('pattern')}
                     alternatives={getHeadAlternatives('pattern')}
                     isEdited={Boolean(editedFields.pattern)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.pattern)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('pattern')}
                     placeholder="Select pattern..."
                     required
                   />
@@ -517,6 +588,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('season')}
                     alternatives={getHeadAlternatives('season')}
                     isEdited={Boolean(editedFields.season)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.season)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('season')}
                     placeholder="Select season..."
                     required
                   />
@@ -532,6 +605,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('usage')}
                     alternatives={getHeadAlternatives('usage')}
                     isEdited={Boolean(editedFields.usage)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.usage)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('usage')}
                     placeholder="Select occasion..."
                     required
                   />
@@ -550,6 +625,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('gender')}
                     alternatives={getHeadAlternatives('gender')}
                     isEdited={Boolean(editedFields.gender)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.gender)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('gender')}
                     placeholder="Select gender..."
                   />
 
@@ -564,6 +641,8 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     confidence={getHeadConfidence('age_group')}
                     alternatives={getHeadAlternatives('age_group')}
                     isEdited={Boolean(editedFields.age_group)}
+                    isUnconfirmed={Boolean(unconfirmedHeads.age_group)}
+                    onToggleUnconfirmed={() => toggleUnconfirmed('age_group')}
                     placeholder="Select age group..."
                   />
                 </div>
@@ -661,6 +740,31 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
                     </select>
                   </div>
                 </div>
+
+                {/* 11. Personal Model Learning Dataset Inclusion */}
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <Cpu className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                      <span>Model Training Eligibility</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {excludeFromTraining
+                        ? 'Excluded: this garment will NOT be used to fine-tune candidate models.'
+                        : 'Eligible: confirmed attributes will be used to fine-tune candidate models.'}
+                    </p>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!excludeFromTraining}
+                      onChange={(e) => setExcludeFromTraining(!e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-zinc-900 dark:peer-checked:bg-zinc-100"></div>
+                  </label>
+                </div>
               </>
             )}
           </div>
@@ -668,16 +772,29 @@ export const ClothingReviewModal: React.FC<ClothingReviewModalProps> = ({
 
         {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">
-            {Object.keys(editedFields).length > 0 ? (
-              <span className="text-amber-600 dark:text-amber-400 font-medium">
-                {Object.keys(editedFields).length} attribute(s) edited manually
-              </span>
-            ) : (
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                All attributes matched with AI model predictions
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleReject}
+              disabled={isSaving}
+              icon={<X className="w-3.5 h-3.5" />}
+              className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+            >
+              Reject Item
+            </Button>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:block">
+              {Object.keys(editedFields).length > 0 ? (
+                <span className="text-amber-600 dark:text-amber-400 font-medium">
+                  {Object.keys(editedFields).length} attribute(s) edited
+                </span>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                  AI predictions matched
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">

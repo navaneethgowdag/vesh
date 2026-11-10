@@ -18,6 +18,17 @@ interface MomentViewerModalProps {
 
 const MOMENT_DISPLAY_DURATION_MS = 5000;
 
+export const isVideoMedia = (url?: string): boolean => {
+  if (!url) return false;
+  const clean = url.split('?')[0].toLowerCase();
+  return (
+    clean.endsWith('.mp4') ||
+    clean.endsWith('.webm') ||
+    clean.endsWith('.mov') ||
+    clean.startsWith('data:video/')
+  );
+};
+
 export const MomentViewerModal: React.FC<MomentViewerModalProps> = ({
   isOpen,
   moments,
@@ -413,13 +424,22 @@ export const MomentViewerModal: React.FC<MomentViewerModalProps> = ({
                   zIndex: 1,
                 }}
               >
-                <img
-                  src={resolveImageUrl(peekMoment.imageUrl) || FALLBACK_POST_IMAGE}
-                  alt="Upcoming look"
-                  className="w-full h-full object-cover filter blur-[1px]"
-                  loading="eager"
-                  decoding="async"
-                />
+                {isVideoMedia(peekMoment.imageUrl) ? (
+                  <video
+                    src={resolveImageUrl(peekMoment.imageUrl)}
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover filter blur-[1px]"
+                  />
+                ) : (
+                  <img
+                    src={resolveImageUrl(peekMoment.imageUrl) || FALLBACK_POST_IMAGE}
+                    alt="Upcoming look"
+                    className="w-full h-full object-cover filter blur-[1px]"
+                    loading="eager"
+                    decoding="async"
+                  />
+                )}
               </div>
             )}
 
@@ -433,13 +453,22 @@ export const MomentViewerModal: React.FC<MomentViewerModalProps> = ({
                 }}
                 className="absolute inset-0 w-full h-full pointer-events-none"
               >
-                <img
-                  src={resolveImageUrl(nextMoment.imageUrl) || FALLBACK_POST_IMAGE}
-                  alt="Next look"
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                  decoding="async"
-                />
+                {isVideoMedia(nextMoment.imageUrl) ? (
+                  <video
+                    src={resolveImageUrl(nextMoment.imageUrl)}
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={resolveImageUrl(nextMoment.imageUrl) || FALLBACK_POST_IMAGE}
+                    alt="Next look"
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40" />
               </motion.div>
             )}
@@ -467,13 +496,24 @@ export const MomentViewerModal: React.FC<MomentViewerModalProps> = ({
               transition={{ type: 'spring', damping: 26, stiffness: 350 }}
               className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
             >
-              <img
-                src={resolveImageUrl(currentMoment.imageUrl) || FALLBACK_POST_IMAGE}
-                alt="Outfit Moment"
-                className="w-full h-full object-cover pointer-events-none"
-                loading="eager"
-                decoding="async"
-              />
+              {isVideoMedia(currentMoment.imageUrl) ? (
+                <video
+                  src={resolveImageUrl(currentMoment.imageUrl)}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover pointer-events-none"
+                />
+              ) : (
+                <img
+                  src={resolveImageUrl(currentMoment.imageUrl) || FALLBACK_POST_IMAGE}
+                  alt="Outfit Moment"
+                  className="w-full h-full object-cover pointer-events-none"
+                  loading="eager"
+                  decoding="async"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40 pointer-events-none" />
             </motion.div>
           </div>

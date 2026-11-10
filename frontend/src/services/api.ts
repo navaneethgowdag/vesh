@@ -1241,6 +1241,11 @@ export const api = {
     async getAvatarAttributes(itemId: string): Promise<any> {
       return request<any>('/clothing/' + itemId + '/avatar-attributes');
     },
+
+    async delete(itemId: string): Promise<void> {
+      apiCache.invalidate('wardrobe');
+      await request<void>(`/wardrobe/${itemId}`, { method: 'DELETE' });
+    },
   },
 
   // --- POSTS / SOCIAL FEED ---
@@ -1435,6 +1440,34 @@ export const api = {
         isLiked: m.is_liked || false,
         poll: m.poll ? mapPoll(m.poll) : undefined,
       }));
+    },
+
+    async upload(formData: FormData): Promise<OutfitMoment> {
+      apiCache.invalidate('moment');
+      const m = await request<any>('/moments/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      return {
+        id: String(m.id),
+        user: {
+          id: String(m.user?.id || ''),
+          name: m.user?.name || 'User',
+          username: m.user?.username || 'user',
+          avatar: resolveImageUrl(m.user?.avatar) || '',
+          isVerified: m.user?.is_verified,
+        },
+        imageUrl: resolveImageUrl(m.image_url),
+        caption: m.caption,
+        occasion: m.occasion || 'Casual Daily',
+        tags: m.tags || [],
+        createdAt: m.created_at,
+        expiresAt: m.expires_at,
+        timeRemainingSeconds: m.time_remaining_seconds || 0,
+        likesCount: m.likes_count || 0,
+        isLiked: m.is_liked || false,
+        poll: m.poll ? mapPoll(m.poll) : undefined,
+      };
     },
 
     async create(data: {
@@ -2926,6 +2959,67 @@ export const api = {
 
     async getAnalytics(): Promise<VaultAnalyticsResponse> {
       return request<VaultAnalyticsResponse>('/vault/analytics');
+    },
+  },
+
+  // Personal Model Learning & Classifier Improvement Pipeline
+  modelLearning: {
+    async getStats(): Promise<any> {
+      return request<any>('/model-learning/stats');
+    },
+    async getClasses(): Promise<any> {
+      return request<any>('/model-learning/classes');
+    },
+    async startTraining(config?: any): Promise<any> {
+      return request<any>('/model-learning/training/start', {
+        method: 'POST',
+        body: JSON.stringify(config || {}),
+      });
+    },
+    async listJobs(limit = 10): Promise<any[]> {
+      return request<any[]>(`/model-learning/training/jobs?limit=${limit}`);
+    },
+    async getJob(jobId: string): Promise<any> {
+      return request<any>(`/model-learning/training/jobs/${jobId}`);
+    },
+    async listVersions(): Promise<any[]> {
+      return request<any[]>('/model-learning/versions');
+    },
+    async getComparison(candidateVersion?: string): Promise<any> {
+      const qs = candidateVersion ? `?candidate_version=${encodeURIComponent(candidateVersion)}` : '';
+      return request<any>(`/model-learning/comparison${qs}`);
+    },
+    async promoteCandidate(versionTag: string): Promise<any> {
+      return request<any>(`/model-learning/versions/${encodeURIComponent(versionTag)}/promote`, {
+        method: 'POST',
+        body: JSON.stringify({ confirm: true }),
+      });
+    },
+    async rejectCandidate(versionTag: string): Promise<any> {
+      return request<any>(`/model-learning/versions/${encodeURIComponent(versionTag)}/reject`, {
+        method: 'POST',
+      });
+    },
+    async rollback(targetVersion?: string): Promise<any> {
+      return request<any>('/model-learning/rollback', {
+        method: 'POST',
+        body: JSON.stringify({ confirm: true, target_version: targetVersion }),
+      });
+    },
+    async getReviewDetails(itemId: string): Promise<any> {
+      return request<any>(`/model-learning/clothing/${itemId}/review-details`);
+    },
+    async submitReview(itemId: string, data: any): Promise<any> {
+      return request<any>(`/model-learning/clothing/${itemId}/review`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    async toggleTrainingEligibility(itemId: string, exclude: boolean): Promise<any> {
+      return request<any>(`/model-learning/clothing/${itemId}/training-eligibility`, {
+        method: 'PATCH',
+        body: JSON.stringify({ exclude_from_training: exclude }),
+      });
     },
   },
 

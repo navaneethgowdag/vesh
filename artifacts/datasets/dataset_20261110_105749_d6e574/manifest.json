@@ -1,0 +1,44 @@
+{
+  "dataset_id": "dataset_20261110_105749_d6e574",
+  "created_at": "2026-11-10T10:57:51.163598+00:00",
+  "user_id": "0323bcd4-d817-42ee-a65a-a244d8b647f3",
+  "random_seed": 42,
+  "counts": {
+    "total": 1,
+    "train": 1,
+    "val": 0,
+    "test": 0
+  },
+  "train": [
+    {
+      "clothing_id": "9c822d8b-3270-4fa6-9800-fbe13813267b",
+      "image_hash": "3ddf4ef48715eae0babecd22fc51d3bdc6702595d305ff2d6d886607e66e7049",
+      "model_version": "1.0.0",
+      "confirmed_labels": {
+        "article_type": "Jackets",
+        "master_category": null,
+        "sub_category": null,
+        "gender": null,
+        "base_colour": "Beige",
+        "season": null,
+        "usage": null,
+        "pattern": "Solid",
+        "age_group": null
+      },
+      "label_indices": {
+        "article_type": 55,
+        "master_category": null,
+        "sub_category": null,
+        "gender": null,
+        "base_colour": 0,
+        "season": null,
+        "usage": null,
+        "pattern": 11,
+        "age_group": null
+      },
+      "reviewed_at": "2026-11-10T10:53:31.547278+00:00"
+    }
+  ],
+  "val": [],
+  "test": []
+}

@@ -457,6 +457,44 @@ class ClothingPredictionService:
         fv["review_required"] = False
         fv["processing_status"] = "completed"
         fv["processing_stage"] = "completed"
+
+        # Synchronize personal_learning for training eligibility
+        pl = dict(fv.get("personal_learning", {}))
+        if not pl.get("confirmed_attributes"):
+            pred_dict = self.get_prediction(db, clothing, user_id) or {}
+            pred_attrs = pred_dict.get("predicted_attributes", {})
+            pred_scores = pred_dict.get("prediction_scores", {})
+            verified = fv.get("verified_attributes", {})
+
+            confirmed = {}
+            status_map = {}
+            corrected = {}
+            user_corrs = fv.get("user_corrections", [])
+            corr_heads = {c.get("attribute_name"): c.get("corrected_value") for c in user_corrs}
+
+            for head in ["article_type", "master_category", "sub_category", "gender", "base_colour", "season", "usage", "pattern", "age_group"]:
+                v = verified.get(head) or pred_attrs.get(head)
+                if v:
+                    confirmed[head] = v
+                    if head in corr_heads and corr_heads[head] != pred_attrs.get(head):
+                        status_map[head] = "corrected"
+                        corrected[head] = {"original": pred_attrs.get(head), "corrected": corr_heads[head]}
+                    else:
+                        status_map[head] = "accepted"
+
+            pl.update({
+                "ai_predicted_attributes": pred_attrs,
+                "ai_confidence_scores": pred_scores,
+                "confirmed_attributes": confirmed,
+                "corrected_attributes": corrected,
+                "attribute_review_status": status_map,
+                "model_version": pred_dict.get("model_version", "1.0.0"),
+                "review_status": "reviewed",
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+                "training_eligible": not bool(clothing.exclude_from_training),
+            })
+            fv["personal_learning"] = pl
+
         analysis.feature_vector = fv
 
         clothing.updated_at = datetime.now(timezone.utc)

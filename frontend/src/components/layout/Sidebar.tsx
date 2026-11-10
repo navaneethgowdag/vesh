@@ -9,6 +9,7 @@ import {
   BarChart2,
   Layers,
   Crown,
+  Cpu,
   Bell,
   User as UserIcon,
   Settings,
@@ -32,6 +33,7 @@ export const Sidebar: React.FC = () => {
     { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
     { name: 'Wardrobe Insights', path: '/insights', icon: BarChart2 },
     { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
+    { name: 'Model Learning', path: '/model-learning', icon: Cpu, badge: 'ML' },
   ];
 
   const accountNavItems = [

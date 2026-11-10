@@ -27,6 +27,7 @@ from app.models.poll import Poll, PollOption, PollVote
 from app.models.community import Community, CommunityMember, CommunityPost
 from app.models.conversation import Conversation, ConversationParticipant, Message, UserBlock
 from app.models.weekly_plan import WeeklyPlan, WeeklyPlanDay
+from app.models.model_version import ModelVersion
 
 __all__ = [
     "Base",
@@ -67,4 +68,5 @@ __all__ = [
     "Notification",
     "CalendarEvent",
     "BackgroundJob",
+    "ModelVersion",
 ]

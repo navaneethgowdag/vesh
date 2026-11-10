@@ -32,6 +32,7 @@ const WeeklyPlanner = lazy(() => import('./pages/WeeklyPlanner').then((m) => ({ 
 const WardrobeGap = lazy(() => import('./pages/WardrobeGap').then((m) => ({ default: m.WardrobeGap })));
 const WardrobeInsights = lazy(() => import('./pages/WardrobeInsights').then((m) => ({ default: m.WardrobeInsights })));
 const OccasionVault = lazy(() => import('./pages/OccasionVault').then((m) => ({ default: m.OccasionVault })));
+const ModelLearning = lazy(() => import('./pages/ModelLearning').then((m) => ({ default: m.ModelLearning })));
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -207,6 +208,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <WardrobeInsights />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/model-learning"
+                  element={
+                    <ProtectedRoute>
+                      <ModelLearning />
                     </ProtectedRoute>
                   }
                 />

@@ -1,11 +1,14 @@
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+import json
+from fastapi import APIRouter, Depends, Query, status, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
 from app.schemas.moment import MomentCreate, MomentResponse, MomentActionResponse
+from app.schemas.poll import PollCreate
 from app.services.moment_service import MomentService
+from app.services.image_service import image_service
 
 router = APIRouter(prefix="/moments", tags=["moments"])
 
@@ -56,6 +59,84 @@ def get_user_active_moments(
             detail="You are not authorized to view moments from this creator.",
         )
     return service.get_user_moments_for_viewer(creator_id=user_id, viewer_id=viewer_id)
+
+
+@router.post("/upload", response_model=MomentResponse, status_code=status.HTTP_201_CREATED)
+async def upload_moment(
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(""),
+    occasion: Optional[str] = Form("Casual Daily"),
+    tags: Optional[str] = Form(""),
+    poll_question: Optional[str] = Form(None),
+    poll_options: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Direct multipart/form-data upload for 24-hour outfit moments.
+    Supports images (.jpg, .jpeg, .png, .webp) and short videos (.mp4, .webm, .mov).
+    Avoids Base64 encoding bloat in JSON payloads and stores optimized static assets.
+    """
+    if not file or not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A media file (image or video) is required.",
+        )
+
+    media_bytes = await file.read()
+    if not media_bytes or len(media_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty.",
+        )
+
+    try:
+        saved_media = image_service.save_media(
+            media_bytes=media_bytes,
+            filename=file.filename,
+            content_type=file.content_type,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process media file: {e}",
+        )
+
+    # Process tags
+    parsed_tags: List[str] = []
+    if tags:
+        parsed_tags = [t.strip() for t in tags.split(",") if t.strip()]
+
+    # Process poll if provided
+    poll_in = None
+    if poll_question and poll_options:
+        options_list = []
+        try:
+            options_list = json.loads(poll_options)
+        except Exception:
+            options_list = [opt.strip() for opt in poll_options.split(",") if opt.strip()]
+
+        if len(options_list) >= 2:
+            poll_in = PollCreate(
+                question=poll_question.strip(),
+                options=options_list[:4],
+                duration_hours=24,
+            )
+
+    service = MomentService(db)
+    return service.create_moment(
+        user_id=current_user.id,
+        image_url=saved_media["image_url"],
+        caption=caption or "",
+        occasion=occasion or "Casual Daily",
+        tags=parsed_tags,
+        poll=poll_in,
+    )
 
 
 @router.post("", response_model=MomentResponse, status_code=status.HTTP_201_CREATED)

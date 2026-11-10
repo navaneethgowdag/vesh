@@ -630,6 +630,8 @@ OCCASION_ALIASES: Dict[str, str] = {
     # Professional & Academic
     "office": "office",
     "work": "office",
+    "workwear": "office",
+    "work wear": "office",
     "work & office": "office",
     "work_office": "office",
     "office_work": "office",

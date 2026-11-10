@@ -1,4 +1,5 @@
 import time
+import re
 from typing import Generator, Optional
 
 from sqlalchemy import create_engine, text
@@ -127,12 +128,23 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def verify_database_connection() -> bool:
-    """Verify Neon PostgreSQL connectivity via SELECT 1 (with failover)."""
+def _sanitize_db_error(msg: str) -> str:
+    """Strip database passwords and sensitive credentials from error strings."""
+    return re.sub(r"://([^:]+):([^@]+)@", "://***:***@", str(msg))
+
+
+def verify_database_connection(fast: bool = True) -> bool:
+    """
+    Verify Neon PostgreSQL connectivity via SELECT 1 (with failover).
+    In fast mode (used during startup & readiness checks), runs 1 attempt
+    so startup is never blocked.
+    """
     try:
-        _connect_with_failover()
+        retries = 1 if fast else 2
+        _connect_with_failover(retries=retries, backoff=0.5)
         return True
     except Exception as e:
-        print(f"Database connection verification error: {e}")
+        clean_err = _sanitize_db_error(str(e))
+        print(f"Database connection verification error: {clean_err}")
         return False
 

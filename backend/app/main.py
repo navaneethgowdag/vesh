@@ -1,4 +1,6 @@
 import os
+import time
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,26 +12,47 @@ from app.api.routes import api_router
 from app.ai.model_manager import model_manager
 from app.ai.fashion_model import fashion_model_service
 
+logger = logging.getLogger("tailorbird.startup")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup tasks
-    print("TailorBird API starting up...")
-    db_connected = verify_database_connection()
-    if db_connected:
-        print("Connected to Neon PostgreSQL.")
-    else:
-        print("Warning: Database connection verification failed during startup.")
-    
-    # Initialize Upstash / Redis if enabled
-    init_redis()
+    start_time = time.time()
+    port = os.getenv("PORT", "8000")
+    logger.info(f"[Startup:Begin] TailorBird API initializing on port {port} (env={settings.APP_ENV})...")
 
-    # Load ML models if available
-    model_manager.load_recommendation_model()
-    fashion_model_service.load_model()
+    # 1. Non-blocking database check (fast mode with strict timeout)
+    try:
+        db_connected = verify_database_connection(fast=True)
+        if db_connected:
+            logger.info("[Startup:Database] Neon PostgreSQL connected successfully.")
+        else:
+            logger.warning("[Startup:Database] Warning: Database connection verification failed during startup. Running in degraded mode.")
+    except Exception as e:
+        logger.warning(f"[Startup:Database] Database verification error: {e}")
+
+    # 2. Initialize Upstash / Redis if enabled (bounded timeout)
+    try:
+        init_redis()
+    except Exception as re:
+        logger.warning(f"[Startup:Redis] Redis initialization notice: {re}")
+
+    # 3. Model initialization (instantaneous background loading)
+    try:
+        model_manager.load_recommendation_model()
+    except Exception as me:
+        logger.warning(f"[Startup:Models] Recommendation model notice: {me}")
+
+    # Dispatch fashion model loading in background thread so Uvicorn binds port immediately
+    fashion_model_service.load_model_in_background()
+
+    elapsed = time.time() - start_time
+    logger.info(f"[Startup:Complete] Startup sequence completed in {elapsed:.3f}s. Binding socket and accepting traffic.")
     yield
     # Shutdown tasks
-    print("TailorBird API shutting down...")
+    logger.info("[Shutdown] TailorBird API shutting down...")
     close_redis()
 
 
@@ -137,21 +160,33 @@ def health_check():
 @app.get("/api/v1/ready", tags=["health"])
 def readiness_check(response: Response):
     """
-    Dependency readiness probe. Verifies that Neon PostgreSQL is reachable
-    via a lightweight SELECT 1 query before orchestrators route live traffic.
-    Returns HTTP 200 when ready, HTTP 503 when dependencies fail.
+    Dependency readiness probe. Reports actual operational status of dependencies:
+    - Database (critical: HTTP 503 if disconnected)
+    - Redis (optional: connected | degraded | disabled)
+    - AI model (ready | loading | unavailable)
+    - Background queue (active | thread_fallback_active)
     """
-    db_ok = verify_database_connection()
+    db_ok = verify_database_connection(fast=True)
     redis_health = check_redis_health()
-    is_ready = db_ok
 
-    if not is_ready:
+    if fashion_model_service.is_loaded:
+        ai_status = "ready"
+    elif fashion_model_service.is_loading:
+        ai_status = "loading"
+    else:
+        ai_status = "unavailable"
+
+    bg_status = "active" if redis_health.get("status") == "ok" else "thread_fallback_active"
+
+    if not db_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "status": "not_ready",
             "app": "TailorBird",
             "database": "disconnected",
-            "redis": redis_health["status"],
+            "redis": redis_health.get("status", "unknown"),
+            "ai_model": ai_status,
+            "background_jobs": bg_status,
             "detail": "Database connection check failed",
         }
 
@@ -159,7 +194,9 @@ def readiness_check(response: Response):
         "status": "ready",
         "app": "TailorBird",
         "database": "Neon PostgreSQL",
-        "redis": redis_health["status"],
+        "redis": redis_health.get("status", "unknown"),
+        "ai_model": ai_status,
+        "background_jobs": bg_status,
     }
 
 

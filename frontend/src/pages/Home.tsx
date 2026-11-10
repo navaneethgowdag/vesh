@@ -22,6 +22,7 @@ import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { MomentViewerModal } from '../components/feed/MomentViewerModal';
+import { AddMomentModal } from '../components/feed/AddMomentModal';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
 import { CalendarEvent, OutfitMoment } from '../types';
@@ -54,6 +55,7 @@ export const Home: React.FC = () => {
   const [moments, setMoments] = useState<OutfitMoment[]>([]);
   const [myMoments, setMyMoments] = useState<OutfitMoment[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [isAddMomentOpen, setIsAddMomentOpen] = useState(false);
   const [activeMomentIndex, setActiveMomentIndex] = useState(0);
 
   // Time-aware greeting
@@ -175,6 +177,11 @@ export const Home: React.FC = () => {
     } catch {
       // quiet
     }
+  };
+
+  const handleMomentCreated = (newMoment: OutfitMoment) => {
+    setMyMoments((prev) => [newMoment, ...prev]);
+    showToast('24-Hour Moment published successfully!', 'success');
   };
 
   return (
@@ -435,7 +442,7 @@ export const Home: React.FC = () => {
                 </span>
               </div>
               <button
-                onClick={() => navigate('/create?type=moment')}
+                onClick={() => setIsAddMomentOpen(true)}
                 className="text-xs text-primary-600 font-semibold hover:underline flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -451,7 +458,7 @@ export const Home: React.FC = () => {
                     setActiveMomentIndex(0);
                     setViewerOpen(true);
                   } else {
-                    navigate('/create?type=moment');
+                    setIsAddMomentOpen(true);
                   }
                 }}
                 className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
@@ -761,6 +768,13 @@ export const Home: React.FC = () => {
           initialIndex={activeMomentIndex}
           onClose={() => setViewerOpen(false)}
           onLike={handleLikeMoment}
+        />
+
+        {/* 24-Hour Moments Add / Upload Modal */}
+        <AddMomentModal
+          isOpen={isAddMomentOpen}
+          onClose={() => setIsAddMomentOpen(false)}
+          onSuccess={handleMomentCreated}
         />
       </PullToRefresh>
     </AppShell>

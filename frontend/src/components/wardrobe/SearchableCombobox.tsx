@@ -14,6 +14,8 @@ export interface SearchableComboboxProps {
   confidence?: number;
   reviewRequired?: boolean;
   isEdited?: boolean;
+  isUnconfirmed?: boolean;
+  onToggleUnconfirmed?: () => void;
   alternatives?: ComboboxAlternative[];
   placeholder?: string;
   className?: string;
@@ -28,6 +30,8 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
   confidence,
   reviewRequired,
   isEdited,
+  isUnconfirmed = false,
+  onToggleUnconfirmed,
   alternatives = [],
   placeholder = 'Select option...',
   className = '',
@@ -75,9 +79,27 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
         </label>
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
-          {isEdited && (
-            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              Edited
+          {onToggleUnconfirmed && (
+            <button
+              type="button"
+              onClick={onToggleUnconfirmed}
+              className="text-[10px] text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline mr-1"
+            >
+              {isUnconfirmed ? 'Confirm' : 'Leave Unconfirmed'}
+            </button>
+          )}
+
+          {isUnconfirmed ? (
+            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-600">
+              Unconfirmed
+            </span>
+          ) : isEdited ? (
+            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              Corrected
+            </span>
+          ) : (
+            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              Accepted
             </span>
           )}
 

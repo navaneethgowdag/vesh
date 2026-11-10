@@ -27,6 +27,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import efficientnet_b0
 import torchvision.transforms as T
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
@@ -145,13 +146,19 @@ class FashionModelService:
         self.model_version: str = "1.0.0"
         self.model_name: str = "efficientnet_b0_multitask"
         self.is_loaded: bool = False
+        self.is_loading: bool = False
+        self.load_error: Optional[str] = None
         self.transform: Optional[T.Compose] = None
         self.confidence_threshold: float = 0.40
 
     @property
     def device(self) -> torch.device:
         if self._device is None:
-            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # Enforce CPU execution on Render and CPU-only cloud instances to prevent CUDA init stalls
+            if os.getenv("RENDER") == "true" or bool(os.getenv("RENDER_SERVICE_ID")) or os.getenv("FORCE_CPU", "false").lower() == "true":
+                self._device = torch.device("cpu")
+            else:
+                self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         return self._device
 
     def _discover_artifacts_dir(self) -> str:
@@ -167,18 +174,41 @@ class FashionModelService:
                 return c
         return os.path.abspath("artifacts")
 
-    def load_model(self) -> bool:
+    def load_model(self, checkpoint_override: Optional[str] = None) -> bool:
         """
         Load the trained fashion AI model checkpoint and configuration files.
-        Non-blocking: logs failures clearly without preventing app initialization.
+        Prioritizes the designated production model from current_production_model.json.
+        Fails safely back to baseline best_model.pt if candidate or custom checkpoint fails.
         """
-        model_path = os.path.join(self.artifacts_dir, "best_model.pt")
+        prod_meta_path = os.path.join(self.artifacts_dir, "current_production_model.json")
+        active_checkpoint = os.path.join(self.artifacts_dir, "best_model.pt")
+        active_version = "1.0.0"
+
+        if checkpoint_override and os.path.exists(checkpoint_override):
+            active_checkpoint = checkpoint_override
+            active_version = "candidate"
+        elif os.path.exists(prod_meta_path):
+            try:
+                with open(prod_meta_path, "r", encoding="utf-8") as pf:
+                    prod_info = json.load(pf)
+                    cand_path = prod_info.get("checkpoint_path", "")
+                    # Resolve relative to artifacts_dir or repo root
+                    if not os.path.isabs(cand_path):
+                        cand_path = os.path.abspath(cand_path)
+                    if os.path.exists(cand_path):
+                        active_checkpoint = cand_path
+                        raw_tag = prod_info.get("version_tag", "1.0.0")
+                        active_version = "1.0.0" if raw_tag in ("v1.0.0", "1.0.0") else raw_tag
+            except Exception as pe:
+                logger.warning(f"[FashionModelService] Error reading current_production_model.json: {pe}")
+
+        model_path = active_checkpoint
         config_path = os.path.join(self.artifacts_dir, "model_config.json")
         prep_path = os.path.join(self.artifacts_dir, "preprocessing.json")
         mappings_path = os.path.join(self.artifacts_dir, "class_mappings.json")
 
         for p, name in [
-            (model_path, "Checkpoint best_model.pt"),
+            (model_path, f"Checkpoint {model_path}"),
             (config_path, "model_config.json"),
             (prep_path, "preprocessing.json"),
             (mappings_path, "class_mappings.json"),
@@ -188,8 +218,10 @@ class FashionModelService:
                 self.is_loaded = False
                 return False
 
+        self.is_loading = True
+        self.load_error = None
         try:
-            logger.info(f"[FashionModelService] Loading model artifacts from: {self.artifacts_dir}")
+            logger.info(f"[FashionModelService] Loading model artifacts from: {self.artifacts_dir} (Checkpoint: {model_path}, Version: {active_version})")
             with open(config_path, "r", encoding="utf-8") as f:
                 self.model_config = json.load(f)
             with open(prep_path, "r", encoding="utf-8") as f:
@@ -199,7 +231,7 @@ class FashionModelService:
 
             tasks = self.model_config.get("tasks", [])
             num_classes = self.model_config.get("num_classes", {})
-            self.model_version = self.model_config.get("model_version", "1.0.0")
+            self.model_version = active_version
 
             # Initialize architecture
             self.model = MultiTaskEfficientNetB0(tasks=tasks, num_classes=num_classes)
@@ -235,9 +267,37 @@ class FashionModelService:
             return True
 
         except Exception as e:
-            logger.exception(f"[FashionModelService] Failed to load fashion model: {e}")
+            self.load_error = str(e)
+            logger.warning(f"[FashionModelService] Failed to load fashion model: {e}")
             self.is_loaded = False
             return False
+        finally:
+            self.is_loading = False
+
+    def load_model_in_background(self) -> None:
+        """
+        Load model asynchronously in a background thread during application startup.
+        Prevents model initialization from delaying Uvicorn port binding on Render.
+        """
+        if self.is_loaded or self.is_loading:
+            return
+        import threading
+
+        def _bg_worker():
+            try:
+                self.load_model()
+            except Exception as exc:
+                logger.warning(f"[FashionModelService] Background initialization error: {exc}")
+
+        bg_thread = threading.Thread(target=_bg_worker, name="fashion-model-init", daemon=True)
+        bg_thread.start()
+        logger.info("[FashionModelService] Dispatched non-blocking model load thread.")
+
+    def reload_model(self) -> bool:
+        """Hot reload active model without restarting process."""
+        self.is_loaded = False
+        self.model = None
+        return self.load_model()
 
     def _prepare_image(self, image_input: Union[Image.Image, bytes, np.ndarray]) -> Image.Image:
         """
@@ -281,10 +341,19 @@ class FashionModelService:
         """
         import time
 
+        if self.is_loading:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Fashion AI model is initializing in background. Please retry shortly.",
+            )
+
         if not self.is_loaded or self.model is None or self.transform is None:
             # Attempt lazy loading if not yet initialized
             if not self.load_model():
-                raise RuntimeError("Fashion AI model is not available or could not be loaded from artifacts.")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Fashion AI model is unavailable ({self.load_error or 'artifacts missing'}).",
+                )
 
         t_start = time.perf_counter()
         pil_img = self._prepare_image(image_input)

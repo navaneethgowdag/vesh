@@ -13,9 +13,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Neon pooler hostnames.
 _FALLBACK_DNS_SERVERS = ("8.8.8.8", "1.1.1.1", "9.9.9.9")
 
-# Resolution can transiently fail (router DNS cache misses, VPN handshakes...).
-_RESOLVE_ATTEMPTS = 4
-_RESOLVE_BACKOFF_SECONDS = 1.5
+# Resolution retries bounded for fast startup
+_RESOLVE_ATTEMPTS = 2
+_RESOLVE_BACKOFF_SECONDS = 0.5
 
 
 def _split_url(database_url: str):
@@ -43,7 +43,11 @@ def _resolve_once(host: str) -> Optional[str]:
     except OSError:
         pass
 
-    # 2. Explicit DNS queries against system + public resolvers.
+    # In cloud environments (e.g. Render / Docker), bypass external raw DNS queries
+    if os.getenv("RENDER") == "true" or bool(os.getenv("RENDER_SERVICE_ID")) or os.getenv("APP_ENV") == "production":
+        return None
+
+    # 2. Explicit DNS queries against system + public resolvers (Windows ISP workaround only).
     try:
         import dns.resolver
         import dns.exception
@@ -54,8 +58,8 @@ def _resolve_once(host: str) -> Optional[str]:
         try:
             resolver = dns.resolver.Resolver(configure=False)
             resolver.nameservers = [server]
-            resolver.timeout = 2.0
-            resolver.lifetime = 3.0
+            resolver.timeout = 1.0
+            resolver.lifetime = 1.5
             answers = resolver.resolve(host, "A")
             for answer in answers:
                 return answer.to_text()
@@ -76,10 +80,6 @@ def _resolve_with_retries(host: str) -> Optional[str]:
             return ip
         if attempt < _RESOLVE_ATTEMPTS - 1:
             time.sleep(_RESOLVE_BACKOFF_SECONDS)
-    print(
-        f"Warning: could not resolve database host '{host}' via system or public DNS. "
-        "Falling back to the hostname; the connection may fail if DNS is still broken."
-    )
     return None
 
 
@@ -99,11 +99,12 @@ def _with_query_param(database_url: str, key: str, value: str) -> str:
 def _pin_host_address(database_url: str) -> str:
     """
     Resolve the database host once and pin it via libpq's `hostaddr`.
-
-    libpq can then connect straight to the IP, bypassing whatever is breaking
-    hostname resolution for this process. The host name is still sent for
-    TLS/SNI and routing purposes.
+    Only enabled on local Windows when ENABLE_DNS_PINNING=true.
+    Disabled by default on Render and Linux to avoid breaking cloud DNS.
     """
+    if os.getenv("RENDER") == "true" or bool(os.getenv("RENDER_SERVICE_ID")) or os.getenv("ENABLE_DNS_PINNING", "false").lower() != "true":
+        return database_url
+
     parts = _split_url(database_url)
     host = parts.hostname
     if not host:

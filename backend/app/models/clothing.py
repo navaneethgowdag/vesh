@@ -495,6 +495,55 @@ class Clothing(Base):
         cat = (self.category or "").lower()
         return CATEGORY_TO_GROUP.get(cat, "western")
 
+    # Personal Model Learning properties (persisted via feature_vector["personal_learning"])
+    @property
+    def exclude_from_training(self) -> bool:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            return bool(self.analysis.feature_vector.get("exclude_from_training", False))
+        return getattr(self, "_exclude_from_training", False)
+
+    @exclude_from_training.setter
+    def exclude_from_training(self, val: bool):
+        if not self.analysis:
+            from app.models.clothing_analysis import ClothingAnalysis
+            self.analysis = ClothingAnalysis(
+                clothing_id=self.id,
+                feature_vector={"exclude_from_training": bool(val)},
+            )
+        elif isinstance(self.analysis.feature_vector, dict):
+            fv = dict(self.analysis.feature_vector)
+            fv["exclude_from_training"] = bool(val)
+            self.analysis.feature_vector = fv
+        else:
+            self.analysis.feature_vector = {"exclude_from_training": bool(val)}
+        self._exclude_from_training = bool(val)
+
+    @property
+    def personal_learning(self) -> dict:
+        if self.analysis and isinstance(self.analysis.feature_vector, dict):
+            return self.analysis.feature_vector.get("personal_learning", {})
+        return getattr(self, "_personal_learning", {})
+
+    @property
+    def confirmed_attributes(self) -> dict:
+        return self.personal_learning.get("confirmed_attributes", {})
+
+    @property
+    def attribute_review_status(self) -> dict:
+        return self.personal_learning.get("attribute_review_status", {})
+
+    @property
+    def corrected_attributes(self) -> dict:
+        return self.personal_learning.get("corrected_attributes", {})
+
+    @property
+    def is_training_eligible(self) -> bool:
+        if self.exclude_from_training:
+            return False
+        if not self.is_finalized:
+            return False
+        return bool(self.confirmed_attributes)
+
     # Relationships
     user = relationship("User", back_populates="clothing_items")
     analysis = relationship("ClothingAnalysis", back_populates="clothing", uselist=False, cascade="all, delete-orphan")
