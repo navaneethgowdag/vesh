@@ -83,12 +83,11 @@ export const MomentCardStack: React.FC<MomentCardStackProps> = ({
             key={activeMoment.id}
             initial={{ scale: 0.96, y: 10, opacity: 0.9 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={(custom) => ({
-              x: custom === 'left' ? -550 : 550,
+            exit={{
               opacity: 0,
-              rotate: custom === 'left' ? -20 : 20,
-              transition: { duration: 0.25, ease: 'easeOut' },
-            })}
+              scale: 0.92,
+              transition: { duration: 0.2, ease: 'easeOut' },
+            }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
             className="absolute inset-0 z-20"
           >
