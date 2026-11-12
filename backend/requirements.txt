@@ -25,6 +25,5 @@ requests>=2.31.0
 
 
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.6.0+cpu
-torchvision==0.21.0+cpu
-
+torch
+torchvision
