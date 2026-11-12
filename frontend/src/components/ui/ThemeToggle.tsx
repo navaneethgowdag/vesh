@@ -93,4 +93,24 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       </div>
     );
   }
+
+  // Compact variant (Header / TopBar icon button)
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={cn(
+        'w-10 h-10 flex items-center justify-center rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] bg-white dark:bg-[#1A1D1A] text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-all cursor-pointer shadow-subtle',
+        className
+      )}
+      title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
+      aria-label="Toggle theme"
+    >
+      {resolvedTheme === 'dark' ? (
+        <Sun className="w-4 h-4 text-zinc-100 transition-transform hover:rotate-45" />
+      ) : (
+        <Moon className="w-4 h-4 text-zinc-900 transition-transform hover:-rotate-12" />
+      )}
+    </button>
+  );
 };

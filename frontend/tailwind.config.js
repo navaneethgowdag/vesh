@@ -8,21 +8,41 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Editorial Atelier Official Palette
+        atelier: {
+          aubergine: '#29202B',  // Midnight Aubergine (Primary text, navigation)
+          porcelain: '#F3EEE8',  // Porcelain (Main page background)
+          oxblood: '#743C49',    // Oxblood (Primary accent and important actions)
+          rose: '#D5A6A0',       // Dusty Rose (Secondary accent)
+          camel: '#B49B82',      // Muted Camel (Supporting accent)
+          white: '#FFFFFF',      // Gallery White (Content surfaces)
+          olive: '#6D7068',      // Slate Olive (Secondary interface elements)
+          taupe: '#DCD4CC',      // Soft Taupe (Borders and dividers)
+          error: '#A33D42',      // Error Red
+          success: '#426B50',    // Success Green
+          // Dark Atelier mode tokens
+          darkBg: '#1A151C',
+          darkSurface: '#241D27',
+          darkBorder: '#392F3E',
+          darkText: '#F3EEE8',
+          darkMuted: '#A89E9B',
+        },
+
         // Official TailorBird Editorial Fashion Palette
         brand: {
-          ink: '#202321',        // Primary Deep Charcoal Ink
-          ivory: '#F8F6F1',      // Warm Editorial Canvas
-          sage: '#899783',       // Signature Muted Sage
-          stone: '#E9E6DE',      // Soft Architectural Stone
-          taupe: '#B5AA99',      // Supporting Warm Taupe
-          olive: '#727D69',      // Accent Muted Olive
-          deep: '#292D29',       // High-Contrast Deep Text
-          muted: '#777C75',      // High-Contrast Secondary Text
-          sand: '#D8D3C8',       // Light Stone Accent
-          dark: '#141715',       // Dark Mode Canvas Background
-          darkSurface: '#1C201D',// Dark Mode Card Surface
-          darkSubtle: '#252A26', // Dark Mode Hover / Subtle Surface
-          darkBorder: '#2E3530', // Dark Mode Fine Borders
+          ink: '#29202B',        // Midnight Aubergine
+          ivory: '#F3EEE8',      // Porcelain
+          sage: '#6D7068',       // Slate Olive
+          stone: '#DCD4CC',      // Soft Taupe
+          taupe: '#B49B82',      // Muted Camel
+          olive: '#743C49',      // Oxblood
+          deep: '#29202B',       // Midnight Aubergine
+          muted: '#6D7068',      // Slate Olive
+          sand: '#D5A6A0',       // Dusty Rose
+          dark: '#1A151C',       // Dark Atelier Canvas
+          darkSurface: '#241D27',// Dark Atelier Surface
+          darkSubtle: '#2C2430', // Dark Atelier Subtle
+          darkBorder: '#392F3E', // Dark Atelier Border
         },
 
         // Surface Design Tokens (Dynamic CSS Variable Mapping)
@@ -156,6 +176,7 @@ export default {
           'sans-serif',
         ],
         serif: [
+          '"Cormorant Garamond"',
           '"Playfair Display"',
           'Georgia',
           'Cambria',
@@ -163,7 +184,7 @@ export default {
           'serif',
         ],
         editorial: [
-          '"Playfair Display"',
+          '"Cormorant Garamond"',
           'Georgia',
           'serif',
         ],

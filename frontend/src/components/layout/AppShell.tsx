@@ -15,7 +15,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   showRightSidebar = false,
 }) => {
   return (
-    <div className="min-h-screen bg-[#F8F6F1] dark:bg-[#141715] text-[#202321] dark:text-[#F8F6F1] flex flex-col antialiased transition-colors duration-200">
+    <div className="min-h-screen bg-[#F3EEE8] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] flex flex-col antialiased transition-colors duration-200">
       {/* Top bar on Mobile / Tablet */}
       <TopBar />
 

@@ -14,15 +14,15 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    default: 'bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-soft',
-    subtle: 'bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F]',
-    elevated: 'bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-soft-md',
+    default: 'bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E]',
+    subtle: 'bg-[#F3EEE8] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E]',
+    elevated: 'bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs',
   };
 
   return (
     <div
       className={cn(
-        'rounded-2xl transition-all duration-150',
+        'rounded-[4px] transition-all duration-150',
         variantStyles[variant],
         className
       )}

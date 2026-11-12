@@ -85,12 +85,14 @@ class TrainingDatasetService:
         - Sample counts per class for all 9 heads
         - Dataset readiness status with actionable feedback
         """
-        # Query owner's clothing items
+        # Query owner's clothing items (fall back to all clothing if single-user app or owner has none)
         clothing_items = (
             db.query(Clothing)
             .filter(Clothing.user_id == user_id)
             .all()
         )
+        if not clothing_items:
+            clothing_items = db.query(Clothing).all()
 
         total_garments = len(clothing_items)
         reviewed_garments = 0
@@ -119,19 +121,18 @@ class TrainingDatasetService:
             # Count attribute statuses
             attr_status = pl.get("attribute_review_status", {})
             confirmed_attrs = pl.get("confirmed_attributes", {})
+            corrected_dict = pl.get("corrected_attributes", {})
 
             for head in SNAKE_TO_TASK.keys():
                 st = attr_status.get(head)
-                if st == "accepted":
-                    total_accepted_attrs += 1
-                elif st == "corrected":
+                if st == "corrected" or head in corrected_dict:
                     total_corrected_attrs += 1
+                elif st == "accepted":
+                    total_accepted_attrs += 1
+                elif head in confirmed_attrs:
+                    total_accepted_attrs += 1
                 else:
-                    # If confirmed without status
-                    if head in confirmed_attrs:
-                        total_accepted_attrs += 1
-                    else:
-                        total_unconfirmed_attrs += 1
+                    total_unconfirmed_attrs += 1
 
             # Check eligibility
             has_orig_img = False
@@ -192,6 +193,12 @@ class TrainingDatasetService:
             "total_accepted_attributes": total_accepted_attrs,
             "total_corrected_attributes": total_corrected_attrs,
             "total_unconfirmed_attributes": total_unconfirmed_attrs,
+            # Direct compatibility aliases for admin dashboard & statistics consumers
+            "reviewed_garments": reviewed_garments,
+            "total_wardrobe_garments": total_garments,
+            "accepted_decisions_count": total_accepted_attrs,
+            "corrected_decisions_count": total_corrected_attrs,
+            "unconfirmed_decisions_count": total_unconfirmed_attrs,
             "dataset_ready": is_ready,
             "readiness_summary": " ".join(readiness_reasons),
             "class_counts_per_head": class_counts,

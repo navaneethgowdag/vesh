@@ -33,6 +33,7 @@ const WardrobeGap = lazy(() => import('./pages/WardrobeGap').then((m) => ({ defa
 const WardrobeInsights = lazy(() => import('./pages/WardrobeInsights').then((m) => ({ default: m.WardrobeInsights })));
 const OccasionVault = lazy(() => import('./pages/OccasionVault').then((m) => ({ default: m.OccasionVault })));
 const ModelLearning = lazy(() => import('./pages/ModelLearning').then((m) => ({ default: m.ModelLearning })));
+const Moments = lazy(() => import('./pages/Moments').then((m) => ({ default: m.Moments })));
 
 // Admin Console Routes (Restricted ML Ops & Governance)
 const AdminProtectedRoute = lazy(() => import('./components/admin/AdminProtectedRoute').then((m) => ({ default: m.AdminProtectedRoute })));
@@ -198,6 +199,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <OccasionVault />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/moments"
+                  element={
+                    <ProtectedRoute>
+                      <Moments />
                     </ProtectedRoute>
                   }
                 />

@@ -24,28 +24,28 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center font-sans font-medium transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none rounded-xl tracking-normal select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#727D69] dark:focus-visible:ring-[#9EAB97] focus-visible:ring-offset-2 cursor-pointer';
+    'inline-flex items-center justify-center font-sans font-medium transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none rounded-[3px] tracking-normal select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#743C49] dark:focus-visible:ring-[#D5A6A0] focus-visible:ring-offset-1 cursor-pointer';
 
   const variants = {
     primary:
-      'bg-[#202321] hover:bg-[#323833] dark:bg-[#F8F6F1] dark:hover:bg-[#E9E6DE] text-[#F8F6F1] dark:text-[#202321] font-semibold border border-transparent shadow-subtle',
+      'bg-[#743C49] hover:bg-[#5E303B] dark:bg-[#743C49] dark:hover:bg-[#8A4A58] text-[#FFFFFF] font-medium border border-transparent shadow-xs',
     champagne:
-      'bg-[#727D69] hover:bg-[#5C6554] text-[#F8F6F1] font-semibold border border-transparent shadow-subtle',
+      'bg-[#29202B] hover:bg-[#3D3040] dark:bg-[#F3EEE8] dark:hover:bg-[#E4DDD4] text-[#F3EEE8] dark:text-[#29202B] font-medium border border-transparent shadow-xs',
     secondary:
-      'bg-[#F1EEE7] hover:bg-[#E9E6DE] dark:bg-[#252A26] dark:hover:bg-[#2F3630] text-[#202321] dark:text-[#F8F6F1] border border-[#E2DDD3] dark:border-[#2D342F] font-medium',
+      'bg-[#FFFFFF] hover:bg-[#F3EEE8] dark:bg-[#241D27] dark:hover:bg-[#2E2532] text-[#29202B] dark:text-[#F3EEE8] border border-[#DCD4CC] dark:border-[#392F3E] font-medium',
     outline:
-      'border border-[#D8D3C8] dark:border-[#38413A] text-[#202321] dark:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] font-medium',
+      'border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] hover:bg-[#F3EEE8] dark:hover:bg-[#241D27] font-medium',
     ghost:
-      'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] font-medium',
+      'text-[#6D7068] dark:text-[#A89E9B] hover:text-[#29202B] dark:hover:text-[#F3EEE8] hover:bg-[#F3EEE8]/60 dark:hover:bg-[#241D27]/60 font-medium',
     danger:
-      'bg-rose-700 text-white hover:bg-rose-800 border border-transparent font-medium shadow-subtle',
+      'bg-[#A33D42] text-white hover:bg-[#893237] border border-transparent font-medium shadow-xs',
   };
 
   const sizes = {
-    sm: 'text-xs min-h-[36px] px-3.5 py-1.5 gap-1.5 rounded-lg',
-    md: 'text-sm min-h-[44px] px-4 py-2 gap-2 rounded-xl',
-    lg: 'text-base min-h-[48px] px-6 py-2.5 gap-2.5 font-semibold rounded-xl',
-    icon: 'min-h-[44px] min-w-[44px] p-2.5 rounded-xl',
+    sm: 'text-xs min-h-[34px] px-3 py-1.5 gap-1.5 rounded-[2px]',
+    md: 'text-sm min-h-[42px] px-4 py-2 gap-2 rounded-[3px]',
+    lg: 'text-base min-h-[46px] px-6 py-2.5 gap-2.5 font-medium rounded-[3px]',
+    icon: 'min-h-[40px] min-w-[40px] p-2 rounded-[3px]',
   };
 
   const isDisabled = disabled || isLoading;

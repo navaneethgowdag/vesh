@@ -350,10 +350,12 @@ class ClothingPredictionService:
                         attribute_name=attr,
                         predicted_value=corr_entry["predicted_value"],
                         corrected_value=corr_entry["corrected_value"],
+                        review_status="pending",
+                        training_eligible=not bool(clothing.exclude_from_training),
                     )
                     db.add(corr_obj)
                 except Exception:
-                    db.rollback()
+                    pass
 
             # Update verified_attributes dict
             verified_attrs[attr] = new_val

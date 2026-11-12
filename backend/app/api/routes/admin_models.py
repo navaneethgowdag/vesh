@@ -10,6 +10,8 @@ All endpoints protected with server-side administrator authorization.
 import os
 import json
 import logging
+import uuid
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -52,6 +54,11 @@ class PromoteModelRequest(BaseModel):
 class RollbackModelRequest(BaseModel):
     target_version: Optional[str] = Field(None, description="Target version to roll back to; defaults to baseline v1.0.0")
     confirm: bool = Field(..., description="Explicit administrator confirmation")
+
+
+class UpdateCorrectionRequest(BaseModel):
+    review_status: Optional[str] = Field(None, description="'pending', 'approved', 'rejected'")
+    training_eligible: Optional[bool] = Field(None, description="Whether eligible for model training")
 
 
 # =========================================================================
@@ -98,12 +105,12 @@ def get_clothing_model_details(
         "image_size": [224, 224],
         "last_promoted_at": prod_info.get("promoted_at", "2026-11-08T19:09:00Z"),
         "training_dataset_info": {
-            "total_wardrobe_items": dataset_stats.get("total_wardrobe_garments", 0),
-            "reviewed_items": dataset_stats.get("reviewed_garments", 0),
+            "total_wardrobe_items": dataset_stats.get("total_wardrobe_items") or dataset_stats.get("total_wardrobe_garments", 0),
+            "reviewed_items": dataset_stats.get("total_reviewed_garments") or dataset_stats.get("reviewed_garments", 0),
             "eligible_for_training": dataset_stats.get("total_eligible_training_examples", 0),
-            "accepted_decisions": dataset_stats.get("accepted_decisions_count", 0),
-            "corrected_decisions": dataset_stats.get("corrected_decisions_count", 0),
-            "unconfirmed_decisions": dataset_stats.get("unconfirmed_decisions_count", 0),
+            "accepted_decisions": dataset_stats.get("total_accepted_attributes") or dataset_stats.get("accepted_decisions_count", 0),
+            "corrected_decisions": dataset_stats.get("total_corrected_attributes") or dataset_stats.get("corrected_decisions_count", 0),
+            "unconfirmed_decisions": dataset_stats.get("total_unconfirmed_attributes") or dataset_stats.get("unconfirmed_decisions_count", 0),
         },
     }
 
@@ -234,6 +241,138 @@ def rollback_clothing_model(
         admin_user_id=current_admin.id,
         target_version_tag=payload.target_version,
     )
+
+
+@router.get("/clothing/corrections")
+def list_user_corrections(
+    page: int = 1,
+    page_size: int = 20,
+    review_status: Optional[str] = None,
+    attribute_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+) -> Dict[str, Any]:
+    """
+    List user-corrected clothing classification mistakes from PostgreSQL.
+    Preserves original AI prediction, user-corrected attributes, changed fields,
+    timestamps, and administrator review status.
+    """
+    from app.models.clothing_correction import ClothingCorrection
+    from app.models.clothing import Clothing
+    from app.models.clothing_analysis import ClothingAnalysis
+
+    # Synchronize any historical corrections logged in ClothingAnalysis.feature_vector to ClothingCorrection table
+    try:
+        analyses = db.query(ClothingAnalysis).all()
+        for a in analyses:
+            if not isinstance(a.feature_vector, dict):
+                continue
+            fv = a.feature_vector
+            corrs = fv.get("user_corrections", [])
+            for c in corrs:
+                c_id_str = c.get("id")
+                if not c_id_str:
+                    continue
+                try:
+                    c_uuid = uuid.UUID(c_id_str)
+                    exists = db.query(ClothingCorrection).filter(ClothingCorrection.id == c_uuid).first()
+                    if not exists:
+                        new_corr = ClothingCorrection(
+                            id=c_uuid,
+                            clothing_id=uuid.UUID(c["clothing_id"]),
+                            user_id=uuid.UUID(c["user_id"]),
+                            attribute_name=c.get("attribute_name", "unknown"),
+                            predicted_value=c.get("predicted_value"),
+                            corrected_value=c.get("corrected_value", ""),
+                            review_status="pending",
+                            training_eligible=True,
+                        )
+                        db.add(new_corr)
+                except Exception:
+                    pass
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.warning(f"Error syncing corrections: {e}")
+
+    query = db.query(ClothingCorrection).join(Clothing, ClothingCorrection.clothing_id == Clothing.id, isouter=True)
+    if review_status and review_status != "all":
+        query = query.filter(ClothingCorrection.review_status == review_status)
+    if attribute_name and attribute_name != "all":
+        query = query.filter(ClothingCorrection.attribute_name == attribute_name)
+
+    total_count = query.count()
+    offset = max(0, (page - 1) * page_size)
+    records = query.order_by(ClothingCorrection.created_at.desc()).offset(offset).limit(page_size).all()
+
+    items = []
+    for r in records:
+        clothing_name = r.clothing.name if r.clothing else "Unknown Garment"
+        image_url = r.clothing.preferred_image_url if r.clothing else None
+        items.append({
+            "id": str(r.id),
+            "clothing_id": str(r.clothing_id),
+            "clothing_name": clothing_name,
+            "image_url": image_url,
+            "user_id": str(r.user_id),
+            "attribute_name": r.attribute_name,
+            "predicted_value": r.predicted_value,
+            "corrected_value": r.corrected_value,
+            "review_status": r.review_status or "pending",
+            "training_eligible": r.training_eligible if r.training_eligible is not None else True,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+
+    return {
+        "items": items,
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": max(1, (total_count + page_size - 1) // page_size),
+    }
+
+
+@router.patch("/clothing/corrections/{correction_id}")
+def update_user_correction_status(
+    correction_id: str,
+    payload: UpdateCorrectionRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+) -> Dict[str, Any]:
+    """
+    Update review status ('pending', 'approved', 'rejected') and training eligibility.
+    """
+    from app.models.clothing_correction import ClothingCorrection
+    try:
+        c_uuid = uuid.UUID(correction_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid correction UUID format")
+
+    corr = db.query(ClothingCorrection).filter(ClothingCorrection.id == c_uuid).first()
+    if not corr:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Correction record not found")
+
+    if payload.review_status is not None:
+        if payload.review_status not in ("pending", "approved", "rejected"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid review_status")
+        corr.review_status = payload.review_status
+
+    if payload.training_eligible is not None:
+        corr.training_eligible = payload.training_eligible
+
+    db.commit()
+    db.refresh(corr)
+
+    return {
+        "id": str(corr.id),
+        "clothing_id": str(corr.clothing_id),
+        "attribute_name": corr.attribute_name,
+        "predicted_value": corr.predicted_value,
+        "corrected_value": corr.corrected_value,
+        "review_status": corr.review_status,
+        "training_eligible": corr.training_eligible,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # =========================================================================

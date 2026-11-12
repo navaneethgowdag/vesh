@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -15,6 +15,8 @@ class ClothingCorrection(Base):
     attribute_name = Column(String(100), nullable=False)
     predicted_value = Column(Text, nullable=True)
     corrected_value = Column(Text, nullable=False)
+    review_status = Column(String(50), default="pending", nullable=True)  # "pending", "approved", "rejected"
+    training_eligible = Column(Boolean, default=True, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     clothing = relationship("Clothing", back_populates="corrections")

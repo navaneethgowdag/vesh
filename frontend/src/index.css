@@ -4,63 +4,87 @@
 
 @layer base {
   :root {
+    /* Exact Editorial Atelier Design Tokens */
+    --color-primary: #29202B;          /* Midnight Aubergine */
+    --color-background: #F3EEE8;       /* Porcelain */
+    --color-accent: #743C49;           /* Oxblood */
+    --color-accent-soft: #D5A6A0;      /* Dusty Rose */
+    --color-support: #B49B82;          /* Muted Camel */
+    --color-surface: #FFFFFF;          /* Gallery White */
+    --color-secondary: #6D7068;        /* Slate Olive */
+    --color-border: #DCD4CC;           /* Soft Taupe */
+    --color-error: #A33D42;            /* Error Red */
+    --color-success: #426B50;          /* Success Green */
+
     /* TailorBird Fashion-Editorial Design Tokens (Light Theme) */
-    --luxury-bg: #F8F6F1;              /* Warm Ivory Canvas */
-    --luxury-surface: #FFFFFF;         /* Crisp White Surface */
-    --luxury-surface-subtle: #F1EEE7;  /* Soft Stone / Subtle Surface */
+    --luxury-bg: #F3EEE8;              /* Porcelain Canvas */
+    --luxury-surface: #FFFFFF;         /* Gallery White Content Surface */
+    --luxury-surface-subtle: #FAF6F0;  /* Subtle Ivory Surface */
     --luxury-elevated: #FFFFFF;        /* Elevated Card */
-    --luxury-text: #202321;            /* Deep Ink / Charcoal (Contrast > 14:1) */
-    --luxury-text-muted: #6B7269;      /* Muted Secondary Text (WCAG AA Contrast > 4.8:1) */
-    --luxury-primary: #202321;         /* Deep Ink Accent */
-    --luxury-secondary: #727D69;       /* Muted Olive */
-    --luxury-muted: #6B7269;
-    --luxury-champagne: #899783;       /* Muted Sage */
-    --luxury-olive: #727D69;           /* Muted Olive */
-    --luxury-border: #E2DDD3;          /* Refined Stone Border */
-    --luxury-border-subtle: #EFECE4;   /* Subtle Border */
-    --luxury-espresso: #202321;
+    --luxury-text: #29202B;            /* Midnight Aubergine (Contrast > 14:1) */
+    --luxury-text-muted: #6D7068;      /* Slate Olive (WCAG AA Contrast > 4.6:1) */
+    --luxury-primary: #743C49;         /* Oxblood Accent */
+    --luxury-secondary: #6D7068;       /* Slate Olive */
+    --luxury-muted: #6D7068;
+    --luxury-champagne: #B49B82;       /* Muted Camel */
+    --luxury-olive: #6D7068;           /* Slate Olive */
+    --luxury-border: #DCD4CC;          /* Soft Taupe Border */
+    --luxury-border-subtle: #E8E2DA;   /* Subtle Divider */
+    --luxury-espresso: #29202B;
 
     /* Legacy compatibility variables */
-    --cream-bg: #F8F6F1;
+    --cream-bg: #F3EEE8;
     --card-bg: #FFFFFF;
-    --sand-subtle: #F1EEE7;
-    --charcoal-main: #202321;
-    --cognac-accent: #899783;
+    --sand-subtle: #FAF6F0;
+    --charcoal-main: #29202B;
+    --cognac-accent: #743C49;
   }
 
   .dark {
+    /* Exact Editorial Atelier Tokens (Dark Atelier Mode) */
+    --color-primary: #F3EEE8;
+    --color-background: #1A151C;
+    --color-accent: #8E4E5D;
+    --color-accent-soft: #D5A6A0;
+    --color-support: #B49B82;
+    --color-surface: #241D27;
+    --color-secondary: #A89E9B;
+    --color-border: #392F3E;
+    --color-error: #E5535A;
+    --color-success: #528965;
+
     /* TailorBird Fashion-Editorial Design Tokens (Dark Theme) */
-    --luxury-bg: #141715;              /* Deep Charcoal Canvas */
-    --luxury-surface: #1C201D;         /* Dark Ink Card Surface */
-    --luxury-surface-subtle: #242A25;  /* Subtle Elevated Dark Surface */
-    --luxury-elevated: #2B322D;        /* Elevated Popover / Modal Surface */
-    --luxury-text: #F8F6F1;            /* Warm Ivory Primary Text (Contrast > 12:1) */
-    --luxury-text-muted: #A3ABA0;      /* High-Contrast Muted Text (Contrast > 5.5:1) */
-    --luxury-primary: #F8F6F1;
-    --luxury-secondary: #899783;       /* Muted Sage */
-    --luxury-muted: #A3ABA0;
-    --luxury-champagne: #899783;
-    --luxury-olive: #9EAB97;
-    --luxury-border: #2D342F;          /* Subtle Dark Border */
-    --luxury-border-subtle: #222823;
-    --luxury-espresso: #F8F6F1;
+    --luxury-bg: #1A151C;              /* Dark Atelier Canvas */
+    --luxury-surface: #241D27;         /* Deep Dark Surface */
+    --luxury-surface-subtle: #2C2430;  /* Subtle Elevated Dark Surface */
+    --luxury-elevated: #332A37;        /* Elevated Modal Surface */
+    --luxury-text: #F3EEE8;            /* Porcelain Primary Text (Contrast > 12:1) */
+    --luxury-text-muted: #A89E9B;      /* High-Contrast Muted Text (Contrast > 5.2:1) */
+    --luxury-primary: #D5A6A0;         /* Dusty Rose Accent */
+    --luxury-secondary: #A89E9B;       /* Secondary */
+    --luxury-muted: #A89E9B;
+    --luxury-champagne: #B49B82;       /* Muted Camel */
+    --luxury-olive: #A89E9B;
+    --luxury-border: #392F3E;          /* Dark Taupe Border */
+    --luxury-border-subtle: #2E2533;
+    --luxury-espresso: #F3EEE8;
 
     /* Legacy compatibility variables in dark mode */
-    --cream-bg: #141715;
-    --card-bg: #1C201D;
-    --sand-subtle: #242A25;
-    --charcoal-main: #F8F6F1;
-    --cognac-accent: #899783;
+    --cream-bg: #1A151C;
+    --card-bg: #241D27;
+    --sand-subtle: #2C2430;
+    --charcoal-main: #F3EEE8;
+    --cognac-accent: #D5A6A0;
 
     /* Dark alias definitions for classes with dark- prefix */
-    --luxury-dark-bg: #141715;
-    --luxury-dark-surface: #1C201D;
-    --luxury-dark-surface-subtle: #242A25;
-    --luxury-dark-text: #F8F6F1;
-    --luxury-dark-text-muted: #A3ABA0;
-    --luxury-dark-border: #2D342F;
-    --luxury-dark-champagne: #899783;
-    --luxury-dark-espresso: #141715;
+    --luxury-dark-bg: #1A151C;
+    --luxury-dark-surface: #241D27;
+    --luxury-dark-surface-subtle: #2C2430;
+    --luxury-dark-text: #F3EEE8;
+    --luxury-dark-text-muted: #A89E9B;
+    --luxury-dark-border: #392F3E;
+    --luxury-dark-champagne: #B49B82;
+    --luxury-dark-espresso: #1A151C;
   }
 
   * {

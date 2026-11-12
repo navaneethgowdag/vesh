@@ -23,7 +23,15 @@ export const AdminClothingModel: React.FC = () => {
   const [modelData, setModelData] = useState<any>(null);
   const [metricsData, setMetricsData] = useState<any>(null);
   const [versionsData, setVersionsData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'architecture' | 'metrics' | 'finetune' | 'versions'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'metrics' | 'corrections' | 'finetune' | 'versions'>('architecture');
+
+  // User Corrections State
+  const [correctionsData, setCorrectionsData] = useState<{ items: any[]; total: number; page: number; total_pages: number } | null>(null);
+  const [loadingCorrections, setLoadingCorrections] = useState(false);
+  const [correctionPage, setCorrectionPage] = useState(1);
+  const [filterReviewStatus, setFilterReviewStatus] = useState<string>('all');
+  const [filterAttribute, setFilterAttribute] = useState<string>('all');
+  const [updatingCorrectionId, setUpdatingCorrectionId] = useState<string | null>(null);
 
   // Training Form State
   const [learningRate, setLearningRate] = useState('0.0001');
@@ -37,6 +45,42 @@ export const AdminClothingModel: React.FC = () => {
   const [isPromoting, setIsPromoting] = useState(false);
   const [isRollingBack, setIsRollingBack] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const fetchCorrections = async (page = 1, status = filterReviewStatus, attr = filterAttribute) => {
+    try {
+      setLoadingCorrections(true);
+      const res = await api.admin.listClothingCorrections({
+        page,
+        pageSize: 15,
+        reviewStatus: status !== 'all' ? status : undefined,
+        attributeName: attr !== 'all' ? attr : undefined,
+      });
+      setCorrectionsData(res);
+      setCorrectionPage(page);
+    } catch (err: any) {
+      console.error('Failed to load user corrections:', err);
+    } finally {
+      setLoadingCorrections(false);
+    }
+  };
+
+  const handleUpdateCorrection = async (id: string, updates: { review_status?: string; training_eligible?: boolean }) => {
+    try {
+      setUpdatingCorrectionId(id);
+      await api.admin.updateClothingCorrection(id, updates);
+      setCorrectionsData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+        };
+      });
+    } catch (err: any) {
+      console.error('Failed to update correction:', err);
+    } finally {
+      setUpdatingCorrectionId(null);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -59,6 +103,12 @@ export const AdminClothingModel: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'corrections') {
+      fetchCorrections(1, filterReviewStatus, filterAttribute);
+    }
+  }, [activeTab]);
 
   const handleStartTraining = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,6 +266,21 @@ export const AdminClothingModel: React.FC = () => {
           Evaluation Metrics
         </button>
         <button
+          onClick={() => setActiveTab('corrections')}
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 cursor-pointer flex items-center gap-2 ${
+            activeTab === 'corrections'
+              ? 'border-indigo-500 text-white'
+              : 'border-transparent text-slate-400 hover:text-slate-300'
+          }`}
+        >
+          <span>User Corrections</span>
+          {(datasetInfo.corrected_decisions ?? 0) > 0 && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              {datasetInfo.corrected_decisions}
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab('finetune')}
           className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
             activeTab === 'finetune'
@@ -365,6 +430,245 @@ export const AdminClothingModel: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2.5: User Corrections Audit Trail */}
+      {activeTab === 'corrections' && (
+        <div className="space-y-6">
+          {/* Header & Controls Bar */}
+          <div className="bg-[#0D121F] border border-slate-800 rounded-2xl p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-white">User Corrections & Annotation Audit</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Audit trail of user-corrected garment attributes from PostgreSQL. Preserves original AI predictions while supporting administrator review.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchCorrections(correctionPage, filterReviewStatus, filterAttribute)}
+                  disabled={loadingCorrections}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw size={13} className={loadingCorrections ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Pills & Select */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="text-slate-500 text-[11px] mr-1 uppercase">Status:</span>
+                {(['all', 'pending', 'approved', 'rejected'] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => {
+                      setFilterReviewStatus(st);
+                      fetchCorrections(1, st, filterAttribute);
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-all cursor-pointer ${
+                      filterReviewStatus === st
+                        ? 'bg-indigo-600 text-white font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-slate-500 text-[11px] uppercase">Attribute:</span>
+                <select
+                  value={filterAttribute}
+                  onChange={(e) => {
+                    const attr = e.target.value;
+                    setFilterAttribute(attr);
+                    fetchCorrections(1, filterReviewStatus, attr);
+                  }}
+                  className="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="all">All Attributes</option>
+                  <option value="article_type">Article Type</option>
+                  <option value="master_category">Master Category</option>
+                  <option value="sub_category">Subcategory</option>
+                  <option value="base_colour">Base Colour</option>
+                  <option value="season">Season</option>
+                  <option value="usage">Occasion / Usage</option>
+                  <option value="pattern">Pattern</option>
+                  <option value="gender">Gender</option>
+                  <option value="age_group">Age Group</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Table / Records View */}
+          <div className="bg-[#0D121F] border border-slate-800 rounded-2xl overflow-hidden">
+            {loadingCorrections ? (
+              <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={24} className="animate-spin text-indigo-400" />
+                <span className="text-xs font-mono">Loading PostgreSQL correction records...</span>
+              </div>
+            ) : !correctionsData?.items || correctionsData.items.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-2">
+                <CheckCircle size={28} className="mx-auto text-emerald-500/80 mb-2" />
+                <h4 className="text-sm font-semibold text-white">No Corrections Match Filters</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {filterReviewStatus !== 'all' || filterAttribute !== 'all'
+                    ? 'Try clearing the active status or attribute filters to view other correction records.'
+                    : 'All user attribute reviews match original AI predictions or no corrections have been submitted yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-sans">
+                  <thead className="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
+                    <tr>
+                      <th className="px-4 py-3">Garment</th>
+                      <th className="px-4 py-3">Attribute</th>
+                      <th className="px-4 py-3">Original AI Prediction</th>
+                      <th className="px-4 py-3">User Corrected</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Review Status</th>
+                      <th className="px-4 py-3">Training Consent</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
+                    {correctionsData.items.map((corr) => {
+                      const isUpdating = updatingCorrectionId === corr.id;
+                      return (
+                        <tr key={corr.id} className="hover:bg-slate-900/40 transition-colors">
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-3">
+                              {corr.image_url ? (
+                                <img
+                                  src={corr.image_url}
+                                  alt={corr.clothing_name}
+                                  className="w-9 h-11 object-cover rounded bg-slate-900 border border-slate-800 shrink-0"
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-9 h-11 bg-slate-900 rounded border border-slate-800 flex items-center justify-center text-slate-600 shrink-0">
+                                  <Layers size={14} />
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-semibold text-white font-sans text-xs">{corr.clothing_name}</div>
+                                <div className="text-[10px] text-slate-500 font-mono truncate max-w-[120px]" title={corr.id}>
+                                  ID: {corr.id.slice(0, 8)}...
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="px-2 py-0.5 rounded text-[11px] bg-slate-800 text-indigo-300 border border-slate-700">
+                              {corr.attribute_name}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-500 line-through">
+                            {corr.predicted_value || '<None>'}
+                          </td>
+                          <td className="px-4 py-3.5 text-emerald-400 font-semibold">
+                            {corr.corrected_value}
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-400 text-[11px]">
+                            {corr.created_at ? new Date(corr.created_at).toLocaleDateString() : '—'}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                corr.review_status === 'approved'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : corr.review_status === 'rejected'
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              }`}
+                            >
+                              {corr.review_status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() => handleUpdateCorrection(corr.id, { training_eligible: !corr.training_eligible })}
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer transition-all ${
+                                corr.training_eligible
+                                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/30'
+                                  : 'bg-slate-800 text-slate-500 border border-slate-700 hover:text-slate-300'
+                              }`}
+                            >
+                              {corr.training_eligible ? 'Eligible' : 'Excluded'}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {corr.review_status !== 'approved' && (
+                                <button
+                                  type="button"
+                                  disabled={isUpdating}
+                                  onClick={() => handleUpdateCorrection(corr.id, { review_status: 'approved', training_eligible: true })}
+                                  className="px-2 py-1 rounded bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 text-[10px] font-semibold transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                              {corr.review_status !== 'rejected' && (
+                                <button
+                                  type="button"
+                                  disabled={isUpdating}
+                                  onClick={() => handleUpdateCorrection(corr.id, { review_status: 'rejected', training_eligible: false })}
+                                  className="px-2 py-1 rounded bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 text-[10px] font-semibold transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination footer */}
+            {correctionsData && correctionsData.total_pages > 1 && (
+              <div className="p-4 border-t border-slate-800 bg-slate-900/40 flex items-center justify-between text-xs font-mono text-slate-400">
+                <div>
+                  Page {correctionsData.page} of {correctionsData.total_pages} ({correctionsData.total} total)
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={correctionsData.page <= 1 || loadingCorrections}
+                    onClick={() => fetchCorrections(correctionsData.page - 1, filterReviewStatus, filterAttribute)}
+                    className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white disabled:opacity-40 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={correctionsData.page >= correctionsData.total_pages || loadingCorrections}
+                    onClick={() => fetchCorrections(correctionsData.page + 1, filterReviewStatus, filterAttribute)}
+                    className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white disabled:opacity-40 cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

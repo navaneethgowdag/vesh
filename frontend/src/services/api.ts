@@ -3116,6 +3116,21 @@ export const api = {
         body: JSON.stringify({ target_version: targetVersion, confirm: true }),
       });
     },
+    async listClothingCorrections(params?: { page?: number; pageSize?: number; reviewStatus?: string; attributeName?: string }): Promise<any> {
+      const sp = new URLSearchParams();
+      if (params?.page) sp.set('page', String(params.page));
+      if (params?.pageSize) sp.set('page_size', String(params.pageSize));
+      if (params?.reviewStatus) sp.set('review_status', params.reviewStatus);
+      if (params?.attributeName) sp.set('attribute_name', params.attributeName);
+      const query = sp.toString() ? `?${sp.toString()}` : '';
+      return request<any>(`/admin/models/clothing/corrections${query}`);
+    },
+    async updateClothingCorrection(id: string, updates: { review_status?: string; training_eligible?: boolean }): Promise<any> {
+      return request<any>(`/admin/models/clothing/corrections/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+    },
     // Recommendation Model
     async getRecommendationModel(): Promise<any> {
       return request<any>('/admin/models/recommendation');

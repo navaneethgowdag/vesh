@@ -112,6 +112,9 @@ export interface ClothingItem {
   category: ClothingCategory;
   color: ClothingColor;
   secondaryColor?: string;
+  secondary_color?: string;
+  fit?: string;
+  size?: string;
   pattern?: string;
   style: StyleVibe;
   season: Season;

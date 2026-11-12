@@ -290,3 +290,28 @@ def test_model_versions_registry(client, admin_token):
     data = res.json()
     assert "clothing_classifier_versions" in data
     assert "recommendation_model_versions" in data
+
+
+def test_clothing_corrections_audit_endpoints(client, admin_token):
+    """Admin User Corrections audit trail and review status endpoints."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    res = client.get("/api/v1/admin/models/clothing/corrections", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "items" in data
+    assert "total" in data
+    assert "page" in data
+    assert isinstance(data["items"], list)
+
+    if data["items"]:
+        first_item = data["items"][0]
+        c_id = first_item["id"]
+        # Update review status
+        patch_res = client.patch(
+            f"/api/v1/admin/models/clothing/corrections/{c_id}",
+            json={"review_status": "approved", "training_eligible": True},
+            headers=headers,
+        )
+        assert patch_res.status_code == 200
+        assert patch_res.json()["review_status"] == "approved"
+        assert patch_res.json()["training_eligible"] is True
