@@ -62,6 +62,12 @@ class ClothingProcessingService:
             self.db.add(analysis)
 
         fv = dict(analysis.feature_vector) if isinstance(analysis.feature_vector, dict) else {}
+        # Never overwrite accepted user-confirmed attributes during retries or pipeline runs
+        if fv.get("is_finalized"):
+            status = "accepted"
+            stage = "completed"
+            review_required = False
+
         fv["processing_status"] = status
         fv["processing_stage"] = stage
         fv["review_required"] = review_required
@@ -148,11 +154,11 @@ class ClothingProcessingService:
 
             dur = round(time.time() - t0, 3)
 
-            # Mark predictions ready for user review (has_processed remains False until background removal)
+            # Mark analysis completed and ready for review
             self._update_metadata(
                 clothing=clothing,
-                status="predictions_ready",
-                stage="predictions_ready",
+                status="ready_for_review",
+                stage="analysis_completed",
                 review_required=True,
                 has_processed=False,
                 duration=dur,
@@ -161,35 +167,58 @@ class ClothingProcessingService:
 
             logger.info(
                 f"[Pipeline:PredictOriginal] clothing_id={clothing_id} => "
-                f"Predicted in {dur}s on original image ({orig_w}x{orig_h}). Stage: predictions_ready."
+                f"Predicted in {dur}s on original image ({orig_w}x{orig_h}). Status: ready_for_review."
             )
 
             return {
-                "status": "predictions_ready",
-                "stage": "predictions_ready",
+                "status": "ready_for_review",
+                "stage": "analysis_completed",
                 "review_required": True,
                 "has_processed": False,
                 "duration_seconds": dur,
                 "prediction": saved_pred,
             }
 
-        except Exception as e:
-            logger.exception(f"[Pipeline] Prediction on original image failed for clothing {clothing_id}: {e}")
+        except ValueError as ve:
+            # Clear validation error (e.g. image too small / corrupt)
+            logger.warning(f"[Pipeline] Image validation failure for clothing {clothing_id}: {ve}")
             dur = round(time.time() - t0, 3)
-            # Even if model throws, allow user manual review without crashing
             self._update_metadata(
                 clothing=clothing,
-                status="predictions_ready",
-                stage="predictions_ready",
-                review_required=True,
+                status="failed",
+                stage="failed",
+                review_required=False,
                 has_processed=False,
-                error_message=str(e),
+                error_message=str(ve),
                 duration=dur,
                 commit=True,
             )
             return {
-                "status": "predictions_ready",
-                "stage": "predictions_ready",
+                "status": "failed",
+                "stage": "failed",
+                "review_required": False,
+                "has_processed": False,
+                "error": str(ve),
+                "duration_seconds": dur,
+            }
+
+        except Exception as e:
+            logger.warning(f"[Pipeline] Automatic classification unavailable for clothing {clothing_id}: {e}")
+            dur = round(time.time() - t0, 3)
+            # Mark manual_review_required so user is aware AI classification was unavailable
+            self._update_metadata(
+                clothing=clothing,
+                status="manual_review_required",
+                stage="manual_review_required",
+                review_required=True,
+                has_processed=False,
+                error_message=f"Automatic classification unavailable ({e}). Manual attribute review required.",
+                duration=dur,
+                commit=True,
+            )
+            return {
+                "status": "manual_review_required",
+                "stage": "manual_review_required",
                 "review_required": True,
                 "has_processed": False,
                 "error": str(e),
@@ -373,18 +402,28 @@ class ClothingProcessingService:
         clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
 
         total_dur = round(time.time() - t0, 2)
-        is_success = pred_res.get("status") not in ("failed", "error")
-        final_status = "ready_for_review" if is_success else "failed"
-        final_stage = "ready_for_review" if is_success else "failed"
+        pred_status = pred_res.get("status", "failed")
+        if pred_status == "ready_for_review":
+            final_status = "ready_for_review"
+            final_stage = "analysis_completed"
+            review_required = True
+        elif pred_status == "manual_review_required":
+            final_status = "manual_review_required"
+            final_stage = "manual_review_required"
+            review_required = True
+        else:
+            final_status = "failed"
+            final_stage = "failed"
+            review_required = False
 
         self._update_metadata(
             clothing=clothing,
             status=final_status,
             stage=final_stage,
-            review_required=True,
+            review_required=review_required,
             has_processed=False,
             duration=total_dur,
-            error_message=pred_res.get("error") if not is_success else None,
+            error_message=pred_res.get("error") if final_status in ("failed", "manual_review_required") else None,
             commit=True,
         )
 
@@ -392,5 +431,6 @@ class ClothingProcessingService:
             "status": final_status,
             "stage": final_stage,
             "duration_seconds": total_dur,
+            "review_required": review_required,
             "prediction": pred_res,
         }

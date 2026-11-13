@@ -74,20 +74,9 @@ class JobService:
         user_id_str = str(user_id)
         clothing_id_str = str(clothing_id) if clothing_id else None
 
-        # 2. Check for active RQ workers on stylesphere-default
+        # 2. Enqueue directly to RQ queue 'stylesphere-default'
         redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
-        has_active_workers = False
         if redis_client is not None:
-            try:
-                workers = Worker.all(connection=redis_client)
-                for w in workers:
-                    if any(q.name == DEFAULT_QUEUE_NAME for q in w.queues):
-                        has_active_workers = True
-                        break
-            except Exception as we:
-                logger.warning(f"Failed to inspect active RQ workers: {we}")
-
-        if redis_client is not None and has_active_workers:
             try:
                 q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
                 q.enqueue(
@@ -103,11 +92,27 @@ class JobService:
                 logger.info(f"[JobService:Enqueued] job_id={job_id_str}, type=clothing_analysis into queue='{DEFAULT_QUEUE_NAME}'")
                 return job
             except Exception as e:
-                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}). Running in-process fallback.")
+                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}).")
 
-        # 3. Fallback execution (when Redis is disabled, offline, or no worker active)
+        # 3. Fallback execution (when Redis is disabled/offline)
+        allow_fallback = (
+            getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", False)
+            or settings.APP_ENV.lower() not in ("production", "prod")
+        )
+        if not allow_fallback:
+            err_msg = "Redis/RQ queue broker unavailable. Background job cannot be durably queued."
+            logger.error(f"[JobService:EnqueueFailed] {err_msg} job_id={job_id_str}")
+            job.status = "failed"
+            job.error_message = err_msg
+            if self._has_table:
+                try:
+                    self.db.commit()
+                except Exception:
+                    pass
+            return job
+
         try:
-            logger.info(f"[JobService] Executing analysis job {job_id_str} synchronously via in-process fallback.")
+            logger.info(f"[JobService] [DevFallback] Executing analysis job {job_id_str} synchronously via in-process fallback.")
             process_clothing_analysis_job(
                 job_id=job_id_str,
                 user_id=user_id_str,
@@ -173,20 +178,9 @@ class JobService:
         user_id_str = str(user_id)
         clothing_id_str = str(clothing_id)
 
-        # 1. Check for active RQ workers on stylesphere-default
+        # 1. Enqueue directly to RQ queue 'stylesphere-default'
         redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
-        has_active_workers = False
         if redis_client is not None:
-            try:
-                workers = Worker.all(connection=redis_client)
-                for w in workers:
-                    if any(q.name == DEFAULT_QUEUE_NAME for q in w.queues):
-                        has_active_workers = True
-                        break
-            except Exception as we:
-                logger.warning(f"Failed to inspect active RQ workers: {we}")
-
-        if redis_client is not None and has_active_workers:
             try:
                 q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
                 q.enqueue(
@@ -201,12 +195,41 @@ class JobService:
                 logger.info(f"[JobService:Enqueued] job_id={job_id_str}, clothing_id={clothing_id_str} into RQ queue '{DEFAULT_QUEUE_NAME}'")
                 return job
             except Exception as e:
-                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}). Spawning async background thread.")
+                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}).")
 
-        # 2. Non-blocking asynchronous background thread fallback (when Redis disabled or 0 active workers)
+        # 2. If Redis/RQ unavailable:
+        allow_fallback = (
+            getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", False)
+            or settings.APP_ENV.lower() not in ("production", "prod")
+        )
+
+        if not allow_fallback:
+            err_msg = "Redis/RQ queue broker unavailable. Background job cannot be durably queued."
+            logger.error(f"[JobService:EnqueueFailed] {err_msg} job_id={job_id_str}, clothing_id={clothing_id_str}")
+            job.status = "failed"
+            job.error_message = err_msg
+            if self._has_table:
+                try:
+                    self.db.commit()
+                except Exception:
+                    pass
+            try:
+                clothing_item = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
+                if clothing_item and clothing_item.analysis:
+                    fv = dict(clothing_item.analysis.feature_vector or {})
+                    fv["processing_status"] = "failed"
+                    fv["processing_stage"] = "enqueue_failed"
+                    fv["error_message"] = err_msg
+                    clothing_item.analysis.feature_vector = fv
+                    self.db.commit()
+            except Exception as ce:
+                logger.warning(f"Failed to update clothing error status: {ce}")
+            return job
+
+        # 3. Development only fallback
         def _run_worker():
             try:
-                logger.info(f"[JobService] Executing garment job {job_id_str} via background daemon thread (clothing_id={clothing_id_str}).")
+                logger.info(f"[JobService] [DevFallback] Executing garment job {job_id_str} via background daemon thread (clothing_id={clothing_id_str}).")
                 process_garment_image_job(
                     job_id=job_id_str,
                     user_id=user_id_str,
@@ -267,18 +290,15 @@ class JobService:
             r = get_rq_redis_client()
             if r is not None:
                 q = Queue(DEFAULT_QUEUE_NAME, connection=r)
-                active_workers = Worker.all(connection=r)
-                has_active = any(w.state != "busy" or True for w in active_workers) if active_workers else False
-                if has_active:
-                    q.enqueue(
-                        execute_personal_training_job,
-                        job_id=job_id_str,
-                        user_id=user_id_str,
-                        training_config=config,
-                        job_timeout=1800,  # 30 minute timeout
-                    )
-                    enqueued_to_redis = True
-                    logger.info(f"[JobService:TrainingEnqueued] job_id={job_id_str} to Redis queue '{DEFAULT_QUEUE_NAME}'")
+                q.enqueue(
+                    execute_personal_training_job,
+                    job_id=job_id_str,
+                    user_id=user_id_str,
+                    training_config=config,
+                    job_timeout=1800,  # 30 minute timeout
+                )
+                enqueued_to_redis = True
+                logger.info(f"[JobService:TrainingEnqueued] job_id={job_id_str} to Redis queue '{DEFAULT_QUEUE_NAME}'")
         except Exception as redis_exc:
             logger.warning(f"[JobService] Redis enqueue unavailable for training ({redis_exc}). Falling back to thread.")
 

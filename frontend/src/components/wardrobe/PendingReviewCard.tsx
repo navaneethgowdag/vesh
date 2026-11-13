@@ -36,6 +36,9 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
     item.processingStatus === 'processing' ||
     item.processingStage === 'queued' ||
     item.processingStage === 'analyzing_clothing';
+  const isManualReview =
+    item.processingStatus === 'manual_review_required' ||
+    item.processingStage === 'manual_review_required';
   const isReady = !isFailed && !isProcessing;
 
   const imgUrl = resolveImageUrl(
@@ -121,7 +124,14 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
             </span>
           )}
 
-          {isReady && (
+          {isManualReview && (
+            <span className="bg-amber-900/90 backdrop-blur-md text-amber-100 text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-amber-600/30">
+              <AlertCircle className="w-3 h-3 text-amber-300" />
+              Manual Review Needed
+            </span>
+          )}
+
+          {isReady && !isManualReview && (
             <span className="bg-[#202321]/90 backdrop-blur-md text-[#B5AA99] text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-[#B5AA99]/30">
               <Sparkles className="w-3 h-3 text-[#B5AA99]" />
               Review Needed

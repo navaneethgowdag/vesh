@@ -219,7 +219,7 @@ class Clothing(Base):
             fv = self.analysis.feature_vector
             if "is_finalized" in fv:
                 return bool(fv["is_finalized"])
-            if fv.get("review_required") or fv.get("processing_status") in ("predictions_ready", "ready_for_review", "queued", "processing", "failed"):
+            if fv.get("review_required") or fv.get("processing_status") in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed"):
                 return False
         if hasattr(self, "_laundry_dict") and "is_finalized" in self._laundry_dict:
             return bool(self._laundry_dict["is_finalized"])

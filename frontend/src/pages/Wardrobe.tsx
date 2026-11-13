@@ -88,6 +88,7 @@ export const Wardrobe: React.FC = () => {
       const isReadyForReview =
         item.reviewRequired ||
         item.processingStatus === 'ready_for_review' ||
+        item.processingStatus === 'manual_review_required' ||
         item.processingStatus === 'predictions_ready';
       const isNotFinalized = item.isFinalized === false;
 
@@ -100,7 +101,7 @@ export const Wardrobe: React.FC = () => {
       const isPending =
         item.reviewRequired ||
         item.isFinalized === false ||
-        ['predictions_ready', 'ready_for_review', 'queued', 'processing', 'failed'].includes(
+        ['predictions_ready', 'ready_for_review', 'manual_review_required', 'queued', 'processing', 'failed'].includes(
           item.processingStatus || ''
         );
       return !isPending;
@@ -116,6 +117,25 @@ export const Wardrobe: React.FC = () => {
         item.processingStatus !== 'processing'
     );
   }, [pendingItems]);
+
+  // Active polling: auto-refresh while any garment is actively queued or processing
+  const hasActiveProcessingItems = useMemo(() => {
+    return wardrobe.some(
+      (item) =>
+        item.processingStatus === 'queued' ||
+        item.processingStatus === 'processing' ||
+        item.processingStage === 'queued' ||
+        item.processingStage === 'analyzing_clothing'
+    );
+  }, [wardrobe]);
+
+  useEffect(() => {
+    if (!hasActiveProcessingItems) return;
+    const interval = setInterval(() => {
+      refreshData(true);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [hasActiveProcessingItems, refreshData]);
 
   const totalItems = wardrobe.length;
   const topsCount = acceptedItems.filter((i) =>
@@ -685,7 +705,7 @@ export const Wardrobe: React.FC = () => {
                   key={item.id}
                   item={item}
                   onReview={handleOpenReview}
-                  onAccepted={refreshData}
+                  onAccepted={() => refreshData(true)}
                 />
               ))}
             </div>
@@ -754,7 +774,7 @@ export const Wardrobe: React.FC = () => {
           onClose={() => setReviewModalOpen(false)}
           items={pendingItems}
           initialIndex={reviewModalIndex}
-          onItemAccepted={refreshData}
+          onItemAccepted={() => refreshData(true)}
         />
       )}
     </AppShell>

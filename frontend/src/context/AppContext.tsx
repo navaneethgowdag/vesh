@@ -11,7 +11,7 @@ import {
   Weather,
   CreatePollPayload,
 } from '../types';
-import { api, ApiError, tokenStorage } from '../services/api';
+import { api, ApiError, tokenStorage, apiCache } from '../services/api';
 import { recommendationCache } from '../utils/recommendationCache';
 
 export type WeatherStatus =
@@ -111,7 +111,7 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   allCreators: User[];
-  refreshData: () => Promise<void>;
+  refreshData: (bypassCache?: boolean) => Promise<void>;
   unreadMessagesCount: number;
   refreshUnreadMessagesCount: () => Promise<void>;
 }
@@ -520,7 +520,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
 
   // Fetch all persistent state from the backend (Neon via FastAPI).
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (bypassCache: boolean = false) => {
+    if (bypassCache) {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('post');
+      apiCache.invalidate('saved');
+      apiCache.invalidate('notification');
+    }
     if (refreshDataPromiseRef.current) {
       return refreshDataPromiseRef.current;
     }
@@ -532,7 +538,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setAuthError(null);
 
         const [items, feedPosts, cols, notifs, followingUsers] = await Promise.all([
-          api.wardrobe.list().catch(() => []),
+          api.wardrobe.list(undefined, { bypassCache }).catch(() => []),
           api.posts.listFeed().catch(() => []),
           api.saved.listCollections().catch(() => []),
           api.notifications.list().catch(() => []),
@@ -567,65 +573,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     refreshData();
   }, [refreshData]);
 
-  // Centralized unread messages count retrieval
+  // Messages feature is deprecated; retain no-op stub for AppContext type compatibility
   const refreshUnreadMessagesCount = useCallback(async () => {
-    if (!isAuthenticated) {
-      setUnreadMessagesCount(0);
-      return;
-    }
-    try {
-      const res = await api.messages.getUnreadCount();
-      setUnreadMessagesCount(res.unread_count);
-    } catch {
-      // quiet fallback
-    }
-  }, [isAuthenticated]);
-
-  // Centralized, visibility-aware polling for unread messages (45-second interval)
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setUnreadMessagesCount(0);
-      return;
-    }
-
-    refreshUnreadMessagesCount();
-
-    let intervalId: any = null;
-
-    const startPolling = () => {
-      if (!intervalId) {
-        intervalId = setInterval(() => {
-          if (!document.hidden) {
-            refreshUnreadMessagesCount();
-          }
-        }, 45000);
-      }
-    };
-
-    const stopPolling = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        stopPolling();
-      } else {
-        refreshUnreadMessagesCount();
-        startPolling();
-      }
-    };
-
-    startPolling();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      stopPolling();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isAuthenticated, refreshUnreadMessagesCount]);
+    setUnreadMessagesCount(0);
+  }, []);
 
   // User-initiated daily fit recommendation generation (no automatic fetch on mount)
   const generateDailyFit = useCallback(

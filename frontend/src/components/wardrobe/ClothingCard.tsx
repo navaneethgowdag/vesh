@@ -92,12 +92,17 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
             Review Needed
           </span>
         )}
+        {item.processingStatus === 'manual_review_required' && (
+          <span className="absolute top-2.5 left-2.5 bg-amber-800/90 backdrop-blur-md text-amber-100 text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-amber-600/30">
+            Manual Review
+          </span>
+        )}
         {item.processingStatus === 'failed' && (
           <span className="absolute top-2.5 left-2.5 bg-rose-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
             Processing Failed
           </span>
         )}
-        {item.isFavorite && !['queued', 'processing', 'ready_for_review', 'failed'].includes(item.processingStatus || '') && (
+        {item.isFavorite && !['queued', 'processing', 'ready_for_review', 'manual_review_required', 'failed'].includes(item.processingStatus || '') && (
           <span className="absolute top-2.5 left-2.5 bg-[#202321]/80 backdrop-blur-md text-[#F8F6F1] p-1.5 rounded-full text-xs shadow-sm" title="Wardrobe Staple">
             <Sparkles className="w-3.5 h-3.5 text-[#B5AA99] fill-current" />
           </span>

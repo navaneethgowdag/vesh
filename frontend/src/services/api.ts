@@ -49,6 +49,12 @@ import {
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getApiBaseUrl } from '../utils/apiUrl';
 import { getDefaultAvatar } from '../utils/avatarHelper';
+import {
+  prepareImageForUpload,
+  prepareBatchImagesForUpload,
+  compressImageIfRequired,
+  compressBatchIfRequired,
+} from '../utils/prepareImageForUpload';
 
 export const API_BASE = getApiBaseUrl();
 
@@ -167,7 +173,6 @@ const DEFAULT_ENDPOINT_TTLS: Array<{ pattern: RegExp | string; ttlMs: number }> 
   { pattern: '/calendar/events', ttlMs: 60 * 1000 },
   { pattern: '/calendar/day-agenda', ttlMs: 60 * 1000 },
   { pattern: '/calendar/google/status', ttlMs: 60 * 1000 },
-  { pattern: '/messages/unread-count', ttlMs: 30 * 1000 },
   { pattern: '/moments/feed', ttlMs: 45 * 1000 },
   { pattern: '/wardrobe', ttlMs: 45 * 1000 },
   { pattern: '/posts', ttlMs: 45 * 1000 },
@@ -671,7 +676,7 @@ export const api = {
       wearTier?: string;
       isLuxury?: boolean;
       reservedStatus?: string;
-    }): Promise<ClothingItem[]> {
+    }, options?: { bypassCache?: boolean }): Promise<ClothingItem[]> {
       let endpoint = '/wardrobe';
       if (filters) {
         const p = new URLSearchParams();
@@ -691,7 +696,10 @@ export const api = {
         const qs = p.toString();
         if (qs) endpoint += '?' + qs;
       }
-      const items = await request<any[]>(endpoint, { cacheTTL: 30000 });
+      const items = await request<any[]>(endpoint, {
+        cacheTTL: options?.bypassCache ? 0 : 30000,
+        bypassCache: options?.bypassCache,
+      });
       return items.map((item) => ({
         id: String(item.id),
         name: item.name,
@@ -855,8 +863,9 @@ export const api = {
     async analyzeImage(file?: File, imageUrl?: string): Promise<any> {
       const apiBase = getApiBaseUrl();
       if (file) {
+        const preparedFile = await compressImageIfRequired(file);
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', preparedFile);
         const headers: Record<string, string> = {};
         const token = tokenStorage.get();
         if (token) {
@@ -947,9 +956,12 @@ export const api = {
       statusUrl: string;
       prediction?: any;
     }> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('clothing');
+      const preparedFile = await compressImageIfRequired(file);
       const apiBase = getApiBaseUrl();
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', preparedFile);
       if (metadata?.name) formData.append('name', metadata.name);
       if (metadata?.category) formData.append('category', metadata.category);
       if (metadata?.color) formData.append('color', metadata.color);
@@ -1010,9 +1022,12 @@ export const api = {
       totalItems: number;
       statusUrl: string;
     }> {
+      apiCache.invalidate('wardrobe');
+      apiCache.invalidate('clothing');
+      const preparedFiles = await compressBatchIfRequired(files);
       const apiBase = getApiBaseUrl();
       const formData = new FormData();
-      for (const file of files) {
+      for (const file of preparedFiles) {
         formData.append('files', file);
       }
       if (metadata?.category) formData.append('category', metadata.category);
@@ -1481,6 +1496,15 @@ export const api = {
 
     async upload(formData: FormData): Promise<OutfitMoment> {
       apiCache.invalidate('moment');
+      const fileCandidate = formData.get('file') || formData.get('image');
+      if (fileCandidate instanceof File) {
+        const prepared = await compressImageIfRequired(fileCandidate);
+        if (formData.has('file')) {
+          formData.set('file', prepared);
+        } else if (formData.has('image')) {
+          formData.set('image', prepared);
+        }
+      }
       const m = await request<any>('/moments/upload', {
         method: 'POST',
         body: formData,
@@ -1643,9 +1667,10 @@ export const api = {
   // --- MEDIA STORAGE & OPTIMIZATION ---
   media: {
     async upload(file: File): Promise<{ image_url: string; thumbnail_url: string }> {
+      const preparedFile = await compressImageIfRequired(file);
       const apiBase = getApiBaseUrl();
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', preparedFile);
       const headers: Record<string, string> = {};
       const token = tokenStorage.get();
       if (token) {
@@ -1876,8 +1901,9 @@ export const api = {
     },
 
     async uploadAvatar(file: File): Promise<{ success: boolean; avatar_url: string; message: string }> {
+      const preparedFile = await compressImageIfRequired(file, { maxDimension: 1024 });
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', preparedFile);
       return request<{ success: boolean; avatar_url: string; message: string }>('/users/me/avatar', {
         method: 'POST',
         body: formData,
@@ -2738,7 +2764,8 @@ export const api = {
     },
 
     async getUnreadCount(): Promise<{ unread_count: number }> {
-      return request<{ unread_count: number }>('/messages/unread-count');
+      // Messages endpoint is disabled; return safe zero without generating 404 network traffic
+      return { unread_count: 0 };
     },
 
     async blockUser(userId: string): Promise<{ success: boolean; blocked_user_id: string }> {

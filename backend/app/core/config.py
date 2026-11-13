@@ -147,7 +147,14 @@ class Settings(BaseSettings):
     REDIS_MAX_CONNECTIONS: int = 20
     REDIS_RETRY_ON_TIMEOUT: bool = True
     
+    # AI Model Artifacts & Deployment
     AI_MODEL_PATH: str = "./ai_models"
+    FASHION_MODEL_PATH: Optional[str] = None
+    ARTIFACTS_DIR: Optional[str] = None
+    FASHION_MODEL_DOWNLOAD_URL: Optional[str] = None
+    FASHION_MODEL_EXPECTED_SIZE: Optional[int] = None
+    FASHION_MODEL_SHA256: Optional[str] = None
+    ALLOW_BACKGROUND_THREAD_FALLBACK: bool = False
     AI_ENABLE_ML: bool = True
     AI_ENABLE_IMAGE_ANALYSIS: bool = True
     

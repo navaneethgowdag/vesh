@@ -162,17 +162,120 @@ class FashionModelService:
         return self._device
 
     def _discover_artifacts_dir(self) -> str:
-        """Find the artifacts directory reliably across different working directories."""
+        """Find the artifacts directory reliably across different working directories and cloud deployments."""
+        from pathlib import Path
+
+        explicit_path = os.getenv("FASHION_MODEL_PATH")
+        if explicit_path:
+            p = Path(explicit_path).resolve()
+            if p.is_file():
+                return str(p.parent)
+            if p.is_dir():
+                return str(p)
+
+        explicit_dir = os.getenv("ARTIFACTS_DIR")
+        if explicit_dir and os.path.isdir(explicit_dir):
+            return str(Path(explicit_dir).resolve())
+
+        base_file = Path(__file__).resolve()
         candidates = [
-            os.path.abspath("artifacts"),
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "artifacts")),
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "artifacts")),
-            os.getenv("ARTIFACTS_DIR", "artifacts"),
+            Path("/var/data/artifacts"),
+            Path("/opt/render/project/src/artifacts"),
+            Path("/opt/render/project/src/backend/artifacts"),
+            base_file.parents[3] / "artifacts",           # repo root / artifacts
+            base_file.parents[2] / "artifacts",           # backend / artifacts
+            Path.cwd() / "artifacts",
+            Path.cwd() / "backend" / "artifacts",
         ]
         for c in candidates:
-            if os.path.isdir(c) and os.path.exists(os.path.join(c, "best_model.pt")):
-                return c
-        return os.path.abspath("artifacts")
+            if c.is_dir() and (c / "best_model.pt").exists():
+                return str(c)
+
+        for c in candidates:
+            if c.is_dir() and (c / "class_mappings.json").exists():
+                return str(c)
+
+        return str(base_file.parents[2] / "artifacts")
+
+    def _ensure_model_artifact_downloaded(self, target_checkpoint: str) -> bool:
+        """
+        Download model artifact if missing and FASHION_MODEL_DOWNLOAD_URL is configured.
+        Performs streaming download to a temporary file, verifies size and SHA256 checksum (if set),
+        then atomically renames into target_checkpoint.
+        """
+        if os.path.exists(target_checkpoint) and os.path.getsize(target_checkpoint) > 1024 * 1024:
+            return True
+
+        download_url = os.getenv("FASHION_MODEL_DOWNLOAD_URL")
+        if not download_url:
+            return False
+
+        logger.info(f"[FashionModelService] Model artifact not found locally. Initiating controlled download from: {download_url}")
+        tmp_path = target_checkpoint + ".tmp"
+        os.makedirs(os.path.dirname(target_checkpoint), exist_ok=True)
+
+        try:
+            import urllib.request
+            import hashlib
+
+            with urllib.request.urlopen(download_url, timeout=90) as response, open(tmp_path, "wb") as out_file:
+                chunk_size = 1024 * 1024  # 1MB
+                downloaded = 0
+                hasher = hashlib.sha256()
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    out_file.write(chunk)
+                    hasher.update(chunk)
+                    downloaded += len(chunk)
+
+            # Verification: size
+            min_expected = int(os.getenv("FASHION_MODEL_EXPECTED_SIZE", str(10 * 1024 * 1024)))
+            if downloaded < min_expected:
+                raise ValueError(f"Downloaded file size too small: {downloaded} bytes (expected >= {min_expected} bytes)")
+
+            # Verification: sha256 if provided
+            expected_sha = os.getenv("FASHION_MODEL_SHA256")
+            if expected_sha and hasher.hexdigest().lower() != expected_sha.strip().lower():
+                raise ValueError(f"Checksum mismatch: got {hasher.hexdigest()} but expected {expected_sha}")
+
+            # Atomic move
+            os.replace(tmp_path, target_checkpoint)
+            logger.info(f"[FashionModelService] Successfully downloaded and verified {target_checkpoint} ({downloaded} bytes).")
+            return True
+
+        except Exception as dl_err:
+            logger.error(f"[FashionModelService] Download failed from {download_url}: {dl_err}")
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+            return False
+
+    def get_model_readiness(self) -> Dict[str, Any]:
+        """
+        Return structured non-sensitive readiness information for health checks and diagnostics.
+        """
+        checkpoint_path = os.path.join(self.artifacts_dir, "best_model.pt")
+        exists = os.path.exists(checkpoint_path)
+        size_bytes = os.path.getsize(checkpoint_path) if exists else None
+
+        status_str = "loaded" if self.is_loaded else ("initializing" if self.is_loading else "unavailable")
+        if self.load_error and not self.is_loaded:
+            status_str = "failed"
+
+        return {
+            "artifact_configured": bool(self.artifacts_dir),
+            "artifact_exists": exists,
+            "artifact_size_bytes": size_bytes,
+            "load_status": status_str,
+            "device": str(self.device),
+            "model_version": self.model_version,
+            "inference_ready": self.is_loaded and self.model is not None,
+            "load_error": self.load_error,
+        }
 
     def load_model(self, checkpoint_override: Optional[str] = None) -> bool:
         """
@@ -203,6 +306,8 @@ class FashionModelService:
                 logger.warning(f"[FashionModelService] Error reading current_production_model.json: {pe}")
 
         model_path = active_checkpoint
+        self._ensure_model_artifact_downloaded(model_path)
+
         config_path = os.path.join(self.artifacts_dir, "model_config.json")
         prep_path = os.path.join(self.artifacts_dir, "preprocessing.json")
         mappings_path = os.path.join(self.artifacts_dir, "class_mappings.json")

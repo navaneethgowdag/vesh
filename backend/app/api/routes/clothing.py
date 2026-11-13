@@ -443,7 +443,7 @@ def get_pending_review_clothing(
     # Filter to items requiring review, in progress, or failed (not yet finalized)
     pending_items = [
         item for item in items
-        if not item.is_finalized or item.review_required or item.processing_status in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+        if not item.is_finalized or item.review_required or item.processing_status in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed")
     ]
     return pending_items
 

@@ -58,6 +58,8 @@ ai_models/
 *.joblib
 *.pt
 *.pth
+!artifacts/best_model.pt
+!backend/artifacts/best_model.pt
 
 # --- Uploaded static assets ---
 backend/static/uploads/*.webp

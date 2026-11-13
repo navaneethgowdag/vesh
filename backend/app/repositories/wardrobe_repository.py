@@ -63,15 +63,38 @@ class WardrobeRepository:
 
         items = query.order_by(Clothing.created_at.desc()).all()
 
+        # Stale job auto-recovery:
+        # If any item is trapped in ('queued', 'processing') for > 120 seconds,
+        # safely recover it to 'manual_review_required' so the client is never trapped in an infinite loading spinner.
+        now = datetime.now(timezone.utc)
+        recovered = False
+        for item in items:
+            if item.processing_status in ("queued", "processing"):
+                updated_at = item.updated_at or item.created_at
+                if updated_at:
+                    if updated_at.tzinfo is None:
+                        updated_at = updated_at.replace(tzinfo=timezone.utc)
+                    age_seconds = (now - updated_at).total_seconds()
+                    if age_seconds > 120:
+                        item.processing_status = "manual_review_required"
+                        item.processing_stage = "manual_review_required"
+                        item.review_required = True
+                        recovered = True
+        if recovered:
+            try:
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
+
         if review_status == "pending":
             items = [
                 i for i in items
-                if not i.is_finalized or i.review_required or i.processing_status in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+                if not i.is_finalized or i.review_required or i.processing_status in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed")
             ]
         elif review_status == "accepted":
             items = [
                 i for i in items
-                if i.is_finalized and not i.review_required and i.processing_status not in ("predictions_ready", "ready_for_review", "queued", "processing", "failed")
+                if i.is_finalized and not i.review_required and i.processing_status not in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed")
             ]
 
         # Occasion Vault & Wardrobe Groups Filtering

@@ -163,41 +163,37 @@ def readiness_check(response: Response):
     Dependency readiness probe. Reports actual operational status of dependencies:
     - Database (critical: HTTP 503 if disconnected)
     - Redis (optional: connected | degraded | disabled)
-    - AI model (ready | loading | unavailable)
-    - Background queue (active | thread_fallback_active)
+    - AI model (ready | loading | unavailable) with device, artifact presence & details
+    - Background queue (active | thread_fallback_active | worker_offline)
     """
     db_ok = verify_database_connection(fast=True)
     redis_health = check_redis_health()
+    model_readiness = fashion_model_service.get_model_readiness()
+    ai_status = model_readiness.get("status", "unavailable")
 
-    if fashion_model_service.is_loaded:
-        ai_status = "ready"
-    elif fashion_model_service.is_loading:
-        ai_status = "loading"
+    if redis_health.get("status") == "ok":
+        bg_status = "active"
+    elif getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", False):
+        bg_status = "thread_fallback_active"
     else:
-        ai_status = "unavailable"
+        bg_status = "redis_disabled"
 
-    bg_status = "active" if redis_health.get("status") == "ok" else "thread_fallback_active"
+    payload = {
+        "status": "ready" if db_ok else "not_ready",
+        "app": "TailorBird",
+        "database": "Neon PostgreSQL" if db_ok else "disconnected",
+        "redis": redis_health.get("status", "unknown"),
+        "ai_model": ai_status,
+        "ai_model_details": model_readiness,
+        "background_jobs": bg_status,
+    }
 
     if not db_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return {
-            "status": "not_ready",
-            "app": "TailorBird",
-            "database": "disconnected",
-            "redis": redis_health.get("status", "unknown"),
-            "ai_model": ai_status,
-            "background_jobs": bg_status,
-            "detail": "Database connection check failed",
-        }
+        payload["detail"] = "Database connection check failed"
+        return payload
 
-    return {
-        "status": "ready",
-        "app": "TailorBird",
-        "database": "Neon PostgreSQL",
-        "redis": redis_health.get("status", "unknown"),
-        "ai_model": ai_status,
-        "background_jobs": bg_status,
-    }
+    return payload
 
 
 @app.get("/health/db", tags=["health"])

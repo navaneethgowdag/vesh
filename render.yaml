@@ -12,3 +12,16 @@ services:
         value: production
       - key: FORCE_CPU
         value: "true"
+
+  - type: worker
+    name: tailorbird-worker
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.worker
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: FORCE_CPU
+        value: "true"
