@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
@@ -42,17 +43,17 @@ export const Notifications: React.FC = () => {
   const getIcon = (type: Notification['type']) => {
     switch (type) {
       case 'like':
-        return <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />;
+        return <Heart className="w-3.5 h-3.5 text-[#743C49] fill-[#743C49]" />;
       case 'comment':
-        return <MessageCircle className="w-3.5 h-3.5 text-sky-500 fill-sky-500" />;
+        return <MessageCircle className="w-3.5 h-3.5 text-[#29202B] dark:text-[#F3EEE8]" />;
       case 'follow':
-        return <UserPlus className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />;
+        return <UserPlus className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />;
       case 'daily_fit':
-        return <Sparkles className="w-3.5 h-3.5 text-amber-500" />;
+        return <Sparkles className="w-3.5 h-3.5 text-[#B49B82]" />;
       case 'collection_save':
-        return <Bookmark className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100 fill-zinc-900 dark:fill-zinc-100" />;
+        return <Bookmark className="w-3.5 h-3.5 text-[#29202B] dark:text-[#F3EEE8] fill-current" />;
       default:
-        return <Bell className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />;
+        return <Bell className="w-3.5 h-3.5 text-[#777078]" />;
     }
   };
 
@@ -68,138 +69,133 @@ export const Notifications: React.FC = () => {
   return (
     <AppShell>
       <PullToRefresh onRefresh={handleRefresh}>
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-md border border-zinc-200 dark:border-zinc-700">
-                <Bell className="w-4 h-4" />
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Activity & Notifications
-              </h1>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-20 select-none">
+          {/* Editorial Header */}
+          <EditorialPageHeader
+            eyebrow="COMMUNITY & SYSTEM ACTIVITY"
+            title="Notifications"
+            italicTitle="Log."
+            description="Stay in sync with likes, comments, following tastemakers, and AI fit alerts."
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  title="Refresh notifications"
+                  className="w-9 h-9 flex items-center justify-center rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] bg-white dark:bg-[#1F1922] hover:border-[#743C49] transition-colors cursor-pointer"
+                  aria-label="Refresh activity"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#743C49]' : ''}`} />
+                </button>
+
+                {unreadNotifsCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={markAllNotificationsAsRead}
+                    icon={<CheckCheck className="w-3.5 h-3.5" />}
+                    className="rounded-[2px] font-mono text-[10px] uppercase tracking-[0.14em] border-[#DCD4CC] dark:border-[#392F3E]"
+                  >
+                    Mark all read
+                  </Button>
+                )}
+              </div>
+            }
+          />
+
+          {/* Empty state */}
+          {!hasAnyNotifications && (
+            <div className="py-20 px-6 text-center bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] max-w-md mx-auto my-8">
+              <div className="w-12 h-12 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-center text-[#743C49] mx-auto mb-3">
+                <Bell className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-serif text-[#29202B] dark:text-[#F3EEE8]">
+                All caught up
+              </h3>
+              <p className="text-xs text-[#777078] dark:text-[#A89E9B] mt-1">
+                When fellow tastemakers interact with your looks, you will see notifications here.
+              </p>
             </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              Stay in sync with likes, comments, following tastemakers, and AI fit alerts.
-            </p>
-          </div>
+          )}
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh notifications"
-              className="w-11 h-11 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all cursor-pointer shadow-sm"
-              aria-label="Refresh activity"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-zinc-900 dark:text-zinc-100' : ''}`} />
-            </button>
+          {/* Notifications grouped */}
+          {hasAnyNotifications && (
+            <div className="space-y-6">
+              {groups.map((grp) => {
+                const items = notifications.filter((n) => n.group === grp);
+                if (items.length === 0) return null;
 
-            {unreadNotifsCount > 0 && (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={markAllNotificationsAsRead}
-                icon={<CheckCheck className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />}
-              >
-                Mark all read
-              </Button>
-            )}
-          </div>
-        </div>
+                return (
+                  <div key={grp}>
+                    <h2 className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0] mb-2.5 px-1 font-semibold">
+                      {grp}
+                    </h2>
 
-        {/* Empty state */}
-        {!hasAnyNotifications && (
-          <div className="py-20 px-6 text-center bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 max-w-md mx-auto my-8">
-            <div className="w-12 h-12 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 mx-auto mb-3">
-              <Bell className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              All caught up
-            </h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              When fellow tastemakers interact with your looks, you will see notifications here.
-            </p>
-          </div>
-        )}
-
-        {/* Notifications grouped */}
-        {hasAnyNotifications && (
-          <div className="space-y-6">
-            {groups.map((grp) => {
-              const items = notifications.filter((n) => n.group === grp);
-              if (items.length === 0) return null;
-
-              return (
-                <div key={grp}>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2.5 px-1">
-                    {grp}
-                  </h2>
-
-                  <div className="space-y-2">
-                    {items.map((notif) => (
-                      <div
-                        key={notif.id}
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`flex items-center justify-between p-3.5 sm:p-4 rounded-md border transition-all cursor-pointer ${
-                          notif.isRead
-                            ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-                            : 'bg-zinc-50 dark:bg-zinc-800/70 border-zinc-300 dark:border-zinc-700 shadow-sm'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {/* Avatar with type badge */}
-                          <div className="relative flex-shrink-0">
-                            {notif.actionUser ? (
-                              <Avatar
-                                src={notif.actionUser.avatar}
-                                alt={notif.actionUser.name}
-                                size="md"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
+                    <div className="space-y-2">
+                      {items.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() => handleNotificationClick(notif)}
+                          className={`flex items-center justify-between p-3.5 sm:p-4 rounded-[3px] border transition-colors cursor-pointer ${
+                            notif.isRead
+                              ? 'bg-white dark:bg-[#1F1922] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
+                              : 'bg-[#FAF6F0] dark:bg-[#241D27] border-[#743C49]/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Avatar with type badge */}
+                            <div className="relative flex-shrink-0">
+                              {notif.actionUser ? (
+                                <Avatar
+                                  src={notif.actionUser.avatar}
+                                  alt={notif.actionUser.name}
+                                  size="md"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-center text-[#29202B] dark:text-[#F3EEE8]">
+                                  {getIcon(notif.type)}
+                                </div>
+                              )}
+                              <span className="absolute -bottom-1 -right-1 bg-white dark:bg-[#1F1922] rounded-[2px] p-1 border border-[#DCD4CC] dark:border-[#392F3E]">
                                 {getIcon(notif.type)}
-                              </div>
-                            )}
-                            <span className="absolute -bottom-1 -right-1 bg-white dark:bg-zinc-900 rounded-md p-1 shadow-sm border border-zinc-200 dark:border-zinc-700">
-                              {getIcon(notif.type)}
-                            </span>
+                              </span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-serif text-[#29202B] dark:text-[#F3EEE8] leading-snug">
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-[#777078] dark:text-[#A89E9B] mt-0.5 line-clamp-2 leading-relaxed">
+                                {notif.message}
+                              </p>
+                              <span className="text-[10px] font-mono text-[#777078] dark:text-[#A89E9B] mt-1 block">
+                                {notif.timeAgo}
+                              </span>
+                            </div>
                           </div>
 
-                          {/* Content */}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 leading-snug">
-                              {notif.title}
-                            </p>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
-                              {notif.message}
-                            </p>
-                            <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 block">
-                              {notif.timeAgo}
-                            </span>
-                          </div>
+                          {/* Target Image preview */}
+                          {notif.targetImage && (
+                            <img
+                              src={notif.targetImage}
+                              alt="Target preview"
+                              className="w-12 h-12 rounded-[2px] object-cover border border-[#DCD4CC] dark:border-[#392F3E] ml-3 flex-shrink-0"
+                            />
+                          )}
+
+                          {!notif.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-[#743C49] ml-3 flex-shrink-0" />
+                          )}
                         </div>
-
-                        {/* Target Image preview */}
-                        {notif.targetImage && (
-                          <img
-                            src={notif.targetImage}
-                            alt="Target preview"
-                            className="w-12 h-12 rounded-md object-cover border border-zinc-200 dark:border-zinc-800 ml-3 flex-shrink-0 shadow-sm"
-                          />
-                        )}
-
-                        {!notif.isRead && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-zinc-900 dark:bg-zinc-100 ml-3 flex-shrink-0" />
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </PullToRefresh>
     </AppShell>
   );

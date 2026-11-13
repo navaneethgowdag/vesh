@@ -190,15 +190,15 @@ export const CommunityDetail: React.FC = () => {
         {/* Back Link */}
         <button
           onClick={() => navigate('/explore')}
-          className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+          className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Explore
         </button>
 
         {/* Community Banner & Header */}
-        <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <div className="h-36 sm:h-48 bg-gradient-to-r from-zinc-800 via-zinc-900 to-black relative">
+        <div className="rounded-[3px] overflow-hidden border border-[#DCD4CC] dark:border-[#392F3E] bg-white dark:bg-[#1F1922]">
+          <div className="h-36 sm:h-48 bg-gradient-to-r from-[#29202B] via-[#1F1922] to-black relative">
             {community.cover_image_url && (
               <img
                 src={community.cover_image_url}
@@ -207,14 +207,14 @@ export const CommunityDetail: React.FC = () => {
               />
             )}
             <div className="absolute top-3 right-3 flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-black/60 backdrop-blur-md text-white border border-white/10 flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-[2px] text-[9px] font-mono uppercase tracking-[0.14em] bg-black/70 backdrop-blur-md text-white border border-white/10 flex items-center gap-1.5">
                 {community.visibility === 'public' ? (
                   <>
-                    <Globe className="w-3 h-3 text-emerald-400" /> Public
+                    <Globe className="w-3 h-3 text-[#D5A6A0]" /> Public
                   </>
                 ) : (
                   <>
-                    <Lock className="w-3 h-3 text-amber-400" /> Private
+                    <Lock className="w-3 h-3 text-[#B49B82]" /> Private
                   </>
                 )}
               </span>
@@ -225,21 +225,21 @@ export const CommunityDetail: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-wider font-bold text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[10px] uppercase font-mono tracking-[0.16em] text-[#777078]">
                     {community.category}
                   </span>
                   {community.membership_role && (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                    <span className="px-2 py-0.5 rounded-[2px] text-[9px] font-mono uppercase tracking-[0.12em] bg-[#FAF6F0] dark:bg-[#241D27] text-[#743C49] dark:text-[#D5A6A0] border border-[#DCD4CC] dark:border-[#392F3E]">
                       {community.membership_role}
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight mt-1">
+                <h1 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] mt-1">
                   {community.name}
                 </h1>
-                <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">
-                  <span className="flex items-center gap-1 font-semibold text-zinc-800 dark:text-zinc-200">
-                    <Users className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-3 text-xs font-mono text-[#777078] mt-1.5">
+                  <span className="flex items-center gap-1 font-medium text-[#29202B] dark:text-[#F3EEE8]">
+                    <Users className="w-3.5 h-3.5 text-[#743C49]" />
                     {community.members_count} members
                   </span>
                   <span>&middot;</span>
@@ -253,6 +253,7 @@ export const CommunityDetail: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRules(!showRules)}
+                    className="rounded-[2px] font-mono text-[10px] uppercase tracking-[0.14em]"
                     icon={<Info className="w-3.5 h-3.5" />}
                   >
                     Guidelines
@@ -263,6 +264,9 @@ export const CommunityDetail: React.FC = () => {
                   variant={community.is_member ? 'outline' : 'primary'}
                   size="sm"
                   onClick={handleJoinLeave}
+                  className={`rounded-[2px] font-mono text-[10px] uppercase tracking-[0.14em] ${
+                    !community.is_member ? 'bg-[#743C49] hover:bg-[#5E2F3A] text-[#F3EEE8]' : ''
+                  }`}
                 >
                   {community.is_member
                     ? community.membership_role === 'owner'
@@ -278,43 +282,45 @@ export const CommunityDetail: React.FC = () => {
             </div>
 
             {community.description && (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p className="text-xs text-[#777078] dark:text-[#DCD4CC] leading-relaxed font-sans">
                 {community.description}
               </p>
             )}
 
             {/* Collapsible Rules Drawer */}
             {showRules && community.rules && (
-              <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
-                <span className="font-bold block uppercase tracking-wider text-zinc-500">Community Rules:</span>
-                <p className="whitespace-pre-line">{community.rules}</p>
+              <div className="p-3.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] text-xs text-[#777078] dark:text-[#DCD4CC] space-y-1 font-mono">
+                <span className="font-semibold block uppercase tracking-[0.14em] text-[#29202B] dark:text-[#F3EEE8] text-[10px]">
+                  Community Rules:
+                </span>
+                <p className="whitespace-pre-line text-xs font-sans">{community.rules}</p>
               </div>
             )}
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-t border-zinc-200 dark:border-zinc-800 px-5 sm:px-6">
+          <div className="flex border-t border-[#DCD4CC] dark:border-[#392F3E] px-5 sm:px-6">
             <button
               onClick={() => setActiveTab('feed')}
-              className={`py-3 text-xs font-bold transition-all relative mr-6 ${
+              className={`py-3 text-[10px] font-mono uppercase tracking-[0.14em] transition-all relative mr-6 cursor-pointer ${
                 activeTab === 'feed'
-                  ? 'text-zinc-900 dark:text-zinc-100 border-b-2 border-zinc-900 dark:border-zinc-100'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800'
+                  ? 'text-[#29202B] dark:text-[#F3EEE8] border-b-2 border-[#743C49] font-bold'
+                  : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8]'
               }`}
             >
               Feed & Discussions ({feed.length})
             </button>
             <button
               onClick={() => setActiveTab('members')}
-              className={`py-3 text-xs font-bold transition-all relative ${
+              className={`py-3 text-[10px] font-mono uppercase tracking-[0.14em] transition-all relative cursor-pointer ${
                 activeTab === 'members'
-                  ? 'text-zinc-900 dark:text-zinc-100 border-b-2 border-zinc-900 dark:border-zinc-100'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800'
+                  ? 'text-[#29202B] dark:text-[#F3EEE8] border-b-2 border-[#743C49] font-bold'
+                  : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8]'
               }`}
             >
               Members ({members.length})
               {pendingMembers.length > 0 && isOwnerOrMod && (
-                <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-[2px] text-[9px] bg-[#743C49] text-white font-mono">
                   {pendingMembers.length}
                 </span>
               )}
@@ -329,9 +335,9 @@ export const CommunityDetail: React.FC = () => {
             {community.is_member ? (
               <form
                 onSubmit={handleCreatePost}
-                className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3"
+                className="p-4 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] space-y-3"
               >
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] block">
                   Start a Discussion or Share Style
                 </span>
                 <input
@@ -339,14 +345,14 @@ export const CommunityDetail: React.FC = () => {
                   placeholder="Discussion Topic / Title..."
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  className="w-full bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] px-3 py-2 text-xs text-[#29202B] dark:text-[#F3EEE8] focus:outline-none focus:border-[#743C49]"
                 />
                 <textarea
                   rows={2}
                   placeholder="Share outfit thoughts, style advice, or questions with the community..."
                   value={postMessage}
                   onChange={(e) => setPostMessage(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
+                  className="w-full bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] px-3 py-2 text-xs text-[#29202B] dark:text-[#F3EEE8] focus:outline-none focus:border-[#743C49] resize-none"
                 />
                 <div className="flex justify-end">
                   <Button

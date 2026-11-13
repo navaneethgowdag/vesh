@@ -61,7 +61,8 @@ def _wh_to_calendar_event(wh: WearHistory) -> CalendarEvent:
         created_at=wh.created_at,
         updated_at=wh.created_at,
     )
-    ev.outfit = wh.outfit
+    if wh.outfit:
+        ev.__dict__["outfit"] = wh.outfit
     return ev
 
 
@@ -118,12 +119,14 @@ class CalendarRepository:
             updated_at=datetime.fromisoformat(d["updated_at"]) if d.get("updated_at") else datetime.now(timezone.utc),
         )
         if o_id:
-            ev.outfit = (
+            outfit = (
                 self.db.query(Outfit)
                 .options(joinedload(Outfit.clothing_items))
                 .filter(Outfit.id == o_id)
                 .first()
             )
+            if outfit:
+                ev.__dict__["outfit"] = outfit
         return ev
 
     def get_by_id(self, event_id: UUID, user_id: Optional[UUID] = None) -> Optional[CalendarEvent]:

@@ -283,57 +283,63 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
   const originalImageUrl = activeItemId ? api.clothing.getOriginalImageUrl(activeItemId) : localPreviewUrl;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add to Wardrobe" maxWidth="xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add to Wardrobe"
+      subtitle="Single Photo AI Extraction · EfficientNet-B0 Multi-Task Classifier"
+      maxWidth="4xl"
+    >
       <div className="space-y-6">
-        {/* Visual Progress Stepper (No Background Removal) */}
-        <div className="bg-zinc-50 dark:bg-zinc-800/60 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+        {/* Visual Progress Stepper */}
+        <div className="bg-[#FAF6F0] dark:bg-[#201824] p-3 rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E]">
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             {/* Step 1: Upload */}
             <div
-              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-[2px] font-medium transition-colors ${
                 step === 'idle'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-700 dark:text-zinc-300'
+                  ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold shadow-xs'
+                  : 'text-[#777078] dark:text-[#D5A6A0]'
               }`}
             >
               {step !== 'idle' ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               ) : (
-                <Upload className="w-3.5 h-3.5" />
+                <Upload className="w-3.5 h-3.5 flex-shrink-0" />
               )}
-              <span className="truncate">1. Select Photo</span>
+              <span className="truncate uppercase tracking-[0.1em] text-[10px]">1. Select Photo</span>
             </div>
 
             {/* Step 2: AI Analysis */}
             <div
-              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-[2px] font-medium transition-colors ${
                 step === 'analyzing'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
+                  ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold shadow-xs'
                   : step === 'review' || step === 'saving'
-                  ? 'text-zinc-700 dark:text-zinc-300'
-                  : 'text-zinc-400 dark:text-zinc-500'
+                  ? 'text-[#777078] dark:text-[#D5A6A0]'
+                  : 'text-[#777078]/50 dark:text-[#D5A6A0]/40'
               }`}
             >
               {step === 'analyzing' ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
               ) : step === 'review' || step === 'saving' ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
               )}
-              <span className="truncate">2. AI Analysis</span>
+              <span className="truncate uppercase tracking-[0.1em] text-[10px]">2. AI Analysis</span>
             </div>
 
             {/* Step 3: Review Attributes */}
             <div
-              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-[2px] font-medium transition-colors ${
                 step === 'review' || step === 'saving'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm'
-                  : 'text-zinc-400 dark:text-zinc-500'
+                  ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold shadow-xs'
+                  : 'text-[#777078]/50 dark:text-[#D5A6A0]/40'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="truncate">3. Review & Save</span>
+              <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate uppercase tracking-[0.1em] text-[10px]">3. Review & Save</span>
             </div>
           </div>
         </div>
@@ -352,21 +358,21 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                   handleFileChosen(e.dataTransfer.files[0]);
                 }
               }}
-              className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-500 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/40 group"
+              className="border-2 border-dashed border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49] dark:hover:border-[#D5A6A0] rounded-[3px] p-8 sm:p-12 text-center cursor-pointer transition-all bg-[#FAF6F0]/50 dark:bg-[#201824]/50 hover:bg-[#FAF6F0] dark:hover:bg-[#201824] group"
             >
-              <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:scale-110 flex items-center justify-center mx-auto mb-4 text-zinc-900 dark:text-zinc-100 transition-transform">
+              <div className="w-16 h-16 rounded-[2px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] group-hover:scale-105 flex items-center justify-center mx-auto mb-4 text-[#743C49] dark:text-[#D5A6A0] transition-transform">
                 <Upload className="w-8 h-8" />
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
+              <h3 className="font-serif text-xl sm:text-2xl text-[#29202B] dark:text-[#F3EEE8] mb-1">
                 Upload clothing photo
               </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto mb-4">
+              <p className="text-xs sm:text-sm text-[#777078] dark:text-[#DCD4CC] max-w-sm mx-auto mb-4 font-sans leading-relaxed">
                 Drag and drop your garment photo here, or click to browse. Flat-lay, hanger, or worn photos supported.
               </p>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
-                <Sparkles className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
-                EfficientNet-B0 extracts 9 fashion attributes directly from original photo
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[2px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] text-[10px] uppercase tracking-[0.08em] font-medium text-[#29202B] dark:text-[#F3EEE8]">
+                <Sparkles className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
+                EfficientNet-B0 extracts 9 fashion attributes directly from photo
               </div>
             </div>
 
@@ -377,7 +383,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                 size="md"
                 onClick={() => cameraInputRef.current?.click()}
                 icon={<Camera className="w-4 h-4" />}
-                className="flex-1 sm:flex-initial"
+                className="flex-1 sm:flex-initial rounded-[2px] border-[#DCD4CC] dark:border-[#392F3E] uppercase tracking-[0.1em] text-xs"
               >
                 Take Photo
               </Button>
@@ -386,7 +392,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                 <button
                   type="button"
                   onClick={onSwitchToBatch}
-                  className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 underline decoration-zinc-300 dark:decoration-zinc-700"
+                  className="text-xs font-semibold uppercase tracking-[0.1em] text-[#743C49] dark:text-[#D5A6A0] hover:underline"
                 >
                   Upload multiple items together
                 </button>
@@ -430,23 +436,23 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                 <img
                   src={localPreviewUrl}
                   alt="Analyzing preview"
-                  className="w-20 h-20 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700 opacity-60"
+                  className="w-20 h-20 rounded-[3px] object-cover border border-[#DCD4CC] dark:border-[#392F3E] opacity-60"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                  <Shirt className="w-10 h-10 text-zinc-400" />
+                <div className="w-20 h-20 rounded-[3px] bg-[#FAF6F0] dark:bg-[#201824] flex items-center justify-center">
+                  <Shirt className="w-10 h-10 text-[#777078]" />
                 </div>
               )}
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-zinc-900 dark:text-zinc-100 animate-spin" />
+                <Loader2 className="w-8 h-8 text-[#743C49] dark:text-[#D5A6A0] animate-spin" />
               </div>
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Analyzing original image...
+              <h3 className="font-serif text-lg text-[#29202B] dark:text-[#F3EEE8]">
+                Analyzing image...
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-1 max-w-sm mx-auto font-sans">
                 Running Multi-Task EfficientNet-B0 to extract garment identification, appearance, and catalog context.
               </p>
             </div>
@@ -457,12 +463,12 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         {/* STEP FAILED NOTICE */}
         {/* ------------------------------------------------------------- */}
         {step === 'failed' && (
-          <div className="p-5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+          <div className="p-5 rounded-[3px] bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-center space-y-3">
+            <div className="w-10 h-10 rounded-[2px] bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
+              <h4 className="font-serif text-base text-rose-900 dark:text-rose-200">
                 Upload or Analysis Failed
               </h4>
               <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
@@ -475,6 +481,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                 size="sm"
                 onClick={() => setStep('idle')}
                 icon={<RefreshCw className="w-3.5 h-3.5" />}
+                className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
               >
                 Try Another Photo
               </Button>
@@ -486,49 +493,59 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
         {/* STEP 3: ATTRIBUTE REVIEW & PERSISTENCE FORM */}
         {/* ------------------------------------------------------------- */}
         {(step === 'review' || step === 'saving') && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Original Photograph Display (Clean & Prominent) */}
-            <div className="lg:col-span-4 space-y-3">
-              <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 aspect-[3/4] relative shadow-sm group">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Original Photograph Display & AI Confidence */}
+            <div className="md:col-span-5 space-y-3.5">
+              <div className="rounded-[3px] overflow-hidden border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#201824] aspect-[3/4] relative shadow-xs group">
                 {originalImageUrl ? (
                   <img
                     src={originalImageUrl}
                     alt={name || 'Uploaded Garment'}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                  <div className="w-full h-full flex items-center justify-center text-[#777078]">
                     <Shirt className="w-12 h-12" />
                   </div>
                 )}
 
                 <div className="absolute top-2.5 left-2.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md bg-black/70 backdrop-blur-md text-white border border-white/20">
+                  <span className="text-[10px] uppercase font-mono font-semibold tracking-wider px-2 py-0.5 rounded-[2px] bg-[#29202B]/85 text-white backdrop-blur-xs">
                     Original Photo
                   </span>
                 </div>
               </div>
 
-              {/* Photo Metadata Advisory */}
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-400 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">Model:</span>
-                  <span>EfficientNet-B0</span>
+              {/* Photo Metadata / Classifier Advisory */}
+              <div className="p-3.5 rounded-[3px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-2 text-xs">
+                <div className="flex items-center justify-between font-semibold text-[#29202B] dark:text-[#F3EEE8]">
+                  <span className="flex items-center gap-1.5 font-sans">
+                    <Sparkles className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
+                    EfficientNet-B0
+                  </span>
+                  {rawPrediction?.category_score !== undefined && (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[2px] bg-[#426B50]/15 text-[#426B50] dark:text-emerald-400 border border-[#426B50]/20">
+                      {Math.round(rawPrediction.category_score * 100)}% Confidence
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">Preservation:</span>
-                  <span>Original Photo Kept</span>
+                <p className="text-[11px] text-[#6D7068] dark:text-[#A89E9B] leading-relaxed">
+                  9 multi-task fashion attributes extracted directly from your photo. Edits will refine your wardrobe intelligence and recommendations.
+                </p>
+                <div className="flex items-center justify-between text-[10px] font-mono text-[#777078] dark:text-[#D5A6A0] pt-2 border-t border-[#DCD4CC]/60 dark:border-[#392F3E]/60">
+                  <span>9 ATTRIBUTE HEADS</span>
+                  <span className="text-[#426B50] dark:text-emerald-400 font-semibold">PREDICTIONS READY</span>
                 </div>
               </div>
             </div>
 
             {/* Right Column: 9 AI-Extracted Attributes Grouped Sensibly */}
-            <div className="lg:col-span-8 space-y-6">
-              {/* Optional Basic Name & Brand Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    Garment Name
+            <div className="md:col-span-7 space-y-5">
+              {/* Basic Name & Brand Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pb-4 border-b border-[#DCD4CC] dark:border-[#392F3E]">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#6D7068] dark:text-[#A89E9B]">
+                    Garment Name *
                   </label>
                   <input
                     type="text"
@@ -538,12 +555,12 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                       markEdited('name');
                     }}
                     placeholder="e.g. Navy Oxford Cotton Shirt"
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                    className="w-full bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[3px] px-3.5 py-2 text-xs sm:text-sm text-[#29202B] dark:text-[#F3EEE8] min-h-[40px] focus:outline-none focus:border-[#743C49] focus:ring-1 focus:ring-[#743C49] transition-colors"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#6D7068] dark:text-[#A89E9B]">
                     Brand (Optional)
                   </label>
                   <input
@@ -554,7 +571,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                       markEdited('brand');
                     }}
                     placeholder="e.g. Zara, Uniqlo, Levi's"
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                    className="w-full bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[3px] px-3.5 py-2 text-xs sm:text-sm text-[#29202B] dark:text-[#F3EEE8] min-h-[40px] focus:outline-none focus:border-[#743C49] focus:ring-1 focus:ring-[#743C49] transition-colors"
                   />
                 </div>
               </div>
@@ -563,15 +580,20 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
               {/* GROUP 1: GARMENT IDENTIFICATION */}
               {/* ----------------------------------------------------------- */}
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800/80">
-                  <Tag className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    Garment Identification
-                  </h4>
+                <div className="flex items-center justify-between pb-1.5 border-b border-[#DCD4CC] dark:border-[#392F3E]">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
+                    <h4 className="font-serif text-sm font-semibold text-[#29202B] dark:text-[#F3EEE8]">
+                      1. Garment Identification
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#6D7068] dark:text-[#A89E9B]">
+                    Primary Anatomy
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Article Type (142 classes - Searchable Combobox) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Article Type (142 classes) */}
                   <SearchableCombobox
                     label="Article Type"
                     value={articleType}
@@ -588,24 +610,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                     required
                   />
 
-                  {/* Master Category (7 classes) */}
-                  <SearchableCombobox
-                    label="Master Category"
-                    value={masterCategory}
-                    options={classOptions.master_category || []}
-                    onChange={(val) => {
-                      setMasterCategory(val);
-                      markEdited('master_category');
-                    }}
-                    confidence={getFieldMeta('master_category').confidence}
-                    reviewRequired={getFieldMeta('master_category').reviewRequired}
-                    isEdited={editedFields.has('master_category')}
-                    alternatives={getFieldMeta('master_category').alternatives}
-                    placeholder="Select category..."
-                    required
-                  />
-
-                  {/* Subcategory (45 classes - Searchable Combobox) */}
+                  {/* Subcategory (45 classes) */}
                   <SearchableCombobox
                     label="Subcategory"
                     value={subCategory}
@@ -622,21 +627,45 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                     required
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Master Category (7 classes) */}
+                  <SearchableCombobox
+                    label="Master Category"
+                    value={masterCategory}
+                    options={classOptions.master_category || []}
+                    onChange={(val) => {
+                      setMasterCategory(val);
+                      markEdited('master_category');
+                    }}
+                    confidence={getFieldMeta('master_category').confidence}
+                    reviewRequired={getFieldMeta('master_category').reviewRequired}
+                    isEdited={editedFields.has('master_category')}
+                    alternatives={getFieldMeta('master_category').alternatives}
+                    placeholder="Select category..."
+                    required
+                  />
+                </div>
               </div>
 
               {/* ----------------------------------------------------------- */}
               {/* GROUP 2: APPEARANCE */}
               {/* ----------------------------------------------------------- */}
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800/80">
-                  <Palette className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    Appearance
-                  </h4>
+                <div className="flex items-center justify-between pb-1.5 border-b border-[#DCD4CC] dark:border-[#392F3E]">
+                  <div className="flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
+                    <h4 className="font-serif text-sm font-semibold text-[#29202B] dark:text-[#F3EEE8]">
+                      2. Appearance
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#6D7068] dark:text-[#A89E9B]">
+                    Visual Aesthetics
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Base Colour (46 classes - Searchable Combobox) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Base Colour (46 classes) */}
                   <SearchableCombobox
                     label="Base Colour"
                     value={baseColour}
@@ -676,14 +705,19 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
               {/* GROUP 3: CATALOG CONTEXT */}
               {/* ----------------------------------------------------------- */}
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 pb-1 border-b border-zinc-100 dark:border-zinc-800/80">
-                  <Compass className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    Catalog Context
-                  </h4>
+                <div className="flex items-center justify-between pb-1.5 border-b border-[#DCD4CC] dark:border-[#392F3E]">
+                  <div className="flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
+                    <h4 className="font-serif text-sm font-semibold text-[#29202B] dark:text-[#F3EEE8]">
+                      3. Catalog Context & Styling
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#6D7068] dark:text-[#A89E9B]">
+                    Styling Context
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* Gender (5 classes) */}
                   <SearchableCombobox
                     label="Gender"
@@ -700,6 +734,24 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                     placeholder="Select gender..."
                   />
 
+                  {/* Age Group (6 classes) */}
+                  <SearchableCombobox
+                    label="Age Group"
+                    value={ageGroup}
+                    options={classOptions.age_group || []}
+                    onChange={(val) => {
+                      setAgeGroup(val);
+                      markEdited('age_group');
+                    }}
+                    confidence={getFieldMeta('age_group').confidence}
+                    reviewRequired={getFieldMeta('age_group').reviewRequired}
+                    isEdited={editedFields.has('age_group')}
+                    alternatives={getFieldMeta('age_group').alternatives}
+                    placeholder="Select age group..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* Season (4 classes) */}
                   <SearchableCombobox
                     label="Season"
@@ -731,32 +783,17 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                     alternatives={getFieldMeta('usage').alternatives}
                     placeholder="Select usage..."
                   />
-
-                  {/* Age Group (6 classes) */}
-                  <SearchableCombobox
-                    label="Age Group"
-                    value={ageGroup}
-                    options={classOptions.age_group || []}
-                    onChange={(val) => {
-                      setAgeGroup(val);
-                      markEdited('age_group');
-                    }}
-                    confidence={getFieldMeta('age_group').confidence}
-                    reviewRequired={getFieldMeta('age_group').reviewRequired}
-                    isEdited={editedFields.has('age_group')}
-                    alternatives={getFieldMeta('age_group').alternatives}
-                    placeholder="Select age group..."
-                  />
                 </div>
               </div>
 
               {/* Modal Action Buttons */}
-              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-between gap-3">
                 <Button
                   variant="outline"
                   size="md"
                   onClick={onClose}
                   disabled={isSaving || step === 'saving'}
+                  className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.12em] text-xs font-mono"
                 >
                   Cancel
                 </Button>
@@ -769,6 +806,7 @@ export const AddClothingModal: React.FC<AddClothingModalProps> = ({
                   loadingText="Saving to Wardrobe..."
                   disabled={!activeItemId}
                   icon={<Check className="w-4 h-4" />}
+                  className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold shadow-xs"
                 >
                   Save to Wardrobe
                 </Button>

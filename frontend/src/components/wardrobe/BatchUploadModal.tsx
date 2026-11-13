@@ -366,15 +366,15 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-500 rounded-xl p-8 text-center cursor-pointer bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all"
+              className="border-2 border-dashed border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49] dark:hover:border-[#D5A6A0] rounded-[3px] p-8 text-center cursor-pointer bg-[#FAF6F0]/50 dark:bg-[#201824]/50 hover:bg-[#FAF6F0] dark:hover:bg-[#201824] transition-all"
             >
-              <div className="w-12 h-12 mx-auto rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-800 dark:text-zinc-200 mb-3 border border-zinc-200 dark:border-zinc-700">
+              <div className="w-12 h-12 mx-auto rounded-[2px] bg-white dark:bg-[#1F1922] flex items-center justify-center text-[#743C49] dark:text-[#D5A6A0] mb-3 border border-[#DCD4CC] dark:border-[#392F3E]">
                 <Layers className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-serif text-lg text-[#29202B] dark:text-[#F3EEE8]">
                 Drag & drop multiple clothing images here
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-1 max-w-sm mx-auto font-sans leading-relaxed">
                 Or click to browse files from your device. Select up to 20 images at once.
               </p>
               <div className="mt-4">
@@ -383,6 +383,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                   variant="outline"
                   size="sm"
                   icon={<Upload className="w-3.5 h-3.5" />}
+                  className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     fileInputRef.current?.click();
@@ -397,26 +398,26 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
             {selectedFiles.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#29202B] dark:text-[#F3EEE8]">
                     Selected Images ({selectedFiles.length})
                   </span>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-1"
+                    className="text-xs font-semibold uppercase tracking-[0.1em] text-[#743C49] dark:text-[#D5A6A0] hover:underline flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add More</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-64 overflow-y-auto p-1 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-64 overflow-y-auto p-1 border border-[#DCD4CC] dark:border-[#392F3E] rounded-[3px]">
                   {selectedFiles.map((item, idx) => (
                     <div
                       key={idx}
-                      className="group relative rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900"
+                      className="group relative rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] overflow-hidden bg-white dark:bg-[#1F1922]"
                     >
-                      <div className="aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center">
+                      <div className="aspect-square bg-[#FAF6F0] dark:bg-[#201824] overflow-hidden flex items-center justify-center">
                         <img
                           src={item.previewUrl}
                           alt={item.name}
@@ -424,13 +425,13 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                         />
                       </div>
                       <div className="p-2">
-                        <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        <p className="text-[11px] font-medium text-[#29202B] dark:text-[#F3EEE8] truncate font-serif">
                           {item.name}
                         </p>
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                        <div className="flex items-center justify-between text-[10px] text-[#777078] font-mono">
                           <span>{item.sizeFormatted}</span>
                           {item.savedPercent !== undefined && item.savedPercent > 0 && (
-                            <span className="text-emerald-500 font-semibold">
+                            <span className="text-emerald-600 font-semibold">
                               -{item.savedPercent}%
                             </span>
                           )}
@@ -439,7 +440,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removeFile(idx)}
-                        className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 text-white hover:bg-black/90 transition-all opacity-90 group-hover:opacity-100"
+                        className="absolute top-1.5 right-1.5 p-1 rounded-[2px] bg-black/60 text-white hover:bg-[#743C49] transition-all opacity-90 group-hover:opacity-100 cursor-pointer"
                         title="Remove image"
                       >
                         <X className="w-3 h-3" />
@@ -451,13 +452,13 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 {/* Batch Defaults */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-[#29202B] dark:text-[#F3EEE8] mb-1">
                       Default Category
                     </label>
                     <select
                       value={defaultCategory}
                       onChange={(e) => setDefaultCategory(e.target.value)}
-                      className="w-full text-xs rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2 text-zinc-900 dark:text-zinc-100"
+                      className="w-full text-xs rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-white dark:bg-[#1F1922] p-2 text-[#29202B] dark:text-[#F3EEE8] uppercase tracking-[0.05em]"
                     >
                       <option value="Tops">Tops & Shirts</option>
                       <option value="Bottoms">Bottoms & Pants</option>
@@ -469,13 +470,13 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-[#29202B] dark:text-[#F3EEE8] mb-1">
                       Default Occasion
                     </label>
                     <select
                       value={defaultOccasion}
                       onChange={(e) => setDefaultOccasion(e.target.value)}
-                      className="w-full text-xs rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2 text-zinc-900 dark:text-zinc-100"
+                      className="w-full text-xs rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-white dark:bg-[#1F1922] p-2 text-[#29202B] dark:text-[#F3EEE8] uppercase tracking-[0.05em]"
                     >
                       <option value="Casual Daily">Casual Daily</option>
                       <option value="Smart Casual">Smart Casual</option>
@@ -488,8 +489,8 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 </div>
 
                 {/* Submit Action */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                  <Button variant="outline" size="sm" onClick={handleResetModal}>
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DCD4CC] dark:border-[#392F3E]">
+                  <Button variant="outline" size="sm" onClick={handleResetModal} className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs">
                     Clear Selection
                   </Button>
                   <Button
@@ -500,6 +501,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     loadingText="Submitting Batch..."
                     disabled={selectedFiles.length === 0}
                     icon={<ArrowRight className="w-4 h-4" />}
+                    className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                   >
                     Start Batch Upload ({selectedFiles.length} Pieces)
                   </Button>
@@ -513,13 +515,13 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         {(isProcessing || isTerminal) && (
           <div className="space-y-5">
             {/* Top Batch Status Header */}
-            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/60 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+            <div className="p-4 bg-[#FAF6F0] dark:bg-[#201824] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                  <span className="text-[9px] uppercase font-mono tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0]">
                     Sequential Batch Processing
                   </span>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                  <h4 className="font-serif text-base text-[#29202B] dark:text-[#F3EEE8] mt-0.5">
                     {isTerminal
                       ? 'Batch Processing Complete'
                       : currentProcessingItem
@@ -528,11 +530,11 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                   </h4>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  <span className="text-xs font-mono font-bold text-[#29202B] dark:text-[#F3EEE8]">
                     {completedItems} / {totalItems} completed
                   </span>
                   {failedItems > 0 && (
-                    <span className="block text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                    <span className="block text-[10px] font-mono font-semibold text-rose-600 dark:text-rose-400">
                       {failedItems} failed
                     </span>
                   )}
@@ -540,12 +542,12 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[#DCD4CC] dark:bg-[#392F3E] h-1.5 rounded-[1px] overflow-hidden">
                 <div
                   className={`h-full transition-all duration-500 ${
                     failedItems > 0 && isTerminal
-                      ? 'bg-amber-500'
-                      : 'bg-zinc-900 dark:bg-zinc-100'
+                      ? 'bg-amber-600'
+                      : 'bg-[#743C49] dark:bg-[#D5A6A0]'
                   }`}
                   style={{ width: `${progressPercentage}%` }}
                 />
@@ -555,21 +557,21 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
               {!isTerminal && (
                 <div className="flex items-center justify-between pt-1">
                   {currentProcessingItem ? (
-                    <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-900 dark:text-zinc-100" />
+                    <div className="flex items-center gap-2 text-xs text-[#777078] dark:text-[#D5A6A0] font-sans">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#743C49] dark:text-[#D5A6A0]" />
                       <span>
                         Current Stage:{' '}
                         <strong>{STAGE_LABELS[currentProcessingItem.stage] || currentProcessingItem.stage}</strong>
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xs text-zinc-500">Processing queue...</span>
+                    <span className="text-xs text-[#777078]">Processing queue...</span>
                   )}
                   <button
                     type="button"
                     onClick={handleCancelBatch}
                     disabled={isCancelling}
-                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 font-medium underline"
+                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium underline uppercase tracking-[0.08em]"
                   >
                     {isCancelling ? 'Cancelling...' : 'Cancel Batch'}
                   </button>
@@ -588,18 +590,18 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 return (
                   <div
                     key={item.clothing_id}
-                    className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all ${
+                    className={`flex items-center gap-3 p-2.5 rounded-[2px] border transition-all ${
                       isItemProcessing
-                        ? 'bg-zinc-50 dark:bg-zinc-800/80 border-zinc-400 dark:border-zinc-600 shadow-sm'
+                        ? 'bg-[#FAF6F0] dark:bg-[#201824] border-[#743C49] shadow-xs'
                         : isReady
-                        ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                        ? 'bg-white dark:bg-[#1F1922] border-[#DCD4CC] dark:border-[#392F3E]'
                         : isItemFailed
-                        ? 'bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40'
-                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 opacity-60'
+                        ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
+                        : 'bg-white dark:bg-[#1F1922] border-[#DCD4CC] dark:border-[#392F3E] opacity-60'
                     }`}
                   >
                     {/* Thumbnail preview */}
-                    <div className="w-10 h-10 rounded bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex-shrink-0 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                    <div className="w-10 h-10 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] overflow-hidden flex-shrink-0 flex items-center justify-center border border-[#DCD4CC] dark:border-[#392F3E]">
                       {item.has_processed ? (
                         <img
                           src={item.processed_image_url || item.original_image_url}
@@ -618,14 +620,14 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     {/* Metadata */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono font-bold text-zinc-400">
+                        <span className="text-[10px] font-mono font-bold text-[#777078]">
                           #{item.sequence_order + 1}
                         </span>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                        <p className="text-xs font-serif text-[#29202B] dark:text-[#F3EEE8] truncate">
                           {item.name}
                         </p>
                       </div>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      <p className="text-[10px] text-[#777078] font-sans truncate">
                         {isItemFailed
                           ? item.error || 'Processing encountered an error'
                           : STAGE_LABELS[item.stage] || item.stage}
@@ -636,24 +638,24 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     {/* Status Pill */}
                     <div className="flex-shrink-0">
                       {isReady && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-medium bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300/40">
                           <CheckCircle2 className="w-3 h-3" />
                           <span>Processed</span>
                         </span>
                       )}
                       {isItemProcessing && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-medium bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] animate-pulse">
                           <Loader2 className="w-3 h-3 animate-spin" />
                           <span>Active</span>
                         </span>
                       )}
                       {isItemQueued && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-medium bg-[#FAF6F0] text-[#777078] dark:bg-[#201824] dark:text-[#D5A6A0] border border-[#DCD4CC] dark:border-[#392F3E]">
                           Queued
                         </span>
                       )}
                       {isItemFailed && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-medium bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300/40">
                           <AlertCircle className="w-3 h-3" />
                           <span>Failed</span>
                         </span>
@@ -666,13 +668,13 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
 
             {/* STEP 3: TERMINAL SUMMARY ACTIONS */}
             {isTerminal && (
-              <div className="p-4 bg-zinc-50 dark:bg-zinc-900/60 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
+              <div className="p-4 bg-[#FAF6F0] dark:bg-[#201824] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-between gap-3">
                 <div className="text-xs">
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-serif text-sm font-semibold text-[#29202B] dark:text-[#F3EEE8]">
                     {completedItems} of {totalItems} items ready in Wardrobe.
                   </span>
                   {failedItems > 0 && (
-                    <span className="text-zinc-500 dark:text-zinc-400 block text-[11px]">
+                    <span className="text-[#777078] block text-[11px] font-sans">
                       {failedItems} item(s) could not be segmented automatically.
                     </span>
                   )}
@@ -687,6 +689,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                       isLoading={isRetryingBatch || isRetrying}
                       loadingText="Retrying..."
                       icon={<RefreshCw className="w-3.5 h-3.5" />}
+                      className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                     >
                       Retry Failed
                     </Button>
@@ -696,6 +699,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     size="sm"
                     onClick={handleFinishAndClose}
                     icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                    className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                   >
                     Go to Wardrobe
                   </Button>

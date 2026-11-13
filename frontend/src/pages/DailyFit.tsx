@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { WhyThisOutfitModal } from '../components/recommendation/WhyThisOutfitModal';
@@ -346,81 +347,78 @@ export const DailyFit: React.FC = () => {
   return (
     <AppShell showRightSidebar={true}>
       <PullToRefresh onRefresh={() => handleRegenerate()}>
-        <div className="max-w-4xl mx-auto space-y-8 pb-12 select-none">
-          {/* Top Bar: Switcher between Today's Look and Saved Outfits */}
-          <div className="flex items-center justify-between border-b border-[#E2DDD3] dark:border-[#2D342F] pb-4">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('recommendation')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'recommendation'
-                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-subtle'
-                    : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26]'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Today's Recommendation</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('saved_outfits')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'saved_outfits'
-                    ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-subtle'
-                    : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26]'
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>Saved Looks</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] px-3.5 py-1.5 rounded-xl shadow-subtle text-xs">
-                <CloudSun className="w-4 h-4 text-[#727D69] dark:text-[#9EAB97]" />
-                <span className="font-semibold font-mono text-[#202321] dark:text-[#F8F6F1]">
-                  {weather?.city ? `${weather.city} · ${weather.temp}°C` : '22°C · Clear Sky'}
-                </span>
+        <div className="max-w-5xl mx-auto space-y-8 pb-12 select-none">
+          {/* Editorial Page Header */}
+          <EditorialPageHeader
+            eyebrow="Intelligent Styling"
+            title="Daily Fit"
+            italicTitle="Studio."
+            description={`${formattedToday} · Calibrated for your routine, climate rules, and personal aesthetic.`}
+            actions={
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] px-3.5 py-1.5 rounded-[2px] shadow-xs text-xs font-mono">
+                  <CloudSun className="w-4 h-4 text-[#743C49] dark:text-[#D5A6A0]" />
+                  <span className="font-medium text-[#29202B] dark:text-[#F3EEE8]">
+                    {weather?.city ? `${weather.city} · ${weather.temp}°C` : '22°C · Clear Sky'}
+                  </span>
+                </div>
               </div>
-            </div>
+            }
+          />
+
+          {/* Top Bar: Switcher between Today's Look and Saved Outfits */}
+          <div className="flex items-center gap-2 border-b border-[#DCD4CC] dark:border-[#392F3E] pb-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab('recommendation')}
+              className={`px-4 py-2 rounded-[2px] text-xs font-medium uppercase tracking-[0.14em] transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'recommendation'
+                  ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] shadow-xs'
+                  : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] hover:bg-[#FAF6F0] dark:hover:bg-[#201824]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D5A6A0]" />
+              <span>Today's Recommendation</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('saved_outfits')}
+              className={`px-4 py-2 rounded-[2px] text-xs font-medium uppercase tracking-[0.14em] transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'saved_outfits'
+                  ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] shadow-xs'
+                  : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] hover:bg-[#FAF6F0] dark:hover:bg-[#201824]'
+              }`}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>Saved Looks</span>
+            </button>
           </div>
 
           {/* TAB 1: DAILY FIT RECOMMENDATION */}
           {activeTab === 'recommendation' && (
             <div className="space-y-6">
-              {/* Header Title */}
-              <div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#202321] dark:text-[#F8F6F1] font-serif">
-                  Daily Fit Studio
-                </h1>
-                <p className="text-xs sm:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-mono">
-                  {formattedToday} · Calibrated for your routine and lifestyle.
-                </p>
-              </div>
-
               {/* Canonical Occasions Selector Pills & Luxury Toggle */}
               <div className="space-y-2">
-                <div className="bg-[#F8F6F1] dark:bg-[#242A25] p-2 rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
+                <div className="bg-[#FAF6F0] dark:bg-[#201824] p-2 rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
                   {/* Luxury Protection Toggle */}
                   <button
                     type="button"
                     onClick={handleToggleLuxury}
-                    className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-[2px] font-medium shrink-0 transition-all flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-[0.12em] ${
                       includeLuxury
-                        ? 'bg-[#899783] text-[#F8F6F1] font-bold shadow-subtle'
-                        : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] bg-[#E9E6DE] dark:bg-[#2D342F]'
+                        ? 'bg-[#743C49] text-white font-bold shadow-xs'
+                        : 'text-[#29202B] dark:text-[#F3EEE8] hover:bg-[#DCD4CC]/40 bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E]'
                     }`}
                     title="Allow special-occasion and luxury attire from Occasion Vault to be recommended"
                   >
-                    <Crown className="w-3.5 h-3.5 text-amber-500" />
+                    <Crown className="w-3.5 h-3.5 text-[#D5A6A0]" />
                     <span>{includeLuxury ? 'Vault Unlocked' : 'Vault Shielded'}</span>
                   </button>
 
-                  <div className="h-4 w-px bg-[#D8D3C8] dark:border-[#38413A] mx-1 shrink-0" />
+                  <div className="h-4 w-px bg-[#DCD4CC] dark:bg-[#392F3E] mx-1 shrink-0" />
 
-                  <span className="px-1 text-[#777C75] dark:text-[#8E968C] text-[11px] font-bold uppercase tracking-wider shrink-0 font-mono">
+                  <span className="px-1 text-[#777078] dark:text-[#D5A6A0] text-[10px] font-mono uppercase tracking-[0.14em] shrink-0">
                     Occasion:
                   </span>
 
@@ -431,10 +429,10 @@ export const DailyFit: React.FC = () => {
                         key={occ}
                         type="button"
                         onClick={() => handleSelectOccasion(occ)}
-                        className={`px-3.5 py-1.5 rounded-xl font-medium shrink-0 transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-[2px] font-medium shrink-0 transition-all cursor-pointer text-[10px] uppercase tracking-[0.12em] ${
                           isSelected
-                            ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] font-semibold shadow-subtle'
-                            : 'text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE] dark:hover:bg-[#2D342F]'
+                            ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold shadow-xs'
+                            : 'bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] hover:bg-[#FAF6F0]'
                         }`}
                       >
                         {occ}
@@ -446,7 +444,7 @@ export const DailyFit: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowAllOccasionsModal(true)}
-                    className="px-3 py-1.5 rounded-xl font-medium shrink-0 transition-all cursor-pointer text-[#727D69] dark:text-[#9EAB97] bg-[#E9E6DE] dark:bg-[#2D342F] hover:bg-[#D8D3C8] flex items-center gap-1 font-semibold"
+                    className="px-3 py-1.5 rounded-[2px] font-medium shrink-0 transition-all cursor-pointer text-[10px] uppercase tracking-[0.12em] text-[#743C49] dark:text-[#D5A6A0] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] hover:bg-[#FAF6F0] flex items-center gap-1 font-semibold"
                   >
                     <span>Browse All</span>
                     <ChevronDown className="w-3 h-3" />
@@ -457,14 +455,14 @@ export const DailyFit: React.FC = () => {
               {/* Structured Missing Component Alert */}
               {((recommendation?.missingComponents && recommendation.missingComponents.length > 0) ||
                 (recommendation?.missing_components && recommendation.missing_components.length > 0)) && (
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-300 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="p-4 rounded-[3px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#B49B82] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5">
-                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-[#743C49] shrink-0" />
                     <div>
-                      <span className="font-bold text-amber-900 dark:text-amber-200">
+                      <span className="font-serif font-bold text-[#29202B] dark:text-[#F3EEE8]">
                         Missing Outfit Component:{' '}
                       </span>
-                      <span className="text-amber-800 dark:text-amber-300">
+                      <span className="text-[#777078] dark:text-[#DCD4CC] font-sans">
                         {(recommendation.missingComponents || recommendation.missing_components || [])
                           .map((mc) => `${mc.slot.toUpperCase()}: ${mc.reason}`)
                           .join(' · ')}
@@ -475,7 +473,7 @@ export const DailyFit: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => navigate('/wardrobe-gap')}
-                    className="shrink-0 text-xs font-semibold"
+                    className="shrink-0 text-xs font-semibold rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em]"
                   >
                     Explore Gap Solutions →
                   </Button>
@@ -484,21 +482,21 @@ export const DailyFit: React.FC = () => {
 
               {/* Wardrobe Gap Warning Banner */}
               {gapWarning && (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs">
+                <div className="p-4 rounded-[3px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5">
-                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-[#743C49] shrink-0" />
                     <div>
-                      <span className="font-bold text-[#202321] dark:text-[#F8F6F1]">
+                      <span className="font-serif font-bold text-[#29202B] dark:text-[#F3EEE8]">
                         Wardrobe Gap Detected:{' '}
                       </span>
-                      <span className="text-[#50564E] dark:text-[#A3ABA0]">{gapWarning}</span>
+                      <span className="text-[#777078] dark:text-[#DCD4CC] font-sans">{gapWarning}</span>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => navigate('/wardrobe-gap')}
-                    className="shrink-0 text-xs font-semibold"
+                    className="shrink-0 text-xs font-semibold rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em]"
                   >
                     View Gap Solutions →
                   </Button>
@@ -507,49 +505,54 @@ export const DailyFit: React.FC = () => {
 
               {/* MAIN HERO STAGE: THE ONE RECOMMENDED OUTFIT */}
               {wardrobe.length === 0 ? (
-                <div className="text-center py-16 px-6 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-subtle max-w-lg mx-auto">
-                  <Shirt className="w-12 h-12 text-[#777C75] mx-auto mb-3" />
-                  <h2 className="text-xl font-bold font-serif text-[#202321] dark:text-[#F8F6F1]">
+                <div className="text-center py-16 px-6 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs max-w-lg mx-auto">
+                  <Shirt className="w-12 h-12 text-[#743C49] dark:text-[#D5A6A0] mx-auto mb-3 opacity-60" />
+                  <h2 className="text-2xl font-normal font-serif text-[#29202B] dark:text-[#F3EEE8]">
                     Your Wardrobe is Empty
                   </h2>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 max-w-sm mx-auto mb-5 leading-relaxed">
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-2 max-w-sm mx-auto mb-5 leading-relaxed font-sans">
                     Upload your shirts, pants, dresses, or shoes. TailorBird styles personalized looks strictly from your actual garments.
                   </p>
-                  <Button variant="primary" size="md" onClick={() => navigate('/wardrobe')}>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => navigate('/wardrobe')}
+                    className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
+                  >
                     Add Pieces to Wardrobe
                   </Button>
                 </div>
               ) : isGenerating ? (
-                <div className="text-center py-24 px-6 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-subtle">
-                  <div className="w-12 h-12 rounded-full border-2 border-[#202321]/30 border-t-[#202321] dark:border-[#F8F6F1]/30 dark:border-t-[#F8F6F1] animate-spin mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-[#202321] dark:text-[#F8F6F1] font-serif">
+                <div className="text-center py-24 px-6 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
+                  <div className="w-12 h-12 rounded-full border-2 border-[#29202B]/20 border-t-[#743C49] dark:border-[#F3EEE8]/20 dark:border-t-[#D5A6A0] animate-spin mx-auto mb-4" />
+                  <h2 className="text-3xl font-normal text-[#29202B] dark:text-[#F3EEE8] font-serif">
                     Art-Directing Your Look...
                   </h2>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1.5 font-mono">
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-2 font-sans">
                     Balancing hue harmony, formality delta, and climate rules for {activeOccasion}.
                   </p>
                 </div>
               ) : generationError ? (
-                <div className="text-center py-16 px-6 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-subtle max-w-lg mx-auto space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+                <div className="text-center py-16 px-6 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs max-w-lg mx-auto space-y-4">
+                  <div className="w-12 h-12 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] text-[#743C49] flex items-center justify-center mx-auto border border-[#DCD4CC]">
                     <Info className="w-6 h-6" />
                   </div>
-                  <h2 className="text-lg font-bold font-serif text-[#202321] dark:text-[#F8F6F1]">Styling Notice</h2>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0]">{generationError}</p>
-                  <Button variant="outline" size="md" onClick={handleRegenerate}>
+                  <h2 className="text-xl font-normal font-serif text-[#29202B] dark:text-[#F3EEE8]">Styling Notice</h2>
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] font-sans">{generationError}</p>
+                  <Button variant="outline" size="md" onClick={handleRegenerate} className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs">
                     Try Again
                   </Button>
                 </div>
               ) : recommendation?.status === 'no_items' ? (
-                <div className="text-center py-16 px-6 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-subtle max-w-lg mx-auto space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-[#F1EEE7] dark:bg-[#252A26] text-[#727D69] flex items-center justify-center mx-auto">
+                <div className="text-center py-16 px-6 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs max-w-lg mx-auto space-y-4">
+                  <div className="w-14 h-14 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] text-[#743C49] dark:text-[#D5A6A0] flex items-center justify-center mx-auto border border-[#DCD4CC]">
                     <Shirt className="w-7 h-7" />
                   </div>
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-[#202321] dark:text-[#F8F6F1] font-serif">
+                    <h2 className="text-2xl font-normal text-[#29202B] dark:text-[#F3EEE8] font-serif">
                       No garments found for {activeOccasion}
                     </h2>
-                    <p className="text-xs sm:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-2 max-w-md mx-auto leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#777078] dark:text-[#DCD4CC] mt-2 max-w-md mx-auto leading-relaxed font-sans">
                       {recommendation.emptyReason?.message ||
                         `Your wardrobe has no verified garments matching ${activeOccasion} criteria.`}
                     </p>
@@ -563,6 +566,7 @@ export const DailyFit: React.FC = () => {
                         size="md"
                         onClick={() => navigate('/wardrobe?tab=pending')}
                         icon={<Sparkles className="w-4 h-4" />}
+                        className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                       >
                         Review Pending Garments
                       </Button>
@@ -573,6 +577,7 @@ export const DailyFit: React.FC = () => {
                           size="md"
                           onClick={() => navigate('/wardrobe?tab=accepted')}
                           icon={<Shirt className="w-4 h-4" />}
+                          className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                         >
                           Check Laundry Filter
                         </Button>
@@ -581,6 +586,7 @@ export const DailyFit: React.FC = () => {
                           size="md"
                           onClick={() => navigate('/wardrobe')}
                           icon={<Plus className="w-4 h-4" />}
+                          className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                         >
                           Upload More Pieces
                         </Button>
@@ -592,6 +598,7 @@ export const DailyFit: React.FC = () => {
                           size="md"
                           onClick={() => navigate('/wardrobe')}
                           icon={<Plus className="w-4 h-4" />}
+                          className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                         >
                           Upload Garments
                         </Button>
@@ -600,6 +607,7 @@ export const DailyFit: React.FC = () => {
                           size="md"
                           onClick={() => navigate('/wardrobe-gap')}
                           icon={<Layers className="w-4 h-4" />}
+                          className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                         >
                           View Wardrobe Gap
                         </Button>
@@ -608,22 +616,22 @@ export const DailyFit: React.FC = () => {
                   </div>
                 </div>
               ) : recommendation && outfit ? (
-                <div className="relative rounded-3xl bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-soft-lg overflow-hidden">
+                <div className="relative rounded-[4px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs overflow-hidden">
                   {/* Top Ribbon */}
-                  <div className="bg-[#202321] dark:bg-[#141715] px-6 sm:px-8 py-3.5 text-[#F8F6F1] flex items-center justify-between border-b border-[#2E3530]">
+                  <div className="bg-[#29202B] px-6 sm:px-8 py-3.5 text-[#F3EEE8] flex items-center justify-between border-b border-[#392F3E]">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-2 h-2 rounded-full bg-[#899783] animate-pulse" />
-                      <span className="text-[11px] font-mono uppercase font-bold tracking-widest text-[#F8F6F1]">
+                      <span className="w-2 h-2 rounded-full bg-[#D5A6A0] animate-pulse" />
+                      <span className="text-[10px] font-mono uppercase font-bold tracking-[0.18em] text-[#F3EEE8]">
                         Curated Look
                       </span>
-                      <span className="text-[#777C75]">·</span>
-                      <span className="text-xs text-[#D8D3C8] font-medium">
+                      <span className="text-[#777078]">·</span>
+                      <span className="text-xs text-[#DCD4CC] font-sans">
                         {outfit.occasion || activeOccasion}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-[#F8F6F1] border border-white/20">
+                      <span className="text-[10px] font-mono font-medium uppercase tracking-[0.1em] px-2.5 py-0.5 rounded-[2px] bg-white/10 text-[#F3EEE8] border border-white/20">
                         {recommendation.score}% Affinity Match
                       </span>
                     </div>
@@ -633,14 +641,14 @@ export const DailyFit: React.FC = () => {
                   <div className="p-6 sm:p-8 space-y-8">
                     {/* Stale Look Alert Banner */}
                     {recommendation.status === 'stale' && (
-                      <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                          <AlertCircle className="w-4 h-4 shrink-0" />
+                      <div className="p-3.5 bg-[#FAF6F0] dark:bg-[#201824] border border-[#B49B82] rounded-[3px] flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-[#29202B] dark:text-[#F3EEE8]">
+                          <AlertCircle className="w-4 h-4 text-[#743C49] shrink-0" />
                           <span>One item or setting is no longer current. Refresh to sync with latest wardrobe state.</span>
                         </div>
                         <button
                           onClick={handleRegenerate}
-                          className="font-bold underline text-amber-950 dark:text-amber-100 hover:text-amber-700 whitespace-nowrap cursor-pointer"
+                          className="font-medium underline uppercase tracking-[0.1em] text-[#743C49] dark:text-[#D5A6A0] hover:text-[#29202B] whitespace-nowrap cursor-pointer text-xs"
                         >
                           Refresh suggestion →
                         </button>
@@ -649,9 +657,9 @@ export const DailyFit: React.FC = () => {
 
                     {/* Partial Outfit Alert Banner */}
                     {recommendation.status === 'partial_outfit' && (
-                      <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                          <AlertCircle className="w-4 h-4 shrink-0" />
+                      <div className="p-3.5 bg-[#FAF6F0] dark:bg-[#201824] border border-[#B49B82] rounded-[3px] flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-[#29202B] dark:text-[#F3EEE8]">
+                          <AlertCircle className="w-4 h-4 text-[#743C49] shrink-0" />
                           <span>
                             {recommendation.emptyReason?.message || `No footwear found for ${activeOccasion}. Ensemble is partial.`}
                           </span>
@@ -660,7 +668,7 @@ export const DailyFit: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => navigate('/wardrobe-gap')}
-                          className="shrink-0 text-xs font-semibold"
+                          className="shrink-0 text-xs font-semibold rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em]"
                         >
                           View Wardrobe Gap →
                         </Button>
@@ -668,12 +676,12 @@ export const DailyFit: React.FC = () => {
                     )}
 
                     {/* Outfit Title & Style Vibe */}
-                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 pb-5 border-b border-[#E2DDD3] dark:border-[#2D342F]">
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 pb-5 border-b border-[#DCD4CC] dark:border-[#392F3E]">
                       <div>
-                        <h2 className="text-2xl sm:text-3xl font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight font-serif">
+                        <h2 className="text-3xl sm:text-4xl font-normal text-[#29202B] dark:text-[#F3EEE8] tracking-tight font-serif">
                           {outfit.title || `${activeOccasion} Ensemble`}
                         </h2>
-                        <p className="text-xs sm:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1">
+                        <p className="text-xs sm:text-sm text-[#777078] dark:text-[#DCD4CC] mt-1 font-sans">
                           {outfit.description || 'Color-coordinated palette tailored for your day and occasion rules.'}
                         </p>
                       </div>
@@ -681,7 +689,7 @@ export const DailyFit: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setWhyModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#727D69] dark:text-[#9EAB97] hover:underline cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-[#743C49] dark:text-[#D5A6A0] hover:underline cursor-pointer"
                       >
                         <Info className="w-3.5 h-3.5" />
                         <span>Why This Look?</span>
@@ -691,10 +699,10 @@ export const DailyFit: React.FC = () => {
                     {/* GARMENT TILES (EDITORIAL CANVASES) */}
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] font-mono">
+                        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#777078] dark:text-[#D5A6A0]">
                           Outfit Garments ({pieces.length})
                         </span>
-                        <span className="text-xs text-[#727D69] dark:text-[#9EAB97] font-mono">
+                        <span className="text-xs text-[#777078] dark:text-[#DCD4CC] font-sans">
                           Tap card to view garment details
                         </span>
                       </div>
@@ -706,11 +714,11 @@ export const DailyFit: React.FC = () => {
                           return (
                             <div
                               key={piece.id}
-                              className="group rounded-2xl bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] overflow-hidden hover:border-[#727D69] transition-all cursor-pointer shadow-subtle hover:shadow-soft relative"
+                              className="group rounded-[3px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] overflow-hidden hover:border-[#743C49] dark:hover:border-[#D5A6A0] transition-all cursor-pointer shadow-xs relative"
                             >
                               <div
                                 onClick={() => navigate(`/wardrobe/${piece.id}`)}
-                                className="aspect-[3/4] relative overflow-hidden bg-[#E9E6DE] dark:bg-[#1E2320]"
+                                className="aspect-[3/4] relative overflow-hidden bg-[#FAF6F0] dark:bg-[#201824]"
                               >
                                 <img
                                   src={pieceImg}
@@ -720,10 +728,10 @@ export const DailyFit: React.FC = () => {
                                       e.currentTarget.src = FALLBACK_POST_IMAGE;
                                     }
                                   }}
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 <div className="absolute top-2 left-2">
-                                  <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white border border-white/20 font-mono">
+                                  <span className="text-[9px] uppercase font-medium tracking-[0.14em] px-2 py-0.5 rounded-[2px] bg-[#29202B]/85 text-white backdrop-blur-xs font-sans">
                                     {piece.category}
                                   </span>
                                 </div>
@@ -731,10 +739,10 @@ export const DailyFit: React.FC = () => {
 
                               <div className="p-3 flex items-center justify-between">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-bold text-[#202321] dark:text-[#F8F6F1] truncate">
+                                  <p className="font-serif text-sm font-normal text-[#29202B] dark:text-[#F3EEE8] truncate group-hover:text-[#743C49] dark:group-hover:text-[#D5A6A0] transition-colors">
                                     {piece.name}
                                   </p>
-                                  <p className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] truncate font-mono">
+                                  <p className="text-[11px] text-[#777078] dark:text-[#B49B82] truncate font-sans mt-0.5">
                                     {piece.color} {piece.brand && `· ${piece.brand}`}
                                   </p>
                                 </div>
@@ -745,7 +753,7 @@ export const DailyFit: React.FC = () => {
                                     handleOpenReplaceModal(piece as any);
                                   }}
                                   title="Replace this garment"
-                                  className="p-1.5 rounded-lg hover:bg-[#E9E6DE] dark:hover:bg-[#2D342F] text-[#777C75] hover:text-[#202321] dark:hover:text-[#F8F6F1] transition-colors ml-1 cursor-pointer"
+                                  className="p-1.5 rounded-[2px] hover:bg-white dark:hover:bg-[#1F1922] text-[#777078] hover:text-[#743C49] transition-colors ml-1 cursor-pointer border border-transparent hover:border-[#DCD4CC]"
                                 >
                                   <ArrowLeftRight className="w-3.5 h-3.5" />
                                 </button>
@@ -757,7 +765,7 @@ export const DailyFit: React.FC = () => {
                     </div>
 
                     {/* HERO ACTION CONSOLE */}
-                    <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#E2DDD3] dark:border-[#2D342F]">
+                    <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#DCD4CC] dark:border-[#392F3E]">
                       <div className="flex items-center gap-3 flex-wrap">
                         {/* 1. Wear This Outfit */}
                         <Button
@@ -767,8 +775,10 @@ export const DailyFit: React.FC = () => {
                           disabled={isRecordingWear || isWorn || recommendation?.canWear === false}
                           isLoading={isRecordingWear}
                           loadingText="Recording Wear..."
-                          className={isWorn ? '!bg-emerald-700 !text-white' : ''}
-                          icon={isWorn ? <Check className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+                          className={`rounded-[2px] uppercase tracking-[0.14em] text-xs font-semibold px-6 py-3 ${
+                            isWorn ? '!bg-emerald-700 !text-white' : 'bg-[#743C49] hover:bg-[#5b2f3a] text-white'
+                          }`}
+                          icon={isWorn ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                         >
                           {isWorn
                             ? '✓ Worn Today'
@@ -779,13 +789,14 @@ export const DailyFit: React.FC = () => {
 
                         {/* 2. Regenerate */}
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="lg"
                           onClick={handleRegenerate}
                           disabled={isGenerating || isRecordingWear}
                           isLoading={isGenerating}
                           loadingText="Curating..."
-                          icon={<RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />}
+                          className="rounded-[2px] border-[#DCD4CC] dark:border-[#392F3E] uppercase tracking-[0.12em] text-xs px-5 py-3"
+                          icon={<RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />}
                         >
                           Regenerate
                         </Button>
@@ -795,7 +806,8 @@ export const DailyFit: React.FC = () => {
                           variant="outline"
                           size="lg"
                           onClick={() => handleOpenReplaceModal()}
-                          icon={<ArrowLeftRight className="w-4 h-4" />}
+                          className="rounded-[2px] border-[#DCD4CC] dark:border-[#392F3E] uppercase tracking-[0.12em] text-xs px-5 py-3"
+                          icon={<ArrowLeftRight className="w-3.5 h-3.5" />}
                         >
                           Replace an Item
                         </Button>
@@ -807,8 +819,10 @@ export const DailyFit: React.FC = () => {
                           variant="outline"
                           size="md"
                           onClick={handleSaveOutfit}
-                          className={isSaved ? 'text-[#727D69] border-[#727D69]' : ''}
-                          icon={<Bookmark className="w-4 h-4" />}
+                          className={`rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs ${
+                            isSaved ? 'text-[#743C49] border-[#743C49]' : ''
+                          }`}
+                          icon={<Bookmark className="w-3.5 h-3.5" />}
                         >
                           {isSaved ? 'Saved' : 'Save Look'}
                         </Button>
@@ -817,7 +831,7 @@ export const DailyFit: React.FC = () => {
                         <button
                           type="button"
                           onClick={handleNotMyStyle}
-                          className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] bg-white dark:bg-[#1C201D] text-[#777C75] dark:text-[#A3ABA0] hover:text-rose-600 transition-all cursor-pointer flex items-center justify-center"
+                          className="p-2.5 min-h-[42px] min-w-[42px] rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-white dark:bg-[#1F1922] text-[#777078] hover:text-[#743C49] transition-all cursor-pointer flex items-center justify-center shadow-xs"
                           title="Not My Style (Adjust recommendations)"
                         >
                           <ThumbsDown className="w-4 h-4" />
@@ -827,10 +841,10 @@ export const DailyFit: React.FC = () => {
                         <button
                           type="button"
                           onClick={handleLoveLook}
-                          className={`p-2.5 min-h-[44px] min-w-[44px] rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                          className={`p-2.5 min-h-[42px] min-w-[42px] rounded-[2px] border transition-all cursor-pointer flex items-center justify-center shadow-xs ${
                             isLoved
                               ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-600'
-                              : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1]'
+                              : 'bg-white dark:bg-[#1F1922] border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:text-[#743C49]'
                           }`}
                           title="Love this look"
                         >
@@ -848,29 +862,34 @@ export const DailyFit: React.FC = () => {
           {activeTab === 'saved_outfits' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#202321] dark:text-[#F8F6F1] font-serif">
+                <h2 className="text-2xl sm:text-3xl font-normal tracking-tight text-[#29202B] dark:text-[#F3EEE8] font-serif">
                   Saved Outfits Collection
                 </h2>
-                <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 font-mono">
+                <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-1 font-sans">
                   Your bookmarked styling ensembles for quick daily rotation.
                 </p>
               </div>
 
               {loadingSaved ? (
-                <div className="py-20 text-center text-xs text-[#777C75] dark:text-[#A3ABA0]">
-                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#727D69]" />
+                <div className="py-20 text-center text-xs text-[#777078] dark:text-[#DCD4CC]">
+                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#743C49]" />
                   Loading your saved outfits...
                 </div>
               ) : savedOutfitsList.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] p-6 shadow-subtle">
-                  <Bookmark className="w-10 h-10 text-[#777C75] mx-auto mb-2 opacity-50" />
-                  <h3 className="font-bold text-[#202321] dark:text-[#F8F6F1] text-base font-serif">
+                <div className="text-center py-20 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] p-6 shadow-xs">
+                  <Bookmark className="w-10 h-10 text-[#743C49] mx-auto mb-2 opacity-50" />
+                  <h3 className="font-serif text-xl font-normal text-[#29202B] dark:text-[#F3EEE8]">
                     No Saved Outfits Yet
                   </h3>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 max-w-sm mx-auto mb-4 leading-relaxed">
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-1 max-w-sm mx-auto mb-4 leading-relaxed font-sans">
                     When you like a recommended look, tap "Save Look" to keep it here for quick styling.
                   </p>
-                  <Button variant="primary" size="sm" onClick={() => setActiveTab('recommendation')}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setActiveTab('recommendation')}
+                    className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
+                  >
                     Curate Today's Look
                   </Button>
                 </div>
@@ -879,29 +898,30 @@ export const DailyFit: React.FC = () => {
                   {savedOutfitsList.map((item) => (
                     <div
                       key={item.id}
-                      className="p-5 rounded-2xl bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-subtle flex items-center justify-between"
+                      className="p-5 rounded-[3px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3.5">
-                        <div className="w-11 h-11 rounded-xl bg-[#F8F6F1] dark:bg-[#252A26] flex items-center justify-center text-[#727D69]">
+                        <div className="w-11 h-11 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] flex items-center justify-center text-[#743C49] border border-[#DCD4CC] dark:border-[#392F3E]">
                           <Shirt className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-[#202321] dark:text-[#F8F6F1]">
+                          <p className="font-serif text-base font-normal text-[#29202B] dark:text-[#F3EEE8]">
                             {item.title || 'Saved Ensemble'}
                           </p>
-                          <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] font-mono mt-0.5">
+                          <p className="text-xs text-[#777078] font-mono mt-0.5">
                             {item.pieces_count || 3} Pieces · Saved look
                           </p>
                         </div>
                       </div>
 
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setActiveTab('recommendation');
                           showToast('Loaded saved outfit look!', 'info');
                         }}
+                        className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                       >
                         Wear Look
                       </Button>
@@ -918,26 +938,26 @@ export const DailyFit: React.FC = () => {
         {/* ------------------------------------------------------------- */}
         {replaceModalOpen && selectedPieceToReplace && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-            <div className="bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] max-w-lg w-full p-6 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-white dark:bg-[#1F1922] rounded-[4px] border border-[#DCD4CC] dark:border-[#392F3E] max-w-lg w-full p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCD4CC] dark:border-[#392F3E] pb-3">
                 <div>
-                  <h3 className="text-base font-bold text-[#202321] dark:text-[#F8F6F1] font-serif">
+                  <h3 className="text-lg font-normal text-[#29202B] dark:text-[#F3EEE8] font-serif">
                     Replace {selectedPieceToReplace.category}
                   </h3>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5 font-mono">
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-0.5 font-sans">
                     Currently: {selectedPieceToReplace.name}
                   </p>
                 </div>
                 <button
                   onClick={() => setReplaceModalOpen(false)}
-                  className="p-1 rounded-full text-[#777C75] hover:text-[#202321] dark:hover:text-[#F8F6F1] cursor-pointer"
+                  className="p-1 rounded-[2px] text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {replacementCandidates.length === 0 ? (
-                <div className="py-8 text-center text-xs text-[#777C75] dark:text-[#A3ABA0]">
+                <div className="py-8 text-center text-xs text-[#777078] dark:text-[#DCD4CC]">
                   No other clean items found in your wardrobe matching category "{selectedPieceToReplace.category}".
                 </div>
               ) : (
@@ -949,22 +969,22 @@ export const DailyFit: React.FC = () => {
                       <div
                         key={cand.id}
                         onClick={() => handleApplyReplacement(cand)}
-                        className="p-3 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] hover:border-[#727D69] cursor-pointer flex items-center gap-3 transition-colors group bg-[#F8F6F1] dark:bg-[#242A25]"
+                        className="p-3 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49] cursor-pointer flex items-center gap-3 transition-colors group bg-[#FAF6F0] dark:bg-[#201824]"
                       >
                         <img
                           src={candImg}
                           alt={cand.name}
-                          className="w-12 h-12 object-cover rounded-lg bg-[#E9E6DE] dark:bg-[#2D342F]"
+                          className="w-12 h-12 object-cover rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC]"
                         />
                         <div className="flex-1 min-w-0 text-xs">
-                          <p className="font-bold text-[#202321] dark:text-[#F8F6F1] truncate group-hover:underline">
+                          <p className="font-serif font-normal text-sm text-[#29202B] dark:text-[#F3EEE8] truncate group-hover:text-[#743C49]">
                             {cand.name}
                           </p>
-                          <p className="text-[#777C75] dark:text-[#A3ABA0] font-mono truncate">
+                          <p className="text-[#777078] dark:text-[#DCD4CC] font-sans truncate">
                             {cand.color} {cand.brand && `· ${cand.brand}`}
                           </p>
                         </div>
-                        <span className="text-xs text-[#727D69] dark:text-[#9EAB97] font-bold">Select</span>
+                        <span className="text-xs text-[#743C49] dark:text-[#D5A6A0] font-semibold uppercase tracking-[0.08em]">Select</span>
                       </div>
                     );
                   })}
@@ -972,7 +992,7 @@ export const DailyFit: React.FC = () => {
               )}
 
               <div className="pt-2 flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => setReplaceModalOpen(false)}>
+                <Button variant="outline" size="sm" onClick={() => setReplaceModalOpen(false)} className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs">
                   Cancel
                 </Button>
               </div>
@@ -985,19 +1005,19 @@ export const DailyFit: React.FC = () => {
         {/* ------------------------------------------------------------- */}
         {showCustomModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-            <div className="bg-white dark:bg-[#1C201D] rounded-3xl border border-[#E2DDD3] dark:border-[#2D342F] max-w-md w-full p-6 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-[#202321] dark:text-[#F8F6F1] font-serif">
+            <div className="bg-white dark:bg-[#1F1922] rounded-[4px] border border-[#DCD4CC] dark:border-[#392F3E] max-w-md w-full p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCD4CC] dark:border-[#392F3E] pb-3">
+                <h3 className="text-lg font-normal text-[#29202B] dark:text-[#F3EEE8] font-serif">
                   Custom Styling Occasion
                 </h3>
                 <button
                   onClick={() => setShowCustomModal(false)}
-                  className="p-1 rounded-full text-[#777C75] hover:text-[#202321] dark:hover:text-[#F8F6F1] cursor-pointer"
+                  className="p-1 rounded-[2px] text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-xs text-[#777C75] dark:text-[#A3ABA0]">
+              <p className="text-xs text-[#777078] dark:text-[#DCD4CC] font-sans">
                 Describe the event or context (e.g. "Gallery opening", "Rooftop dinner", "Keynote speech"):
               </p>
               <input
@@ -1005,10 +1025,10 @@ export const DailyFit: React.FC = () => {
                 value={customOccasionInput}
                 onChange={(e) => setCustomOccasionInput(e.target.value)}
                 placeholder="e.g. Gallery opening, Rooftop cocktails"
-                className="w-full p-3 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] bg-[#F8F6F1] dark:bg-[#242A25] text-sm text-[#202321] dark:text-[#F8F6F1] font-sans focus:outline-none focus:border-[#727D69]"
+                className="w-full p-3 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#201824] text-sm text-[#29202B] dark:text-[#F3EEE8] font-sans focus:outline-none focus:border-[#743C49] focus:ring-1 focus:ring-[#743C49]"
               />
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setShowCustomModal(false)}>
+                <Button variant="outline" size="sm" onClick={() => setShowCustomModal(false)} className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs">
                   Cancel
                 </Button>
                 <Button
@@ -1016,6 +1036,7 @@ export const DailyFit: React.FC = () => {
                   size="sm"
                   onClick={handleConfirmCustomOccasion}
                   disabled={!customOccasionInput.trim()}
+                  className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                 >
                   Style for this Occasion
                 </Button>

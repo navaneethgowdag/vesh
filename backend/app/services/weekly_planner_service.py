@@ -48,11 +48,19 @@ class WeeklyPlannerService:
     def get_plan(self, user_id: UUID, week_start_date: Optional[date] = None) -> Optional[WeeklyPlan]:
         """Retrieves active weekly plan for user."""
         if week_start_date:
-            return self.repo.get_by_week(user_id, week_start_date)
-        start, _ = self.get_week_boundaries()
-        plan = self.repo.get_by_week(user_id, start)
-        if not plan:
-            plan = self.repo.get_active_or_latest(user_id)
+            plan = self.repo.get_by_week(user_id, week_start_date)
+        else:
+            start, _ = self.get_week_boundaries()
+            plan = self.repo.get_by_week(user_id, start)
+            if not plan:
+                plan = self.repo.get_active_or_latest(user_id)
+        if plan and getattr(plan, "days", None):
+            for day in plan.days:
+                if getattr(day, "outfit", None):
+                    if not getattr(day.outfit, "season", None):
+                        day.outfit.season = "All-Season"
+                    if not getattr(day.outfit, "occasion", None):
+                        day.outfit.occasion = "Casual Daily"
         return plan
 
     async def generate_weekly_plan(
@@ -357,6 +365,7 @@ class WeeklyPlannerService:
                 user_id=user_id,
                 name=f"Manual Look - {target_day.plan_date.strftime('%a %b %d')}",
                 occasion="Custom",
+                season="All-Season",
             )
             outfit.clothing_items = items
             self.db.add(outfit)

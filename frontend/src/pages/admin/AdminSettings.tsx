@@ -42,12 +42,15 @@ export const AdminSettings: React.FC = () => {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-[#392F3E]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            Admin Infrastructure & Security
+          <div className="text-[10px] font-mono tracking-[0.2em] text-[#777078] uppercase mb-1">
+            SECURITY, STORAGE & INFRASTRUCTURE
+          </div>
+          <h1 className="text-3xl font-serif text-[#F3EEE8]">
+            Admin <span className="italic text-[#D5A6A0]">Infrastructure.</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs text-[#777078] mt-1 font-sans">
             System configuration, durable artifact storage paths, and model hot-reload controls.
           </p>
         </div>
@@ -55,18 +58,18 @@ export const AdminSettings: React.FC = () => {
         <button
           onClick={handleHotReload}
           disabled={isReloading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-xs font-medium text-white shadow-lg shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-[2px] bg-[#743C49] hover:bg-[#8E4B5A] text-[10px] font-mono uppercase tracking-[0.14em] text-[#F3EEE8] transition-all cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw size={14} className={isReloading ? 'animate-spin' : ''} />
+          <RefreshCw size={12} className={isReloading ? 'animate-spin' : ''} />
           <span>Hot-Reload AI Models</span>
         </button>
       </div>
 
       {message && (
         <div
-          className={`p-4 rounded-xl text-xs flex items-center gap-3 ${
+          className={`p-4 rounded-[2px] text-xs flex items-center gap-3 font-mono ${
             message.type === 'success'
-              ? 'bg-emerald-950/40 border border-emerald-800/50 text-emerald-300'
+              ? 'bg-[#743C49]/20 border border-[#743C49]/40 text-[#D5A6A0]'
               : 'bg-red-950/40 border border-red-800/50 text-red-300'
           }`}
         >
@@ -78,35 +81,35 @@ export const AdminSettings: React.FC = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Artifact Storage Paths */}
-        <div className="bg-[#0D121F] border border-slate-800 rounded-2xl p-6">
+        <div className="bg-[#1F1922] border border-[#392F3E] rounded-[3px] p-6">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-              <HardDrive size={18} />
+            <div className="w-8 h-8 rounded-[2px] bg-[#241D27] border border-[#392F3E] flex items-center justify-center text-[#D5A6A0]">
+              <HardDrive size={16} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Model Artifact Directories</h3>
-              <p className="text-xs text-slate-400">Durable filesystem checkpoints</p>
+              <h3 className="text-base font-serif text-[#F3EEE8]">Model Artifact Directories</h3>
+              <p className="text-xs text-[#777078]">Durable filesystem checkpoints</p>
             </div>
           </div>
 
           <div className="space-y-3 font-mono text-xs">
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="text-[10px] text-slate-500 uppercase">Clothing Classifier Active Manifest</div>
-              <div className="text-white mt-1 select-all break-all">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E]">
+              <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Clothing Classifier Active Manifest</div>
+              <div className="text-[#F3EEE8] mt-1 select-all break-all">
                 artifacts/clothing/current_production_model.json
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="text-[10px] text-slate-500 uppercase">Recommendation Model Active Manifest</div>
-              <div className="text-white mt-1 select-all break-all">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E]">
+              <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Recommendation Model Active Manifest</div>
+              <div className="text-[#F3EEE8] mt-1 select-all break-all">
                 artifacts/recommendation/current_production_model.json
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="text-[10px] text-slate-500 uppercase">Baseline Joblib Weights</div>
-              <div className="text-emerald-400 mt-1 select-all break-all">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E]">
+              <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Baseline Joblib Weights</div>
+              <div className="text-[#D5A6A0] mt-1 select-all break-all">
                 artifacts/recommendation/versions/v1.0.0/tailorbird_preference_model.joblib
               </div>
             </div>
@@ -114,44 +117,44 @@ export const AdminSettings: React.FC = () => {
         </div>
 
         {/* Security & Access Guard */}
-        <div className="bg-[#0D121F] border border-slate-800 rounded-2xl p-6">
+        <div className="bg-[#1F1922] border border-[#392F3E] rounded-[3px] p-6">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Shield size={18} />
+            <div className="w-8 h-8 rounded-[2px] bg-[#241D27] border border-[#392F3E] flex items-center justify-center text-[#D5A6A0]">
+              <Shield size={16} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Console Access Controls</h3>
-              <p className="text-xs text-slate-400">Authentication & Throttling Guards</p>
+              <h3 className="text-base font-serif text-[#F3EEE8]">Console Access Controls</h3>
+              <p className="text-xs text-[#777078]">Authentication & Throttling Guards</p>
             </div>
           </div>
 
           <div className="space-y-3 font-mono text-xs">
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E] flex justify-between items-center">
               <div>
-                <div className="text-[10px] text-slate-500 uppercase">Configured Administrator</div>
-                <div className="text-white mt-0.5">admin</div>
+                <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Configured Administrator</div>
+                <div className="text-[#F3EEE8] mt-0.5">admin</div>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] font-mono uppercase tracking-[0.12em] bg-[#743C49]/30 text-[#D5A6A0] border border-[#743C49]/40">
                 Verified
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E] flex justify-between items-center">
               <div>
-                <div className="text-[10px] text-slate-500 uppercase">Rate Limiting & Lockout</div>
-                <div className="text-slate-300 mt-0.5">5 failed attempts → 15m lockout</div>
+                <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Rate Limiting & Lockout</div>
+                <div className="text-[#777078] mt-0.5">5 failed attempts → 15m lockout</div>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] font-mono uppercase tracking-[0.12em] bg-[#B49B82]/20 text-[#B49B82] border border-[#B49B82]/30">
                 Active
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
+            <div className="p-3 rounded-[2px] bg-[#241D27] border border-[#392F3E] flex justify-between items-center">
               <div>
-                <div className="text-[10px] text-slate-500 uppercase">Authorization Mechanism</div>
-                <div className="text-slate-300 mt-0.5">JWT Bearer Claim (role: admin) + 403 Guard</div>
+                <div className="text-[10px] text-[#777078] uppercase tracking-[0.12em]">Authorization Mechanism</div>
+                <div className="text-[#777078] mt-0.5">JWT Bearer Claim (role: admin) + 403 Guard</div>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] font-mono uppercase tracking-[0.12em] bg-[#743C49]/30 text-[#D5A6A0] border border-[#743C49]/40">
                 Enforced
               </span>
             </div>

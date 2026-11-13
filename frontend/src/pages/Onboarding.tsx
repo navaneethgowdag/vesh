@@ -257,16 +257,16 @@ export const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] dark:bg-[#141715] text-[#202321] dark:text-[#F8F6F1] flex flex-col justify-between p-4 sm:p-6 lg:p-8 transition-colors duration-200">
+    <div className="min-h-screen bg-[#F3EEE8] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] flex flex-col justify-between p-4 sm:p-6 lg:p-8 transition-colors duration-200">
       {/* Top Header */}
-      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-4 border-b border-[#E2DDD3] dark:border-[#2D342F]">
+      <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-4 border-b border-[#DCD4CC] dark:border-[#392F3E]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] flex items-center justify-center font-serif font-bold text-base shadow-xs">
+          <div className="w-9 h-9 rounded-[2px] bg-[#29202B] dark:bg-[#F3EEE8] text-[#FFFFFF] dark:text-[#29202B] flex items-center justify-center font-serif font-bold text-base shadow-xs">
             T
           </div>
           <div>
-            <h1 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">TailorBird Setup</h1>
-            <p className="text-xs font-mono text-[#777C75] dark:text-[#A3ABA0]">Step {step} of 6</p>
+            <h1 className="text-base font-serif font-bold text-[#29202B] dark:text-[#F3EEE8]">TailorBird Atelier Setup</h1>
+            <p className="text-[11px] font-sans uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">Step {step} of 6</p>
           </div>
         </div>
 
@@ -275,12 +275,12 @@ export const Onboarding: React.FC = () => {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1 rounded-[1px] transition-all duration-300 ${
                 i === step
-                  ? 'w-6 bg-[#202321] dark:bg-[#F8F6F1]'
+                  ? 'w-7 bg-[#743C49] dark:bg-[#D5A6A0]'
                   : i < step
-                  ? 'w-2 bg-[#727D69]'
-                  : 'w-2 bg-[#E2DDD3] dark:bg-[#2D342F]'
+                  ? 'w-2.5 bg-[#6D7068]'
+                  : 'w-2.5 bg-[#DCD4CC] dark:bg-[#392F3E]'
               }`}
             />
           ))}
@@ -302,13 +302,16 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   Lifestyle Foundation
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  What is your primary daily activity?
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>What is your</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    primary daily activity?
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   TailorBird adapts recommendations around your real day-to-day lifestyle.
                 </p>
               </div>
@@ -322,17 +325,17 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={item.id}
                       onClick={() => setOccupation(item.id)}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-md'
-                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
+                          ? 'bg-[#FAF6F0] text-[#29202B] dark:bg-[#2E2432] dark:text-[#F3EEE8] border-[#743C49] dark:border-[#D5A6A0] ring-1 ring-[#743C49] dark:ring-[#D5A6A0] shadow-xs'
+                          : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-5 h-5 ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-500'}`} />
-                        <span className="font-semibold text-sm">{item.label}</span>
+                        <Icon className={`w-5 h-5 ${isSelected ? 'text-[#743C49] dark:text-[#D5A6A0]' : 'text-[#6D7068] dark:text-[#A89E9B]'}`} />
+                        <span className="font-semibold text-sm font-sans">{item.label}</span>
                       </div>
-                      <p className={`text-xs mt-2 ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500'}`}>
+                      <p className={`text-xs mt-2 font-sans ${isSelected ? 'text-[#6D7068] dark:text-[#D5A6A0]' : 'text-[#6D7068] dark:text-[#A89E9B]'}`}>
                         {item.desc}
                       </p>
                     </div>
@@ -342,15 +345,17 @@ export const Onboarding: React.FC = () => {
 
               {/* Dynamic Conditional Questions */}
               {occupation === 'student' && (
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Student Details</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-4">
+                  <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.16em] text-[#743C49] dark:text-[#D5A6A0]">
+                    Student Details
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                     <div>
-                      <label className="block font-medium mb-1">Campus Environment</label>
+                      <label className="block font-medium mb-1 text-[#6D7068] dark:text-[#A89E9B]">Campus Environment</label>
                       <select
                         value={studentDetails.campusDress}
                         onChange={(e) => setStudentDetails({ ...studentDetails, campusDress: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                        className="w-full p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] focus:border-[#743C49]"
                       >
                         <option value="Casual">Casual / Relaxed</option>
                         <option value="Smart casual">Smart Casual</option>
@@ -359,13 +364,13 @@ export const Onboarding: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-1">Major or Field (Optional)</label>
+                      <label className="block font-medium mb-1 text-[#6D7068] dark:text-[#A89E9B]">Major or Field (Optional)</label>
                       <input
                         type="text"
                         placeholder="e.g. Design, Law, Computer Science"
                         value={studentDetails.fieldOfStudy}
                         onChange={(e) => setStudentDetails({ ...studentDetails, fieldOfStudy: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                        className="w-full p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] focus:border-[#743C49]"
                       />
                     </div>
                   </div>
@@ -373,15 +378,17 @@ export const Onboarding: React.FC = () => {
               )}
 
               {occupation === 'working_professional' && (
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Workplace Context</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-4">
+                  <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.16em] text-[#743C49] dark:text-[#D5A6A0]">
+                    Workplace Context
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-sans">
                     <div>
-                      <label className="block font-medium mb-1">Industry</label>
+                      <label className="block font-medium mb-1 text-[#6D7068] dark:text-[#A89E9B]">Industry</label>
                       <select
                         value={workDetails.industry}
                         onChange={(e) => setWorkDetails({ ...workDetails, industry: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                        className="w-full p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] focus:border-[#743C49]"
                       >
                         <option value="Technology">Technology</option>
                         <option value="Finance & Corporate">Finance & Corporate</option>
@@ -393,11 +400,11 @@ export const Onboarding: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-1">Workplace Dress Code</label>
+                      <label className="block font-medium mb-1 text-[#6D7068] dark:text-[#A89E9B]">Workplace Dress Code</label>
                       <select
                         value={workDetails.dressCode}
                         onChange={(e) => setWorkDetails({ ...workDetails, dressCode: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                        className="w-full p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] focus:border-[#743C49]"
                       >
                         <option value="Smart Casual">Smart Casual</option>
                         <option value="Business Casual">Business Casual</option>
@@ -407,11 +414,11 @@ export const Onboarding: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block font-medium mb-1">Work Mode</label>
+                      <label className="block font-medium mb-1 text-[#6D7068] dark:text-[#A89E9B]">Work Mode</label>
                       <select
                         value={workDetails.workMode}
                         onChange={(e) => setWorkDetails({ ...workDetails, workMode: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
+                        className="w-full p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FAF6F0] dark:bg-[#1A151C] text-[#29202B] dark:text-[#F3EEE8] focus:border-[#743C49]"
                       >
                         <option value="Hybrid">Hybrid (2-3 days office)</option>
                         <option value="In-office">In-Office Full Time</option>
@@ -436,35 +443,38 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   Weekly Rhythm
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  Your Typical Monday to Sunday Routine
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>Your Typical</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    Monday to Sunday Routine
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   On days without calendar events, Daily Fit uses this schedule to tailor your outfit dress code.
                 </p>
               </div>
 
               {/* Template Shortcuts */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold text-zinc-500 mr-1">Quick Apply:</span>
+                <span className="text-xs font-semibold text-[#6D7068] dark:text-[#A89E9B] mr-1 font-sans">Quick Apply:</span>
                 <button
                   onClick={() => applyRoutineTemplate('work')}
-                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="px-3 py-1 text-xs rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FFFFFF] dark:bg-[#241D27] hover:border-[#743C49] transition-colors font-sans cursor-pointer"
                 >
                   9-to-5 Office Weekdays
                 </button>
                 <button
                   onClick={() => applyRoutineTemplate('college')}
-                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="px-3 py-1 text-xs rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FFFFFF] dark:bg-[#241D27] hover:border-[#743C49] transition-colors font-sans cursor-pointer"
                 >
                   College Campus
                 </button>
                 <button
                   onClick={() => applyRoutineTemplate('hybrid')}
-                  className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="px-3 py-1 text-xs rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] bg-[#FFFFFF] dark:bg-[#241D27] hover:border-[#743C49] transition-colors font-sans cursor-pointer"
                 >
                   Hybrid Work Routine
                 </button>
@@ -475,13 +485,13 @@ export const Onboarding: React.FC = () => {
                 {weeklyRoutine.map((item, idx) => (
                   <div
                     key={item.day}
-                    className="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    className="p-3.5 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                   >
-                    <div className="w-24 font-bold text-sm text-zinc-900 dark:text-zinc-100">{item.day}</div>
+                    <div className="w-24 font-serif font-bold text-base text-[#29202B] dark:text-[#F3EEE8]">{item.day}</div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 font-sans">
                       <div>
-                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Activity</label>
+                        <label className="block text-[10px] text-[#6D7068] dark:text-[#A89E9B] font-medium">Activity</label>
                         <select
                           value={item.activity}
                           onChange={(e) => {
@@ -489,7 +499,7 @@ export const Onboarding: React.FC = () => {
                             updated[idx].activity = e.target.value;
                             setWeeklyRoutine(updated);
                           }}
-                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                          className="w-full p-2 rounded-[2px] bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] font-medium"
                         >
                           <option value="Work">Work / Office</option>
                           <option value="College">College / Study</option>
@@ -501,7 +511,7 @@ export const Onboarding: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Dress Code</label>
+                        <label className="block text-[10px] text-[#6D7068] dark:text-[#A89E9B] font-medium">Dress Code</label>
                         <select
                           value={item.dress_code}
                           onChange={(e) => {
@@ -509,7 +519,7 @@ export const Onboarding: React.FC = () => {
                             updated[idx].dress_code = e.target.value;
                             setWeeklyRoutine(updated);
                           }}
-                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                          className="w-full p-2 rounded-[2px] bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] font-medium"
                         >
                           <option value="Smart Casual">Smart Casual</option>
                           <option value="Business Casual">Business Casual</option>
@@ -521,7 +531,7 @@ export const Onboarding: React.FC = () => {
                       </div>
 
                       <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">Time Window</label>
+                        <label className="block text-[10px] text-[#6D7068] dark:text-[#A89E9B] font-medium">Time Window</label>
                         <input
                           type="text"
                           value={item.time_range}
@@ -530,7 +540,7 @@ export const Onboarding: React.FC = () => {
                             updated[idx].time_range = e.target.value;
                             setWeeklyRoutine(updated);
                           }}
-                          className="w-full p-2 rounded-md bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 font-medium"
+                          className="w-full p-2 rounded-[2px] bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] font-medium"
                           placeholder="e.g. 09:00 - 17:00"
                         />
                       </div>
@@ -553,20 +563,23 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   Personal Aesthetics
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  How do you like to dress?
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>How do you like</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    to dress?
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   Select your core aesthetics and color preferences.
                 </p>
               </div>
 
               {/* Style Aesthetic Chips */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                <label className="text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">
                   Style Aesthetics (Select up to 4)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -576,14 +589,14 @@ export const Onboarding: React.FC = () => {
                       <div
                         key={st.id}
                         onClick={() => toggleItem(selectedStyles, st.id, setSelectedStyles)}
-                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                        className={`p-3.5 rounded-[4px] border text-xs cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
-                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
+                            ? 'bg-[#FAF6F0] text-[#29202B] dark:bg-[#2E2432] dark:text-[#F3EEE8] border-[#743C49] dark:border-[#D5A6A0] ring-1 ring-[#743C49] dark:ring-[#D5A6A0] shadow-xs'
+                            : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]/50'
                         }`}
                       >
-                        <p className="font-semibold">{st.label}</p>
-                        <p className={`text-[11px] mt-1 line-clamp-2 ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                        <p className="font-semibold font-sans">{st.label}</p>
+                        <p className={`text-[11px] mt-1 line-clamp-2 font-sans ${isSelected ? 'text-[#743C49] dark:text-[#D5A6A0]' : 'text-[#6D7068] dark:text-[#A89E9B]'}`}>
                           {st.desc}
                         </p>
                       </div>
@@ -595,7 +608,7 @@ export const Onboarding: React.FC = () => {
               {/* Color Preferences */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  <label className="text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">
                     Favorite Colors
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -606,14 +619,14 @@ export const Onboarding: React.FC = () => {
                           key={c.name}
                           type="button"
                           onClick={() => toggleItem(preferredColors, c.name, setPreferredColors)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-medium border cursor-pointer transition-all font-sans ${
                             isSelected
-                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
+                              ? 'bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] border-transparent shadow-xs'
+                              : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8]'
                           }`}
                         >
                           <span
-                            className="w-3 h-3 rounded-full border border-zinc-300"
+                            className="w-3 h-3 rounded-full border border-black/20"
                             style={{ backgroundColor: c.hex }}
                           />
                           <span>{c.name}</span>
@@ -624,7 +637,7 @@ export const Onboarding: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  <label className="text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">
                     Disliked Colors (Avoid)
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -635,14 +648,14 @@ export const Onboarding: React.FC = () => {
                           key={c.name}
                           type="button"
                           onClick={() => toggleItem(dislikedColors, c.name, setDislikedColors)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-medium border cursor-pointer transition-all font-sans ${
                             isDisliked
-                              ? 'bg-rose-600 text-white border-transparent'
-                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
+                              ? 'bg-[#A33D42] text-white border-transparent'
+                              : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8]'
                           }`}
                         >
                           <span
-                            className="w-3 h-3 rounded-full border border-zinc-300"
+                            className="w-3 h-3 rounded-full border border-black/20"
                             style={{ backgroundColor: c.hex }}
                           />
                           <span>{c.name}</span>
@@ -654,19 +667,19 @@ export const Onboarding: React.FC = () => {
               </div>
 
               {/* Sliders: Comfort vs Style & Simple vs Experimental */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
-                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Comfort vs. Appearance</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 font-sans">
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">Comfort vs. Appearance</span>
                   <div className="flex gap-2 text-xs">
                     {(['comfort', 'balanced', 'style'] as const).map((val) => (
                       <button
                         key={val}
                         type="button"
                         onClick={() => setComfortVsAppearance(val)}
-                        className={`flex-1 py-2 rounded-lg font-semibold capitalize border ${
+                        className={`flex-1 py-2 rounded-[2px] font-semibold capitalize border cursor-pointer transition-colors ${
                           comfortVsAppearance === val
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
+                            ? 'bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] border-transparent'
+                            : 'border-[#DCD4CC] dark:border-[#392F3E] text-[#6D7068] dark:text-[#A89E9B]'
                         }`}
                       >
                         {val === 'comfort' ? 'Comfort First' : val === 'style' ? 'Style First' : 'Balanced'}
@@ -675,18 +688,18 @@ export const Onboarding: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
-                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Simple vs. Experimental</span>
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">Simple vs. Experimental</span>
                   <div className="flex gap-2 text-xs">
                     {(['simple', 'balanced', 'experimental'] as const).map((val) => (
                       <button
                         key={val}
                         type="button"
                         onClick={() => setSimpleVsExperimental(val)}
-                        className={`flex-1 py-2 rounded-lg font-semibold capitalize border ${
+                        className={`flex-1 py-2 rounded-[2px] font-semibold capitalize border cursor-pointer transition-colors ${
                           simpleVsExperimental === val
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                            : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
+                            ? 'bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] border-transparent'
+                            : 'border-[#DCD4CC] dark:border-[#392F3E] text-[#6D7068] dark:text-[#A89E9B]'
                         }`}
                       >
                         {val === 'simple' ? 'Simple & Familiar' : val === 'experimental' ? 'Experimental' : 'Balanced'}
@@ -710,13 +723,16 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   Occasion Focus
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  Which occasions do you dress for regularly?
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>Which occasions do you</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    dress for regularly?
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   Select all occasions that match your lifestyle.
                 </p>
               </div>
@@ -728,14 +744,14 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={occ}
                       onClick={() => toggleItem(selectedOccasions, occ, setSelectedOccasions)}
-                      className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      className={`p-3.5 rounded-[4px] border flex items-center justify-between cursor-pointer transition-all font-sans ${
                         isSelected
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
-                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 text-zinc-800 dark:text-zinc-200'
+                          ? 'bg-[#FAF6F0] text-[#29202B] dark:bg-[#2E2432] dark:text-[#F3EEE8] border-[#743C49] dark:border-[#D5A6A0] ring-1 ring-[#743C49] dark:ring-[#D5A6A0] shadow-xs'
+                          : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]/50 text-[#29202B] dark:text-[#F3EEE8]'
                       }`}
                     >
                       <span className="font-semibold text-xs">{occ}</span>
-                      {isSelected && <Check className="w-4 h-4 shrink-0" />}
+                      {isSelected && <Check className="w-4 h-4 shrink-0 text-[#743C49] dark:text-[#D5A6A0]" />}
                     </div>
                   );
                 })}
@@ -755,20 +771,23 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   Shopping & Budget Habits (Optional)
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  How do you like to shop for clothing?
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>How do you like</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    to shop for clothing?
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   Helps our Wardrobe Gap stylist surface relevant brand discoveries within your taste.
                 </p>
               </div>
 
               {/* Budget Tier */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+              <div className="space-y-2 font-sans">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">
                   Budget Preference
                 </label>
                 <div className="grid grid-cols-3 gap-3">
@@ -780,14 +799,14 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={tier.id}
                       onClick={() => setBudgetTier(tier.id)}
-                      className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                      className={`p-3.5 rounded-[4px] border text-xs cursor-pointer transition-all ${
                         budgetTier === tier.id
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent shadow-sm'
-                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                          ? 'bg-[#FAF6F0] text-[#29202B] dark:bg-[#2E2432] dark:text-[#F3EEE8] border-[#743C49] dark:border-[#D5A6A0] ring-1 ring-[#743C49] dark:ring-[#D5A6A0] shadow-xs'
+                          : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E]'
                       }`}
                     >
                       <p className="font-semibold">{tier.label}</p>
-                      <p className={`text-[11px] mt-1 ${budgetTier === tier.id ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                      <p className={`text-[11px] mt-1 ${budgetTier === tier.id ? 'text-[#743C49] dark:text-[#D5A6A0]' : 'text-[#6D7068] dark:text-[#A89E9B]'}`}>
                         {tier.desc}
                       </p>
                     </div>
@@ -796,8 +815,8 @@ export const Onboarding: React.FC = () => {
               </div>
 
               {/* Philosophy */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+              <div className="space-y-2 font-sans">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B]">
                   Shopping Philosophy
                 </label>
                 <div className="grid grid-cols-3 gap-3 text-xs">
@@ -809,10 +828,10 @@ export const Onboarding: React.FC = () => {
                     <div
                       key={p.id}
                       onClick={() => setShoppingPhilosophy(p.id)}
-                      className={`p-3 rounded-xl border text-center font-medium cursor-pointer transition-all ${
+                      className={`p-3 rounded-[4px] border text-center font-medium cursor-pointer transition-all ${
                         shoppingPhilosophy === p.id
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                          ? 'bg-[#FAF6F0] text-[#29202B] dark:bg-[#2E2432] dark:text-[#F3EEE8] border-[#743C49] dark:border-[#D5A6A0] ring-1 ring-[#743C49] dark:ring-[#D5A6A0]'
+                          : 'bg-[#FFFFFF] dark:bg-[#241D27] border-[#DCD4CC] dark:border-[#392F3E]'
                       }`}
                     >
                       {p.label}
@@ -822,7 +841,7 @@ export const Onboarding: React.FC = () => {
               </div>
 
               {/* Note */}
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 italic">
+              <p className="text-[11px] text-[#6D7068] dark:text-[#A89E9B] italic font-sans">
                 * Note: TailorBird never requests financial or payment card details.
               </p>
             </motion.div>
@@ -840,22 +859,25 @@ export const Onboarding: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                <span className="text-[10px] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] uppercase tracking-[0.2em] block">
                   AI Recommendation Tuning
                 </span>
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                  How should TailorBird style you?
+                <h2 className="text-2xl sm:text-3xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight mt-1">
+                  <span>How should TailorBird</span>{' '}
+                  <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+                    style you?
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] mt-1 font-sans">
                   Calibrate your daily stylist behavior to match your habits.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+              <div className="space-y-4 font-sans">
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-2">
                   <div className="flex justify-between text-xs font-bold">
                     <span>Repeat Frequency Behavior</span>
-                    <span className="text-primary-600 uppercase">{repeatFrequency}</span>
+                    <span className="text-[#743C49] dark:text-[#D5A6A0] uppercase">{repeatFrequency}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {[
@@ -867,10 +889,10 @@ export const Onboarding: React.FC = () => {
                         key={opt.id}
                         type="button"
                         onClick={() => setRepeatFrequency(opt.id)}
-                        className={`p-2.5 rounded-lg border text-center font-medium ${
+                        className={`p-2.5 rounded-[2px] border text-center font-medium cursor-pointer transition-colors ${
                           repeatFrequency === opt.id
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                            : 'border-zinc-200 dark:border-zinc-800'
+                            ? 'bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] border-transparent'
+                            : 'border-[#DCD4CC] dark:border-[#392F3E]'
                         }`}
                       >
                         {opt.label}
@@ -879,10 +901,10 @@ export const Onboarding: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                <div className="p-4 rounded-[4px] bg-[#FFFFFF] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-2">
                   <div className="flex justify-between text-xs font-bold">
                     <span>Familiarity vs. New Pairings</span>
-                    <span className="text-primary-600 uppercase">{familiarVsNew}</span>
+                    <span className="text-[#743C49] dark:text-[#D5A6A0] uppercase">{familiarVsNew}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {[
@@ -894,10 +916,10 @@ export const Onboarding: React.FC = () => {
                         key={opt.id}
                         type="button"
                         onClick={() => setFamiliarVsNew(opt.id)}
-                        className={`p-2.5 rounded-lg border text-center font-medium ${
+                        className={`p-2.5 rounded-[2px] border text-center font-medium cursor-pointer transition-colors ${
                           familiarVsNew === opt.id
-                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-transparent'
-                            : 'border-zinc-200 dark:border-zinc-800'
+                            ? 'bg-[#29202B] text-white dark:bg-[#F3EEE8] dark:text-[#29202B] border-transparent'
+                            : 'border-[#DCD4CC] dark:border-[#392F3E]'
                         }`}
                       >
                         {opt.label}
@@ -912,14 +934,14 @@ export const Onboarding: React.FC = () => {
       </div>
 
       {/* Navigation Buttons */}
-      <div className="max-w-3xl mx-auto w-full pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+      <div className="max-w-3xl mx-auto w-full pt-4 border-t border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-between font-sans">
         {step > 1 ? (
           <Button
             variant="outline"
             size="md"
             onClick={() => setStep(step - 1)}
             disabled={isSubmitting}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 rounded-[3px] uppercase tracking-[0.14em] text-xs"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -935,6 +957,7 @@ export const Onboarding: React.FC = () => {
               size="md"
               onClick={() => setStep(6)}
               disabled={isSubmitting}
+              className="rounded-[3px] uppercase tracking-[0.14em] text-xs"
             >
               Skip
             </Button>
@@ -945,7 +968,7 @@ export const Onboarding: React.FC = () => {
               variant="primary"
               size="md"
               onClick={() => setStep(step + 1)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-[3px] uppercase tracking-[0.14em] text-xs"
             >
               Next Step
               <ArrowRight className="w-4 h-4" />
@@ -956,9 +979,9 @@ export const Onboarding: React.FC = () => {
               size="md"
               onClick={handleFinish}
               disabled={isSubmitting}
-              className="flex items-center gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="flex items-center gap-2 rounded-[3px] uppercase tracking-[0.14em] text-xs shadow-md"
             >
-              {isSubmitting ? 'Saving Profile...' : 'Complete Setup & Open Daily Fit'}
+              {isSubmitting ? 'Saving Profile...' : 'Complete Setup & Open Atelier'}
               <CheckCircle2 className="w-4 h-4" />
             </Button>
           )}

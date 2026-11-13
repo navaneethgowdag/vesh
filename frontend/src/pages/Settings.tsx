@@ -16,6 +16,7 @@ import {
   Shirt,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Button } from '../components/ui/Button';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useApp, useCurrentUser } from '../context/AppContext';
@@ -218,22 +219,17 @@ export const Settings: React.FC = () => {
   return (
     <AppShell>
       <PullToRefresh onRefresh={refreshData}>
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
-            Personalization & Controls
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
-            Settings & Aesthetic Profile
-          </h1>
-          <p className="text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-sans">
-            Configure your style signature, appearance theme, notification cadence, and account identity.
-          </p>
-        </div>
+        {/* Editorial Header */}
+        <EditorialPageHeader
+          eyebrow="Personalization & Controls"
+          title="Settings &"
+          italicTitle="Profile."
+          description="Configure your style signature, appearance theme, notification cadence, and account identity."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
           {/* Navigation Sidebar */}
-          <div className="md:col-span-4 bg-white dark:bg-[#1C201D] rounded-2xl p-2 border border-[#E2DDD3] dark:border-[#2D342F] space-y-1 shadow-xs">
+          <div className="md:col-span-4 bg-white dark:bg-[#1F1922] rounded-[3px] p-2 border border-[#DCD4CC] dark:border-[#392F3E] space-y-1 shadow-xs">
             {[
               { id: 'Account', label: 'Account & Identity', icon: User },
               { id: 'Preferences', label: 'Style & Palette', icon: Sliders },
@@ -251,13 +247,13 @@ export const Settings: React.FC = () => {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition-all text-left cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 min-h-[42px] rounded-[2px] text-xs font-medium uppercase tracking-[0.1em] transition-all text-left cursor-pointer ${
                     isCurrent
-                      ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] font-semibold shadow-xs'
-                      : 'text-[#6B7269] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
+                      ? 'bg-[#29202B] dark:bg-[#F3EEE8] text-[#F3EEE8] dark:text-[#29202B] font-semibold shadow-xs'
+                      : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] hover:bg-[#FAF6F0] dark:hover:bg-[#201824]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isCurrent ? 'text-[#F8F6F1] dark:text-[#202321]' : 'text-[#777C75]'}`} />
+                  <Icon className={`w-4 h-4 ${isCurrent ? 'text-[#D5A6A0]' : 'text-[#777078]'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -265,16 +261,16 @@ export const Settings: React.FC = () => {
           </div>
 
           {/* Form Content Area */}
-          <div className="md:col-span-8 bg-white dark:bg-[#1C201D] rounded-2xl p-6 sm:p-8 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+          <div className="md:col-span-8 bg-white dark:bg-[#1F1922] rounded-[3px] p-6 sm:p-8 border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
             <form onSubmit={handleSaveAll} className="space-y-6">
               {/* 1. ACCOUNT TAB */}
               {activeTab === 'Account' && (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                    <h2 className="text-2xl font-serif font-normal text-[#29202B] dark:text-[#F3EEE8]">
                       Account & Public Profile
                     </h2>
-                    <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5">
+                    <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-0.5 font-sans">
                       Your public presence within the TailorBird network.
                     </p>
                   </div>
@@ -283,7 +279,7 @@ export const Settings: React.FC = () => {
 
                   <div className="space-y-3 pt-2">
                     <div>
-                      <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+                      <label className="block text-[10px] font-mono font-medium uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0] mb-1">
                         Display Name
                       </label>
                       <input
@@ -295,7 +291,7 @@ export const Settings: React.FC = () => {
                             account: { ...formData.account, name: e.target.value },
                           })
                         }
-                        className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl px-3.5 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                        className="w-full bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] px-3.5 py-2.5 min-h-[42px] text-sm text-[#29202B] dark:text-[#F3EEE8] focus:outline-none focus:border-[#743C49] focus:ring-1 focus:ring-[#743C49]"
                       />
                     </div>
 

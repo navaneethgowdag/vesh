@@ -22,11 +22,18 @@ class Outfit(Base):
 
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    occasion = Column(String(100), nullable=True)
-    season = Column(String(100), nullable=True)
+    occasion = Column(String(100), nullable=True, default="Casual Daily")
+    season = Column(String(100), nullable=True, default="All-Season")
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def __init__(self, **kwargs):
+        if "occasion" not in kwargs or not kwargs["occasion"]:
+            kwargs["occasion"] = "Casual Daily"
+        if "season" not in kwargs or not kwargs["season"]:
+            kwargs["season"] = "All-Season"
+        super().__init__(**kwargs)
 
     # API compatibility properties
     @property
@@ -63,5 +70,5 @@ class Outfit(Base):
     clothing_items = relationship("Clothing", secondary=outfit_clothing, back_populates="outfits")
     recommendations = relationship("Recommendation", back_populates="outfit", cascade="all, delete-orphan")
     wear_history = relationship("WearHistory", back_populates="outfit")
-    calendar_events = relationship("CalendarEvent", back_populates="outfit")
+    calendar_events = relationship("CalendarEvent", back_populates="outfit", cascade="save-update, merge")
 

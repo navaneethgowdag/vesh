@@ -1,26 +1,46 @@
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Any
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from app.schemas.clothing_ai import ClothingAnalysisResponse
 
 
 class ClothingBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    category: str
+    category: str = "Tops"
     subcategory: Optional[str] = None
-    color: str
+    color: str = "Black"
     secondary_color: Optional[str] = None
     pattern: Optional[str] = None
     material: Optional[str] = None
     fit: Optional[str] = None
     brand: Optional[str] = None
     size: Optional[str] = None
-    season: str = "All-Season"
-    occasion: str = "Casual Daily"
+    season: Optional[str] = "All-Season"
+    occasion: Optional[str] = "Casual Daily"
     style_tags: List[str] = Field(default_factory=list)
     image_url: Optional[str] = None
     description: Optional[str] = None
+
+    @field_validator("season", mode="before")
+    @classmethod
+    def validate_season(cls, v: Any) -> str:
+        return str(v).strip() if (v and str(v).strip()) else "All-Season"
+
+    @field_validator("occasion", mode="before")
+    @classmethod
+    def validate_occasion(cls, v: Any) -> str:
+        return str(v).strip() if (v and str(v).strip()) else "Casual Daily"
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def validate_category(cls, v: Any) -> str:
+        return str(v).strip() if (v and str(v).strip()) else "Tops"
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def validate_color(cls, v: Any) -> str:
+        return str(v).strip() if (v and str(v).strip()) else "Black"
 
 
 class ClothingCreate(ClothingBase):

@@ -12,7 +12,7 @@ class WeeklyPlanDayResponse(BaseModel):
     outfit_id: Optional[UUID] = None
     outfit: Optional[OutfitResponse] = None
     calendar_event_id: Optional[UUID] = None
-    status: str
+    status: Optional[str] = "planned"
     recommendation_explanation: Optional[str] = None
     explanation_data: Dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[datetime] = None
@@ -26,7 +26,7 @@ class WeeklyPlanResponse(BaseModel):
     user_id: UUID
     week_start_date: date
     week_end_date: date
-    status: str
+    status: Optional[str] = "active"
     days: List[WeeklyPlanDayResponse] = Field(default_factory=list)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

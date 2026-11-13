@@ -23,6 +23,7 @@ import {
   Star,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Button } from '../components/ui/Button';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
@@ -144,19 +145,19 @@ export const WardrobeGap: React.FC = () => {
     switch (priority) {
       case 'High':
         return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
+          <span className="px-2.5 py-0.5 rounded-[2px] text-[9px] font-mono uppercase tracking-[0.14em] bg-[#743C49]/15 text-[#743C49] dark:text-[#D5A6A0] border border-[#743C49]/30">
             High Priority
           </span>
         );
       case 'Medium':
         return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+          <span className="px-2.5 py-0.5 rounded-[2px] text-[9px] font-mono uppercase tracking-[0.14em] bg-[#B49B82]/20 text-[#29202B] dark:text-[#DCD4CC] border border-[#B49B82]/40">
             Medium Priority
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] border border-[#899783]/30">
+          <span className="px-2.5 py-0.5 rounded-[2px] text-[9px] font-mono uppercase tracking-[0.14em] bg-[#6D7068]/15 text-[#6D7068] dark:text-[#D5A6A0] border border-[#6D7068]/30">
             Low Priority
           </span>
         );
@@ -165,50 +166,44 @@ export const WardrobeGap: React.FC = () => {
 
   return (
     <AppShell>
-      <div className="max-w-5xl mx-auto px-4 py-8 select-none space-y-6 pb-20">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E2DDD3] dark:border-[#2D342F]">
-          <div>
-            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
-              Wardrobe Intelligence & Shopping
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
-              Wardrobe Gap & Shopping Discovery
-            </h1>
-            <p className="text-xs md:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-sans">
-              Identifies missing essentials that unlock new outfits, with taste-ranked purchase recommendations.
-            </p>
-          </div>
-
-          <Button
-            onClick={() => loadData(true)}
-            isLoading={refreshing}
-            variant="outline"
-            className="flex items-center gap-1.5 shadow-xs self-start md:self-auto"
-          >
-            <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
-            <span>Refresh Analysis</span>
-          </Button>
-        </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 select-none space-y-6 pb-20">
+        {/* Editorial Header */}
+        <EditorialPageHeader
+          eyebrow="CAPSULE INTELLIGENCE & ACQUISITION"
+          title="Wardrobe Gap"
+          italicTitle="Studio."
+          description="Identifies missing essentials that unlock new outfits, with taste-ranked purchase recommendations."
+          actions={
+            <Button
+              onClick={() => loadData(true)}
+              isLoading={refreshing}
+              variant="outline"
+              className="rounded-[2px] font-mono text-[10px] uppercase tracking-[0.14em] border-[#DCD4CC] dark:border-[#392F3E] flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+              <span>Refresh Analysis</span>
+            </Button>
+          }
+        />
 
         {/* Provider Status Banner (Informative & Honest) */}
         {providerStatus && (
-          <div className="p-4 rounded-2xl bg-[#F8F6F1] dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] flex items-center justify-between text-xs shadow-xs">
+          <div className="p-4 rounded-[3px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
-              <Info className="w-4 h-4 text-[#777C75] shrink-0" />
+              <Info className="w-4 h-4 text-[#743C49] shrink-0" />
               <div>
-                <span className="font-semibold text-[#202321] dark:text-[#F8F6F1]">
+                <span className="font-serif font-medium text-[#29202B] dark:text-[#F3EEE8]">
                   {providerStatus.provider_name}:{' '}
                 </span>
-                <span className="text-[#777C75] dark:text-[#A3ABA0]">{providerStatus.message}</span>
+                <span className="text-[#777078] dark:text-[#A89E9B]">{providerStatus.message}</span>
               </div>
             </div>
             {providerStatus.is_live_configured ? (
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+              <span className="text-[9px] font-mono font-semibold uppercase tracking-[0.14em] px-2 py-0.5 rounded-[2px] bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/50">
                 Live API
               </span>
             ) : (
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#E9E6DE] dark:bg-[#2D342F] text-[#292D29] dark:text-[#F8F6F1]">
+              <span className="text-[9px] font-mono font-semibold uppercase tracking-[0.14em] px-2.5 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] text-[#29202B] dark:text-[#F3EEE8] border border-[#DCD4CC] dark:border-[#392F3E]">
                 Curated Mode
               </span>
             )}
@@ -216,13 +211,13 @@ export const WardrobeGap: React.FC = () => {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-[#E2DDD3] dark:border-[#2D342F] pb-3 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 rounded-[2px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] text-xs overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab('gaps')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-[2px] text-[10px] font-mono uppercase tracking-[0.14em] transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'gaps'
-                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
-                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
+                ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold'
+                : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -231,10 +226,10 @@ export const WardrobeGap: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('shopping')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-[2px] text-[10px] font-mono uppercase tracking-[0.14em] transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'shopping'
-                ? 'bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] shadow-xs'
-                : 'text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#E9E6DE]/50 dark:hover:bg-[#242A25]'
+                ? 'bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] font-semibold'
+                : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8]'
             }`}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
@@ -245,8 +240,8 @@ export const WardrobeGap: React.FC = () => {
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-10 h-10 border-2 border-[#E2DDD3] dark:border-[#2D342F] border-t-[#727D69] rounded-full animate-spin mb-4" />
-            <p className="text-sm font-medium text-[#777C75] dark:text-[#A3ABA0]">
+            <RefreshCw className="w-8 h-8 text-[#743C49] animate-spin mb-4" />
+            <p className="text-xs font-mono uppercase tracking-[0.12em] text-[#777078] dark:text-[#A89E9B]">
               Analyzing accepted wardrobe items & catalog matches...
             </p>
           </div>
@@ -260,50 +255,50 @@ export const WardrobeGap: React.FC = () => {
                 {/* Overview Stats Cards */}
                 {analysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
-                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1F1922] rounded-[3px] p-4 border border-[#DCD4CC] dark:border-[#392F3E]">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0] block">
                         Total Accepted Pieces
                       </span>
-                      <div className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] mt-1">
+                      <div className="text-2xl font-serif text-[#29202B] dark:text-[#F3EEE8] mt-1">
                         {analysis.total_items}
                       </div>
-                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
+                      <span className="text-[10px] text-[#777078] dark:text-[#A89E9B] font-mono uppercase tracking-[0.1em] mt-0.5 block">
                         active in closet
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
-                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1F1922] rounded-[3px] p-4 border border-[#DCD4CC] dark:border-[#392F3E]">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0] block">
                         Identified Gaps
                       </span>
-                      <div className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] mt-1">
+                      <div className="text-2xl font-serif text-[#29202B] dark:text-[#F3EEE8] mt-1">
                         {analysis.gaps.length}
                       </div>
-                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
+                      <span className="text-[10px] text-[#777078] dark:text-[#A89E9B] font-mono uppercase tracking-[0.1em] mt-0.5 block">
                         {analysis.gaps.length === 0 ? 'Optimal versatility' : 'Actionable recommendations'}
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
-                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1F1922] rounded-[3px] p-4 border border-[#DCD4CC] dark:border-[#392F3E]">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0] block">
                         Palette Tone
                       </span>
-                      <div className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1] mt-2 truncate">
+                      <div className="text-sm font-serif text-[#29202B] dark:text-[#F3EEE8] mt-2 truncate">
                         {analysis.color_distribution.neutrals} Neutrals / {analysis.color_distribution.accents} Accents
                       </div>
-                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
+                      <span className="text-[10px] text-[#777078] dark:text-[#A89E9B] font-mono uppercase tracking-[0.1em] mt-0.5 block">
                         CIELAB harmony balance
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-4 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
-                      <span className="text-[11px] font-semibold text-[#777C75] dark:text-[#A3ABA0] uppercase tracking-wider">
+                    <div className="bg-white dark:bg-[#1F1922] rounded-[3px] p-4 border border-[#DCD4CC] dark:border-[#392F3E]">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0] block">
                         Formality Balance
                       </span>
-                      <div className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1] mt-2 truncate">
+                      <div className="text-sm font-serif text-[#29202B] dark:text-[#F3EEE8] mt-2 truncate">
                         {analysis.formality_distribution.casual} Casual / {analysis.formality_distribution.formal} Formal
                       </div>
-                      <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] mt-0.5 block">
+                      <span className="text-[10px] text-[#777078] dark:text-[#A89E9B] font-mono uppercase tracking-[0.1em] mt-0.5 block">
                         +{analysis.formality_distribution.smart_casual} Smart Casual
                       </span>
                     </div>
@@ -312,12 +307,12 @@ export const WardrobeGap: React.FC = () => {
 
                 {/* Gaps List */}
                 {analysis?.gaps.length === 0 ? (
-                  <div className="p-8 text-center bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+                  <div className="p-8 text-center bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E]">
                     <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                    <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                    <h3 className="text-base font-serif text-[#29202B] dark:text-[#F3EEE8]">
                       Your Wardrobe is Exceptionally Balanced!
                     </h3>
-                    <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-1 max-w-sm mx-auto">
+                    <p className="text-xs text-[#777078] dark:text-[#A89E9B] mt-1 max-w-sm mx-auto">
                       You have sufficient tops, bottoms, layers, and formal staples to cover all everyday and scheduled occasions.
                     </p>
                   </div>
@@ -326,39 +321,39 @@ export const WardrobeGap: React.FC = () => {
                     {analysis?.gaps.map((gap: WardrobeGapItem, idx: number) => (
                       <div
                         key={idx}
-                        className="bg-white dark:bg-[#1C201D] rounded-2xl p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs space-y-4"
+                        className="bg-white dark:bg-[#1F1922] rounded-[3px] p-6 border border-[#DCD4CC] dark:border-[#392F3E] transition-colors hover:border-[#743C49] space-y-4"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center font-bold font-mono">
-                              {idx + 1}
+                            <div className="w-8 h-8 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] text-[#743C49] dark:text-[#D5A6A0] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-center font-mono text-xs font-semibold">
+                              0{idx + 1}
                             </div>
                             <div>
-                              <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                              <h3 className="text-base font-serif text-[#29202B] dark:text-[#F3EEE8]">
                                 {gap.title}
                               </h3>
-                              <span className="text-xs text-[#777C75] dark:text-[#A3ABA0]">{gap.category}</span>
+                              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#777078]">{gap.category}</span>
                             </div>
                           </div>
                           {priorityBadge(gap.priority)}
                         </div>
 
-                        <p className="text-xs sm:text-sm text-[#202321] dark:text-[#F8F6F1] leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[#29202B] dark:text-[#F3EEE8] leading-relaxed">
                           {gap.reason}
                         </p>
 
-                        <div className="p-3.5 rounded-xl bg-[#F8F6F1] dark:bg-[#242A25] text-xs text-[#777C75] dark:text-[#A3ABA0] border border-[#E2DDD3] dark:border-[#2D342F]">
-                          <strong className="text-[#202321] dark:text-[#F8F6F1]">Evidence: </strong>
+                        <div className="p-3.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#241D27] text-xs text-[#777078] dark:text-[#A89E9B] border border-[#DCD4CC] dark:border-[#392F3E]">
+                          <strong className="text-[#29202B] dark:text-[#F3EEE8] font-serif">Evidence: </strong>
                           {gap.evidence}
                         </div>
 
                         {gap.occasions.length > 0 && (
                           <div className="flex items-center gap-2 flex-wrap text-xs">
-                            <span className="font-semibold text-[#777C75] dark:text-[#A3ABA0]">Unlocks Occasions:</span>
+                            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#777078] dark:text-[#A89E9B]">Unlocks Occasions:</span>
                             {gap.occasions.map((occ) => (
                               <span
                                 key={occ}
-                                className="px-2.5 py-0.5 rounded-full bg-[#899783]/15 text-[#727D69] dark:text-[#A3ABA0] font-medium border border-[#899783]/20"
+                                className="px-2.5 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] text-[#743C49] dark:text-[#D5A6A0] font-mono text-[9px] uppercase tracking-[0.12em] border border-[#DCD4CC] dark:border-[#392F3E]"
                               >
                                 {occ}
                               </span>
@@ -366,15 +361,15 @@ export const WardrobeGap: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="space-y-1.5 pt-2 border-t border-[#E2DDD3] dark:border-[#2D342F]">
-                          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
+                        <div className="space-y-1.5 pt-2 border-t border-[#DCD4CC] dark:border-[#392F3E]">
+                          <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-[#777078] dark:text-[#A89E9B]">
                             Suggested Garments to Complete this Gap:
                           </span>
                           <div className="flex flex-wrap gap-2 pt-1">
                             {gap.suggested_garments.map((garment, gIdx) => (
                               <span
                                 key={gIdx}
-                                className="text-xs px-3 py-1 rounded-full bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] font-medium border border-[#E2DDD3] dark:border-[#2D342F]"
+                                className="text-xs px-3 py-1 rounded-[2px] bg-[#FAF6F0] dark:bg-[#241D27] text-[#29202B] dark:text-[#F3EEE8] font-mono border border-[#DCD4CC] dark:border-[#392F3E]"
                               >
                                 {garment}
                               </span>
@@ -394,27 +389,27 @@ export const WardrobeGap: React.FC = () => {
             {activeTab === 'shopping' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                  <h2 className="text-xl font-serif text-[#29202B] dark:text-[#F3EEE8]">
                     Shopping Discovery
                   </h2>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5">
+                  <p className="text-xs text-[#777078] dark:text-[#A89E9B] mt-0.5">
                     Live product recommendations require verified external shopping provider integration.
                   </p>
                 </div>
 
                 {shoppingRecs.length === 0 ? (
-                  <div className="p-10 text-center bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] space-y-4 shadow-xs">
-                    <div className="w-12 h-12 rounded-2xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center mx-auto">
-                      <ShoppingBag className="w-6 h-6" />
+                  <div className="p-10 text-center bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] space-y-4">
+                    <div className="w-12 h-12 rounded-[2px] bg-[#FAF6F0] dark:bg-[#2A222D] text-[#743C49] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-center mx-auto">
+                      <ShoppingBag className="w-5 h-5" />
                     </div>
                     <div className="max-w-md mx-auto space-y-1.5">
-                      <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                      <h3 className="text-base font-serif text-[#29202B] dark:text-[#F3EEE8]">
                         External Shopping Provider Unconfigured
                       </h3>
-                      <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed">
-                        TailorBird never fabricates synthetic products, dummy prices, or fake affiliate links. To browse live clothing items for your gaps, configure an external provider key (e.g., <code className="px-1.5 py-0.5 rounded bg-[#F8F6F1] dark:bg-[#242A25] font-mono text-[11px]">SERPAPI_API_KEY</code>).
+                      <p className="text-xs text-[#777078] dark:text-[#A89E9B] leading-relaxed">
+                        TailorBird never fabricates synthetic products, dummy prices, or fake affiliate links. To browse live clothing items for your gaps, configure an external provider key (e.g., <code className="px-1.5 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] font-mono text-[11px]">SERPAPI_API_KEY</code>).
                       </p>
-                      <p className="text-xs text-[#727D69] dark:text-[#A3ABA0] pt-2 font-medium">
+                      <p className="text-xs text-[#743C49] dark:text-[#D5A6A0] pt-2 font-mono uppercase tracking-[0.1em]">
                         Your missing wardrobe essentials are accurately detailed in the Identified Gaps tab.
                       </p>
                     </div>
@@ -422,7 +417,7 @@ export const WardrobeGap: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setActiveTab('gaps')}
-                      className="cursor-pointer"
+                      className="cursor-pointer rounded-[2px] font-mono text-[10px] uppercase tracking-[0.14em]"
                     >
                       View Identified Gaps
                     </Button>
@@ -432,54 +427,54 @@ export const WardrobeGap: React.FC = () => {
                     {shoppingRecs.map((prod) => (
                       <div
                         key={prod.id}
-                        className="bg-white dark:bg-[#1C201D] rounded-2xl overflow-hidden border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs flex flex-col justify-between group"
+                        className="bg-white dark:bg-[#1F1922] rounded-[3px] overflow-hidden border border-[#DCD4CC] dark:border-[#392F3E] flex flex-col justify-between group transition-colors hover:border-[#743C49]"
                       >
                         <div>
                           {/* Image */}
-                          <div className="aspect-square relative overflow-hidden bg-[#F1EEE7] dark:bg-[#242A25]">
+                          <div className="aspect-square relative overflow-hidden bg-[#FAF6F0] dark:bg-[#241D27]">
                             <img
                               src={prod.image_url}
                               alt={prod.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <span className="absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/75 text-white backdrop-blur-md">
+                            <span className="absolute top-2.5 left-2.5 text-[9px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-[2px] bg-[#29202B]/85 text-[#F3EEE8] backdrop-blur-xs">
                               {prod.brand}
                             </span>
                           </div>
 
                           {/* Details */}
                           <div className="p-4 space-y-2">
-                            <h4 className="text-xs font-semibold text-[#202321] dark:text-[#F8F6F1] line-clamp-2">
+                            <h4 className="text-xs font-serif text-[#29202B] dark:text-[#F3EEE8] line-clamp-2">
                               {prod.title}
                             </h4>
 
                             <div className="flex items-center justify-between text-xs">
-                              <span className="font-mono font-bold text-[#202321] dark:text-[#F8F6F1]">
+                              <span className="font-mono font-semibold text-[#29202B] dark:text-[#F3EEE8]">
                                 {prod.currency === 'INR' ? '₹' : '$'}
                                 {prod.price.toLocaleString()}
                               </span>
                               {prod.rating && (
-                                <span className="flex items-center gap-1 text-[11px] text-amber-500 font-bold">
-                                  <Star className="w-3 h-3 fill-amber-500" />
+                                <span className="flex items-center gap-1 text-[11px] text-[#B49B82] font-mono">
+                                  <Star className="w-3 h-3 fill-[#B49B82]" />
                                   {prod.rating}
                                 </span>
                               )}
                             </div>
 
-                            <p className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] line-clamp-3 bg-[#F8F6F1] dark:bg-[#242A25] p-2.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F]">
-                              <strong className="text-[#202321] dark:text-[#F8F6F1]">Why: </strong>
+                            <p className="text-[11px] text-[#777078] dark:text-[#A89E9B] line-clamp-3 bg-[#FAF6F0] dark:bg-[#241D27] p-2.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E]">
+                              <strong className="text-[#29202B] dark:text-[#F3EEE8] font-serif">Why: </strong>
                               {prod.match_reason}
                             </p>
                           </div>
                         </div>
 
                         {/* Action buttons */}
-                        <div className="p-3 border-t border-[#E2DDD3] dark:border-[#2D342F] space-y-2">
+                        <div className="p-3 border-t border-[#DCD4CC] dark:border-[#392F3E] space-y-2">
                           <a
                             href={prod.product_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full py-2 px-3 rounded-xl bg-[#202321] text-[#F8F6F1] dark:bg-[#F8F6F1] dark:text-[#202321] text-xs font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                            className="w-full py-2 px-3 rounded-[2px] bg-[#29202B] text-[#F3EEE8] dark:bg-[#F3EEE8] dark:text-[#29202B] text-[10px] font-mono uppercase tracking-[0.14em] flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer"
                           >
                             <span>View Product</span>
                             <ExternalLink className="w-3 h-3" />
@@ -488,10 +483,10 @@ export const WardrobeGap: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleSaveProduct(prod)}
-                              className={`flex-1 py-1.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+                              className={`flex-1 py-1.5 rounded-[2px] border text-[10px] font-mono uppercase tracking-[0.12em] flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                                 prod.is_saved
-                                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 border-rose-300'
-                                  : 'border-[#E2DDD3] dark:border-[#2D342F] text-[#292D29] dark:text-[#F8F6F1] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
+                                  ? 'bg-[#743C49]/15 text-[#743C49] border-[#743C49]/40'
+                                  : 'border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] hover:border-[#743C49]'
                               }`}
                             >
                               <Bookmark className="w-3 h-3" />
@@ -501,7 +496,7 @@ export const WardrobeGap: React.FC = () => {
                             <button
                               onClick={() => handleAlreadyOwn(prod)}
                               title="I already own a similar piece"
-                              className="p-1.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] hover:text-emerald-600 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8] transition-colors cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -509,7 +504,7 @@ export const WardrobeGap: React.FC = () => {
                             <button
                               onClick={() => handleDismissProduct(prod)}
                               title="Not interested"
-                              className="p-1.5 rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] hover:text-rose-600 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:text-[#743C49] transition-colors cursor-pointer"
                             >
                               <EyeOff className="w-3.5 h-3.5" />
                             </button>

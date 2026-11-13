@@ -115,7 +115,7 @@ export const Profile: React.FC = () => {
     <AppShell>
       <PullToRefresh onRefresh={handleRefresh}>
         {/* Profile Header Card */}
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 mb-8 transition-colors">
+        <div className="bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] p-6 sm:p-8 mb-8 transition-colors shadow-xs">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
             <Avatar
               src={currentUser.avatar}
@@ -127,10 +127,10 @@ export const Profile: React.FC = () => {
             <div className="flex-1 text-center sm:text-left min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                 <div>
-                  <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
+                  <h1 className="text-3xl sm:text-4xl font-serif font-normal text-[#29202B] dark:text-[#F3EEE8] tracking-tight">
                     {currentUser.name}
                   </h1>
-                  <p className="text-sm font-mono text-[#777C75] dark:text-[#A3ABA0]">@{currentUser.username}</p>
+                  <p className="text-xs font-mono text-[#777078] dark:text-[#D5A6A0]">@{currentUser.username}</p>
                 </div>
 
                 <div className="flex items-center justify-center sm:justify-end gap-2">
@@ -139,46 +139,47 @@ export const Profile: React.FC = () => {
                     size="sm"
                     onClick={() => setIsEditProfileOpen(true)}
                     icon={<Settings className="w-4 h-4" />}
+                    className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                   >
                     Edit Profile
                   </Button>
                 </div>
               </div>
 
-              <p className="text-sm text-[#292D29] dark:text-[#F8F6F1] max-w-xl leading-relaxed mb-4 font-sans">
+              <p className="text-sm text-[#29202B] dark:text-[#F3EEE8] max-w-xl leading-relaxed mb-4 font-sans">
                 {currentUser.bio}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#777C75] dark:text-[#A3ABA0] mb-6">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#777078] dark:text-[#DCD4CC] mb-6">
                 {currentUser.location && (
                   <span className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#727D69]" />
+                    <MapPin className="w-3.5 h-3.5 text-[#743C49]" />
                     {currentUser.location}
                   </span>
                 )}
                 <span className="flex items-center gap-1.5 font-mono">
-                  <Calendar className="w-3.5 h-3.5 text-[#727D69]" />
+                  <Calendar className="w-3.5 h-3.5 text-[#743C49]" />
                   {currentUser.joinedDate}
                 </span>
               </div>
 
               {/* Social Stats Row */}
-              <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-[#E2DDD3] dark:border-[#2D342F]">
+              <div className="flex items-center justify-center sm:justify-start gap-8 pt-4 border-t border-[#DCD4CC] dark:border-[#392F3E]">
                 <div className="text-center sm:text-left">
-                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block">
+                  <span className="text-3xl font-light font-serif text-[#29202B] dark:text-[#F3EEE8] block">
                     {myPosts.length}
                   </span>
-                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold">Posts</span>
+                  <span className="text-[10px] text-[#777078] dark:text-[#D5A6A0] uppercase tracking-[0.14em] font-medium">Posts</span>
                 </div>
                 <button
                   type="button"
                   onClick={openFollowersModal}
                   className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                 >
-                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block group-hover:underline transition-colors">
+                  <span className="text-3xl font-light font-serif text-[#29202B] dark:text-[#F3EEE8] block group-hover:underline transition-colors">
                     {formatStatCount(currentUser.followersCount || 0)}
                   </span>
-                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold group-hover:text-[#202321] dark:group-hover:text-[#F8F6F1] transition-colors">
+                  <span className="text-[10px] text-[#777078] dark:text-[#D5A6A0] uppercase tracking-[0.14em] font-medium group-hover:text-[#743C49] transition-colors">
                     Followers
                   </span>
                 </button>
@@ -187,18 +188,18 @@ export const Profile: React.FC = () => {
                   onClick={openFollowingModal}
                   className="text-center sm:text-left group cursor-pointer focus:outline-none min-h-[44px]"
                 >
-                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block group-hover:underline transition-colors">
+                  <span className="text-3xl font-light font-serif text-[#29202B] dark:text-[#F3EEE8] block group-hover:underline transition-colors">
                     {formatStatCount(currentUser.followingCount || 0)}
                   </span>
-                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold group-hover:text-[#202321] dark:group-hover:text-[#F8F6F1] transition-colors">
+                  <span className="text-[10px] text-[#777078] dark:text-[#D5A6A0] uppercase tracking-[0.14em] font-medium group-hover:text-[#743C49] transition-colors">
                     Following
                   </span>
                 </button>
                 <div className="text-center sm:text-left">
-                  <span className="text-2xl font-bold font-mono text-[#202321] dark:text-[#F8F6F1] block">
+                  <span className="text-3xl font-light font-serif text-[#29202B] dark:text-[#F3EEE8] block">
                     {wardrobe.length}
                   </span>
-                  <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] uppercase font-semibold">Wardrobe</span>
+                  <span className="text-[10px] text-[#777078] dark:text-[#D5A6A0] uppercase tracking-[0.14em] font-medium">Wardrobe</span>
                 </div>
               </div>
             </div>
@@ -208,10 +209,10 @@ export const Profile: React.FC = () => {
         {/* Style Preferences & Wardrobe Analytics Box */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
           {/* Style Preferences */}
-          <div className="md:col-span-7 bg-white dark:bg-[#1C201D] rounded-2xl p-5 sm:p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+          <div className="md:col-span-7 bg-white dark:bg-[#1F1922] rounded-[3px] p-5 sm:p-6 border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-[#727D69]" />
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
+              <Sparkles className="w-4 h-4 text-[#743C49] dark:text-[#D5A6A0]" />
+              <h3 className="text-[10px] font-mono font-medium uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0]">
                 Aesthetic Signature
               </h3>
             </div>
@@ -219,34 +220,34 @@ export const Profile: React.FC = () => {
               {currentUser.preferences.styles.map((style) => (
                 <span
                   key={style}
-                  className="bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] text-xs font-medium px-3.5 py-1.5 rounded-full border border-[#E2DDD3] dark:border-[#2D342F]"
+                  className="bg-[#FAF6F0] dark:bg-[#201824] text-[#29202B] dark:text-[#F3EEE8] text-[10px] uppercase tracking-[0.1em] font-medium px-3.5 py-1.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E]"
                 >
                   {style}
                 </span>
               ))}
-              <span className="bg-[#F8F6F1] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] text-xs font-medium px-3.5 py-1.5 rounded-full border border-[#E2DDD3] dark:border-[#2D342F]">
+              <span className="bg-[#FAF6F0] dark:bg-[#201824] text-[#29202B] dark:text-[#F3EEE8] text-[10px] uppercase tracking-[0.1em] font-medium px-3.5 py-1.5 rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E]">
                 Neutral Tones
               </span>
             </div>
 
-            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed">
-              <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">Lifestyle:</strong>{' '}
+            <p className="text-xs text-[#777078] dark:text-[#DCD4CC] leading-relaxed font-sans">
+              <strong className="text-[#29202B] dark:text-[#F3EEE8] font-semibold">Lifestyle:</strong>{' '}
               {currentUser.preferences.lifestyle}
             </p>
-            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed mt-1">
-              <strong className="text-[#202321] dark:text-[#F8F6F1] font-semibold">Staple Pieces:</strong>{' '}
+            <p className="text-xs text-[#777078] dark:text-[#DCD4CC] leading-relaxed mt-1 font-sans">
+              <strong className="text-[#29202B] dark:text-[#F3EEE8] font-semibold">Staple Pieces:</strong>{' '}
               {currentUser.preferences.staplePieces.join(', ')}
             </p>
           </div>
 
           {/* Recharts Capsule Visualizer */}
-          <div className="md:col-span-5 bg-white dark:bg-[#1C201D] rounded-2xl p-5 sm:p-6 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs flex flex-col justify-between">
+          <div className="md:col-span-5 bg-white dark:bg-[#1F1922] rounded-[3px] p-5 sm:p-6 border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] flex items-center gap-1.5">
-                <PieIcon className="w-3.5 h-3.5 text-[#727D69]" />
+              <span className="text-[10px] font-mono font-medium uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0] flex items-center gap-1.5">
+                <PieIcon className="w-3.5 h-3.5 text-[#743C49] dark:text-[#D5A6A0]" />
                 Capsule Distribution
               </span>
-              <span className="text-xs font-mono text-[#777C75] dark:text-[#A3ABA0]">{wardrobe.length} Pieces</span>
+              <span className="text-xs font-mono text-[#777078] dark:text-[#DCD4CC]">{wardrobe.length} Pieces</span>
             </div>
 
             <div className="h-36 w-full">
@@ -267,11 +268,11 @@ export const Profile: React.FC = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1C201D',
-                      borderColor: '#2D342F',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      color: '#F8F6F1',
+                      backgroundColor: '#29202B',
+                      borderColor: '#392F3E',
+                      borderRadius: '2px',
+                      fontSize: '11px',
+                      color: '#F3EEE8',
                     }}
                   />
                 </PieChart>
@@ -281,7 +282,7 @@ export const Profile: React.FC = () => {
         </div>
 
         {/* Profile Tabs Navigation */}
-        <div className="flex items-center gap-6 border-b border-zinc-200 dark:border-zinc-800 mb-6 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-6 border-b border-[#DCD4CC] dark:border-[#392F3E] mb-6 overflow-x-auto hide-scrollbar">
           {[
             { id: 'Styling', label: 'Styling Profile & Routine', count: undefined, icon: Sparkles },
             { id: 'Posts', label: 'Lookbook Posts', count: myPosts.length, icon: Grid },
@@ -297,19 +298,19 @@ export const Profile: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`pb-3 min-h-[44px] text-xs sm:text-sm font-medium tracking-wide transition-all whitespace-nowrap flex items-center gap-2 relative ${
+                className={`pb-3 min-h-[44px] text-xs font-medium uppercase tracking-[0.12em] transition-all whitespace-nowrap flex items-center gap-2 relative ${
                   isCurrent
-                    ? 'text-zinc-900 dark:text-zinc-100 font-bold'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    ? 'text-[#743C49] dark:text-[#D5A6A0] font-semibold'
+                    : 'text-[#777078] hover:text-[#29202B] dark:hover:text-[#F3EEE8]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isCurrent ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-[#743C49] dark:text-[#D5A6A0]' : 'text-[#777078]'}`} />
                 <span>{tab.label}</span>
                 {typeof tab.count === 'number' && (
-                  <span className="text-xs text-zinc-400 ml-0.5">({tab.count})</span>
+                  <span className="text-[10px] font-mono text-[#777078] ml-0.5">({tab.count})</span>
                 )}
                 {isCurrent && (
-                  <div className="absolute bottom-0 inset-x-0 h-0.5 bg-zinc-900 dark:bg-zinc-100" />
+                  <div className="absolute bottom-0 inset-x-0 h-0.5 bg-[#743C49] dark:bg-[#D5A6A0]" />
                 )}
               </button>
             );

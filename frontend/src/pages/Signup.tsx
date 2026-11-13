@@ -93,39 +93,48 @@ export const Signup: React.FC = () => {
   const displayedError = formError || authError;
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] dark:bg-[#141715] flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+    <div className="min-h-screen bg-[#F3EEE8] dark:bg-[#1A151C] flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       {/* Top Bar with brand */}
       <div className="max-w-md w-full mx-auto flex items-center justify-between">
         <div
           onClick={() => navigate('/')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-xl bg-[#202321] dark:bg-[#F8F6F1] flex items-center justify-center text-[#F8F6F1] dark:text-[#202321] font-serif font-bold text-base shadow-xs transition-colors">
+          <div className="w-9 h-9 rounded-[2px] bg-[#29202B] dark:bg-[#F3EEE8] flex items-center justify-center text-[#FFFFFF] dark:text-[#29202B] font-serif font-bold text-base shadow-xs transition-colors">
             T
           </div>
-          <span className="text-xl font-serif font-bold tracking-tight text-[#202321] dark:text-[#F8F6F1]">
+          <span className="text-xl font-serif font-bold tracking-tight text-[#29202B] dark:text-[#F3EEE8]">
             TailorBird
           </span>
         </div>
+        <Link
+          to="/"
+          className="text-xs font-sans font-medium uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] hover:text-[#29202B] dark:hover:text-[#F3EEE8]"
+        >
+          Editorial Journal
+        </Link>
       </div>
 
       {/* Main Registration Container */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md my-auto py-6">
         <div className="text-center mb-6">
-          <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
-            Membership
+          <span className="text-[10px] uppercase tracking-[0.2em] font-sans font-semibold text-[#743C49] dark:text-[#D5A6A0] block mb-2 select-none">
+            Membership · Atelier Onboarding
           </span>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
-            Create Your Account
+          <h1 className="text-3xl sm:text-4xl font-serif text-[#29202B] dark:text-[#F3EEE8] tracking-tight leading-tight">
+            <span>Begin Your</span>{' '}
+            <span className="italic font-normal font-serif text-[#743C49] dark:text-[#D5A6A0]">
+              Editorial Closet.
+            </span>
           </h1>
-          <p className="mt-1.5 text-sm text-[#777C75] dark:text-[#A3ABA0] font-sans">
-            Begin your journey towards an intentional, AI-curated style life
+          <p className="mt-2 text-xs sm:text-sm text-[#6D7068] dark:text-[#A89E9B] font-sans">
+            Start your journey toward an intentional, AI-curated wardrobe
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#1C201D] py-8 px-6 sm:px-10 rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] shadow-sm space-y-5">
+        <div className="bg-[#FFFFFF] dark:bg-[#241D27] py-8 px-6 sm:px-9 rounded-[4px] border border-[#DCD4CC] dark:border-[#392F3E] shadow-sm space-y-5">
           {displayedError && (
-            <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+            <div className="p-3.5 rounded-[2px] bg-[#A33D42]/10 border border-[#A33D42]/30 flex items-start gap-2.5 text-xs text-[#A33D42] dark:text-rose-300">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{displayedError}</span>
             </div>
@@ -140,15 +149,15 @@ export const Signup: React.FC = () => {
           />
 
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-[#E2DDD3] dark:border-[#2D342F] w-full" />
-            <span className="bg-white dark:bg-[#1C201D] px-3 text-[11px] font-mono uppercase tracking-wider font-semibold text-[#777C75] dark:text-[#A3ABA0] absolute">
+            <div className="border-t border-[#DCD4CC] dark:border-[#392F3E] w-full" />
+            <span className="bg-[#FFFFFF] dark:bg-[#241D27] px-3 text-[10px] font-sans uppercase tracking-[0.16em] font-semibold text-[#6D7068] dark:text-[#A89E9B] absolute">
               or register with email
             </span>
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+              <label className="block text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] mb-1">
                 Full Name
               </label>
               <div className="relative">
@@ -160,15 +169,15 @@ export const Signup: React.FC = () => {
                     setName(e.target.value);
                     clearErrors();
                   }}
-                  className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                  className="w-full bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] pl-10 pr-4 py-2.5 min-h-[44px] text-sm text-[#29202B] dark:text-[#F3EEE8] placeholder:text-[#6D7068]/50 focus:outline-none focus:border-[#743C49] dark:focus:border-[#D5A6A0]"
                   placeholder="e.g. Clara Vane"
                 />
-                <User className="w-4 h-4 text-[#777C75] absolute left-3.5 top-3.5" />
+                <User className="w-4 h-4 text-[#6D7068] absolute left-3.5 top-3.5" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+              <label className="block text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] mb-1">
                 Username
               </label>
               <div className="relative">
@@ -180,15 +189,15 @@ export const Signup: React.FC = () => {
                     setUsername(e.target.value);
                     clearErrors();
                   }}
-                  className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                  className="w-full bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] pl-10 pr-4 py-2.5 min-h-[44px] text-sm text-[#29202B] dark:text-[#F3EEE8] placeholder:text-[#6D7068]/50 focus:outline-none focus:border-[#743C49] dark:focus:border-[#D5A6A0]"
                   placeholder="claravane"
                 />
-                <AtSign className="w-4 h-4 text-[#777C75] absolute left-3.5 top-3.5" />
+                <AtSign className="w-4 h-4 text-[#6D7068] absolute left-3.5 top-3.5" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+              <label className="block text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] mb-1">
                 Email Address
               </label>
               <div className="relative">
@@ -200,16 +209,16 @@ export const Signup: React.FC = () => {
                     setEmail(e.target.value);
                     clearErrors();
                   }}
-                  className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-10 pr-4 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                  className="w-full bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] pl-10 pr-4 py-2.5 min-h-[44px] text-sm text-[#29202B] dark:text-[#F3EEE8] placeholder:text-[#6D7068]/50 focus:outline-none focus:border-[#743C49] dark:focus:border-[#D5A6A0]"
                   placeholder="you@domain.com"
                 />
-                <Mail className="w-4 h-4 text-[#777C75] absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-[#6D7068] absolute left-3.5 top-3.5" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+                <label className="block text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -221,15 +230,15 @@ export const Signup: React.FC = () => {
                       setPassword(e.target.value);
                       clearErrors();
                     }}
-                    className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-9 pr-8 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                    className="w-full bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] pl-9 pr-8 py-2.5 min-h-[44px] text-sm text-[#29202B] dark:text-[#F3EEE8] placeholder:text-[#6D7068]/50 focus:outline-none focus:border-[#743C49] dark:focus:border-[#D5A6A0]"
                     placeholder="Min 6 chars"
                   />
-                  <Lock className="w-3.5 h-3.5 text-[#777C75] absolute left-3 top-3.5" />
+                  <Lock className="w-3.5 h-3.5 text-[#6D7068] absolute left-3 top-3.5" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0] mb-1">
+                <label className="block text-[10px] font-sans font-semibold uppercase tracking-[0.14em] text-[#6D7068] dark:text-[#A89E9B] mb-1">
                   Confirm
                 </label>
                 <div className="relative">
@@ -241,14 +250,14 @@ export const Signup: React.FC = () => {
                       setConfirmPassword(e.target.value);
                       clearErrors();
                     }}
-                    className="w-full bg-[#F8F6F1] dark:bg-[#242A25] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl pl-9 pr-8 py-2.5 min-h-[44px] text-base sm:text-sm text-[#202321] dark:text-[#F8F6F1] placeholder:text-[#777C75]/60 focus:outline-none focus:ring-1 focus:ring-[#727D69]"
+                    className="w-full bg-[#FAF6F0] dark:bg-[#1A151C] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] pl-9 pr-8 py-2.5 min-h-[44px] text-sm text-[#29202B] dark:text-[#F3EEE8] placeholder:text-[#6D7068]/50 focus:outline-none focus:border-[#743C49] dark:focus:border-[#D5A6A0]"
                     placeholder="Repeat"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-2.5 top-3 p-1 text-[#777C75] hover:text-[#202321] dark:hover:text-[#F8F6F1] cursor-pointer"
+                    className="absolute right-2.5 top-3 p-1 text-[#6D7068] hover:text-[#29202B] dark:hover:text-[#F3EEE8] cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -265,9 +274,9 @@ export const Signup: React.FC = () => {
                     setAgreeTerms(e.target.checked);
                     clearErrors();
                   }}
-                  className="w-4 h-4 mt-0.5 rounded text-[#202321] focus:ring-[#727D69] border-[#E2DDD3] dark:border-[#2D342F]"
+                  className="w-4 h-4 mt-0.5 rounded-[2px] text-[#743C49] focus:ring-[#743C49] border-[#DCD4CC] dark:border-[#392F3E]"
                 />
-                <span className="text-xs text-[#777C75] dark:text-[#A3ABA0] leading-relaxed">
+                <span className="text-xs text-[#6D7068] dark:text-[#A89E9B] leading-relaxed font-sans">
                   I agree to the Terms of Service, Privacy Policy, and Community Standards.
                 </span>
               </label>
@@ -279,18 +288,18 @@ export const Signup: React.FC = () => {
               size="md"
               isLoading={loading}
               loadingText="Creating Account..."
-              className="w-full mt-2 min-h-[44px] shadow-xs cursor-pointer"
+              className="w-full mt-3 min-h-[44px] shadow-xs cursor-pointer font-sans uppercase tracking-[0.14em] text-xs"
             >
               Complete Registration
             </Button>
           </form>
 
-          <div className="pt-3 border-t border-[#E2DDD3] dark:border-[#2D342F] text-center">
-            <p className="text-xs text-[#777C75] dark:text-[#A3ABA0]">
+          <div className="pt-3 border-t border-[#DCD4CC] dark:border-[#392F3E] text-center">
+            <p className="text-xs text-[#6D7068] dark:text-[#A89E9B] font-sans">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="text-[#202321] dark:text-[#F8F6F1] hover:underline font-semibold"
+                className="text-[#743C49] dark:text-[#D5A6A0] hover:underline font-semibold ml-1"
               >
                 Sign In &rarr;
               </Link>
@@ -300,8 +309,8 @@ export const Signup: React.FC = () => {
       </div>
 
       {/* Footer minimal info */}
-      <div className="text-center text-xs font-mono text-[#777C75] dark:text-[#A3ABA0]">
-        TailorBird · Powered by Neon PostgreSQL
+      <div className="text-center text-[11px] font-sans uppercase tracking-[0.16em] text-[#6D7068] dark:text-[#A89E9B]">
+        TailorBird · Personal AI Wardrobe & Occasion Stylist
       </div>
     </div>
   );

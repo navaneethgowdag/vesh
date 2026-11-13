@@ -22,6 +22,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
@@ -451,86 +452,82 @@ export const Calendar: React.FC = () => {
     <AppShell>
       <PullToRefresh onRefresh={handleRefresh}>
         {/* Page Title & Navigation Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
-              Agenda & Outfits
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
-              Wardrobe Calendar
-            </h1>
-            <p className="text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1">
-              Synchronize your schedule, plan outfits, and harmonize your daily looks.
-            </p>
-          </div>
-
-          {/* Action Controls & Month Navigation */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh calendar"
-              className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl border border-[#E2DDD3] dark:border-[#2D342F] text-[#777C75] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] bg-white dark:bg-[#1C201D] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25] transition-all cursor-pointer flex items-center justify-center shadow-xs"
-              aria-label="Refresh calendar"
-            >
-              <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
-            </button>
-
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleOpenPlanModal()}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Plan Outfit
-            </Button>
-
-            <div className="flex items-center gap-1.5 bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] rounded-xl p-1 min-h-[44px] shadow-xs">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePrevMonth}
-                icon={<ChevronLeft className="w-4 h-4" />}
+        <EditorialPageHeader
+          eyebrow="Agenda & Outfits"
+          title="Wardrobe"
+          italicTitle="Calendar."
+          description="Synchronize your schedule, plan outfits, and harmonize your daily looks."
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                title="Refresh calendar"
+                className="p-2.5 min-h-[42px] min-w-[42px] rounded-[2px] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:text-[#743C49] bg-white dark:bg-[#1F1922] hover:bg-[#FAF6F0] dark:hover:bg-[#201824] transition-all cursor-pointer flex items-center justify-center shadow-xs"
+                aria-label="Refresh calendar"
               >
-                Prev
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleToday}>
-                Today
-              </Button>
-              <span className="px-2 text-xs sm:text-sm font-serif font-bold text-[#202321] dark:text-[#F8F6F1] min-w-[130px] text-center">
-                {monthNames[month]} {year}
-              </span>
+                <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+              </button>
+
               <Button
-                variant="ghost"
+                variant="primary"
                 size="sm"
-                onClick={handleNextMonth}
-                icon={<ChevronRight className="w-4 h-4" />}
+                onClick={() => handleOpenPlanModal()}
+                icon={<Plus className="w-4 h-4" />}
+                className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
               >
-                Next
+                Plan Outfit
               </Button>
+
+              <div className="flex items-center gap-1.5 bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] rounded-[2px] p-1 min-h-[42px] shadow-xs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrevMonth}
+                  icon={<ChevronLeft className="w-4 h-4" />}
+                  className="rounded-[2px] text-xs uppercase tracking-[0.08em]"
+                >
+                  Prev
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleToday} className="rounded-[2px] border-[#DCD4CC] text-xs uppercase tracking-[0.08em]">
+                  Today
+                </Button>
+                <span className="px-2 text-xs sm:text-sm font-serif font-normal text-[#29202B] dark:text-[#F3EEE8] min-w-[130px] text-center">
+                  {monthNames[month]} {year}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNextMonth}
+                  icon={<ChevronRight className="w-4 h-4" />}
+                  className="rounded-[2px] text-xs uppercase tracking-[0.08em]"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Google Calendar Connection Status Banner */}
-        <div className="mb-6">
+        <div className="mb-8">
           {calStatus?.is_connected ? (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl bg-white dark:bg-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-[3px] bg-white dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#899783]/15 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center flex-shrink-0 border border-[#899783]/20">
+                <div className="w-10 h-10 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] text-[#743C49] dark:text-[#D5A6A0] flex items-center justify-center flex-shrink-0 border border-[#DCD4CC] dark:border-[#392F3E]">
                   <CalendarCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-[#202321] dark:text-[#F8F6F1]">
+                    <span className="font-serif text-base font-normal text-[#29202B] dark:text-[#F3EEE8]">
                       Google Calendar Connected
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.12em] px-2 py-0.5 rounded-[2px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300/40">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                       Active Sync
                     </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5 font-sans">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#777078] dark:text-[#DCD4CC] mt-0.5 font-sans">
                     {calStatus.google_email && <span>{calStatus.google_email}</span>}
                     <span>•</span>
                     <span className="font-mono">
@@ -555,6 +552,7 @@ export const Calendar: React.FC = () => {
                   onClick={handleSyncGoogle}
                   isLoading={isSyncingGoogle}
                   icon={<RefreshCw className={cn('w-3.5 h-3.5', isSyncingGoogle && 'animate-spin')} />}
+                  className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                 >
                   Sync Now
                 </Button>
@@ -563,6 +561,7 @@ export const Calendar: React.FC = () => {
                   size="sm"
                   onClick={handleOpenManageCalendars}
                   icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                  className="rounded-[2px] uppercase tracking-[0.1em] text-xs"
                 >
                   Calendars
                 </Button>
@@ -572,7 +571,7 @@ export const Calendar: React.FC = () => {
                   onClick={handleDisconnectGoogle}
                   isLoading={isDisconnectingGoogle}
                   title="Disconnect Google Calendar"
-                  className="!text-[#777C75] hover:!text-rose-600"
+                  className="!text-[#777078] hover:!text-rose-600 rounded-[2px] text-xs uppercase tracking-[0.1em]"
                   icon={<Unlink className="w-3.5 h-3.5" />}
                 >
                   Disconnect
@@ -580,16 +579,16 @@ export const Calendar: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#F1EEE7] via-[#F8F6F1] to-[#F1EEE7] dark:from-[#1C201D] dark:via-[#242A25] dark:to-[#1C201D] border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-[3px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
               <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#899783]/20 text-[#727D69] dark:text-[#A3ABA0] flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-[2px] bg-white dark:bg-[#1F1922] text-[#743C49] dark:text-[#D5A6A0] flex items-center justify-center flex-shrink-0 border border-[#DCD4CC] dark:border-[#392F3E]">
                   <CalendarIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                  <h3 className="text-base font-serif font-normal text-[#29202B] dark:text-[#F3EEE8]">
                     Connect Your Google Calendar
                   </h3>
-                  <p className="text-xs text-[#777C75] dark:text-[#A3ABA0] mt-0.5 max-w-xl">
+                  <p className="text-xs text-[#777078] dark:text-[#DCD4CC] mt-0.5 max-w-xl font-sans">
                     Import meetings, flights, and dinners into TailorBird. Get personalized outfit recommendations automatically tuned to each event&apos;s dress code, formality, and local weather.
                   </p>
                 </div>
@@ -601,7 +600,7 @@ export const Calendar: React.FC = () => {
                 onClick={handleConnectGoogle}
                 isLoading={isConnectingGoogle || isLoadingStatus}
                 icon={<CalendarCheck className="w-4 h-4" />}
-                className="self-start sm:self-auto flex-shrink-0"
+                className="self-start sm:self-auto flex-shrink-0 rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
               >
                 Connect Calendar
               </Button>
@@ -610,8 +609,8 @@ export const Calendar: React.FC = () => {
         </div>
 
         {/* Source Filter Tabs */}
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-xs font-semibold text-[#777C75] dark:text-[#A3ABA0] flex items-center gap-1 mr-1">
+        <div className="flex items-center gap-2 mb-8 border-b border-[#DCD4CC] dark:border-[#392F3E] pb-3">
+          <span className="text-xs font-mono uppercase tracking-[0.14em] text-[#777078] dark:text-[#D5A6A0] flex items-center gap-1 mr-1">
             <Filter className="w-3.5 h-3.5" /> Source:
           </span>
           {(['all', 'google', 'tailorbird'] as const).map((filter) => (
@@ -619,10 +618,10 @@ export const Calendar: React.FC = () => {
               key={filter}
               onClick={() => setSourceFilter(filter)}
               className={cn(
-                'px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border',
+                'px-3.5 py-1.5 rounded-[2px] text-[10px] font-medium uppercase tracking-[0.12em] transition-all cursor-pointer border',
                 sourceFilter === filter
-                  ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent shadow-xs'
-                  : 'bg-white dark:bg-[#1C201D] border-[#E2DDD3] dark:border-[#2D342F] text-[#6B7269] dark:text-[#A3ABA0] hover:bg-[#F8F6F1] dark:hover:bg-[#242A25]'
+                  ? 'bg-[#29202B] dark:bg-[#F3EEE8] text-[#F3EEE8] dark:text-[#29202B] border-transparent shadow-xs'
+                  : 'bg-white dark:bg-[#1F1922] border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] hover:bg-[#FAF6F0] dark:hover:bg-[#201824]'
               )}
             >
               {filter === 'all'
@@ -647,9 +646,9 @@ export const Calendar: React.FC = () => {
         {/* Main Grid: Calendar Matrix (Left) + Selected Day Agenda (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Calendar Monthly Matrix (8 cols) */}
-          <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-5 shadow-xs">
+          <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] p-5 shadow-xs">
             {/* Day of Week Header */}
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center mb-2 pb-2 border-b border-[#E2DDD3] dark:border-[#2D342F] text-xs font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center mb-2 pb-2 border-b border-[#DCD4CC] dark:border-[#392F3E] text-[10px] font-mono font-medium uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0]">
               <span>Sun</span>
               <span>Mon</span>
               <span>Tue</span>
@@ -663,7 +662,7 @@ export const Calendar: React.FC = () => {
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {/* Empty offset slots */}
               {Array.from({ length: startDayIndex }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square rounded-xl opacity-0" />
+                <div key={`empty-${i}`} className="aspect-square rounded-[2px] opacity-0" />
               ))}
 
               {/* Days of the month */}
@@ -681,21 +680,21 @@ export const Calendar: React.FC = () => {
                     key={dateStr}
                     onClick={() => setSelectedDate(dateStr)}
                     className={cn(
-                      'aspect-square rounded-xl p-2 flex flex-col justify-between transition-all border text-left relative group cursor-pointer',
+                      'aspect-square rounded-[2px] p-2 flex flex-col justify-between transition-all border text-left relative group cursor-pointer',
                       isSelected
-                        ? 'bg-[#202321] dark:bg-[#F8F6F1] text-[#F8F6F1] dark:text-[#202321] border-transparent font-bold shadow-sm'
+                        ? 'bg-[#29202B] dark:bg-[#F3EEE8] text-[#F3EEE8] dark:text-[#29202B] border-transparent font-medium shadow-xs'
                         : isToday
-                          ? 'bg-[#F1EEE7] dark:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] border-[#727D69] font-bold'
-                          : 'bg-[#F8F6F1]/50 dark:bg-[#1C201D] text-[#202321] dark:text-[#F8F6F1] border-[#E2DDD3] dark:border-[#2D342F] hover:border-[#899783]'
+                          ? 'bg-[#FAF6F0] dark:bg-[#201824] text-[#29202B] dark:text-[#F3EEE8] border-[#743C49] font-medium'
+                          : 'bg-[#FAF6F0]/40 dark:bg-[#201824]/40 text-[#29202B] dark:text-[#F3EEE8] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
                       <span
                         className={cn(
-                          'text-xs font-mono font-semibold',
+                          'text-xs font-mono font-medium',
                           isSelected
-                            ? 'text-[#F8F6F1] dark:text-[#202321]'
-                            : 'text-[#202321] dark:text-[#F8F6F1]'
+                            ? 'text-[#F3EEE8] dark:text-[#29202B]'
+                            : 'text-[#29202B] dark:text-[#F3EEE8]'
                         )}
                       >
                         {dayNum}
@@ -703,7 +702,7 @@ export const Calendar: React.FC = () => {
                       {hasGoogle && (
                         <span
                           className={cn(
-                            'text-[9px] font-bold px-1 rounded',
+                            'text-[9px] font-bold px-1 rounded-[1px]',
                             isSelected
                               ? 'bg-white/20 text-white dark:bg-black/20 dark:text-black'
                               : 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
@@ -732,8 +731,8 @@ export const Calendar: React.FC = () => {
                                   : ev.status === 'completed'
                                     ? 'bg-emerald-500'
                                     : isSelected
-                                      ? 'bg-white dark:bg-[#202321]'
-                                      : 'bg-[#727D69]'
+                                      ? 'bg-white dark:bg-[#29202B]'
+                                      : 'bg-[#743C49]'
                               )}
                               title={`${ev.title || ev.occasion || 'Event'}: ${ev.status}`}
                             />
@@ -744,8 +743,8 @@ export const Calendar: React.FC = () => {
                             className={cn(
                               'text-[10px] font-mono font-bold',
                               isSelected
-                                ? 'text-[#F8F6F1] dark:text-[#202321]'
-                                : 'text-[#777C75] dark:text-[#A3ABA0]'
+                                ? 'text-[#F3EEE8] dark:text-[#29202B]'
+                                : 'text-[#777078] dark:text-[#D5A6A0]'
                             )}
                           >
                             +{dayEvts.length - 3}
@@ -761,13 +760,13 @@ export const Calendar: React.FC = () => {
 
           {/* Selected Day Agenda (4 cols) */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-            <div className="bg-white dark:bg-[#1C201D] rounded-2xl border border-[#E2DDD3] dark:border-[#2D342F] p-5 shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#E2DDD3] dark:border-[#2D342F] pb-3.5 mb-4">
+            <div className="bg-white dark:bg-[#1F1922] rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E] p-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#DCD4CC] dark:border-[#392F3E] pb-3.5 mb-4">
                 <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0]">
                     Agenda for
                   </span>
-                  <h3 className="text-base font-serif font-bold text-[#202321] dark:text-[#F8F6F1]">
+                  <h3 className="text-base font-serif font-normal text-[#29202B] dark:text-[#F3EEE8]">
                     {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
                       weekday: 'short',
                       month: 'short',
@@ -781,6 +780,7 @@ export const Calendar: React.FC = () => {
                     size="sm"
                     onClick={() => handleOpenPlanModal(selectedDate)}
                     icon={<Plus className="w-3.5 h-3.5" />}
+                    className="rounded-[2px] border-[#DCD4CC] uppercase tracking-[0.1em] text-xs"
                   >
                     Plan
                   </Button>
@@ -789,6 +789,7 @@ export const Calendar: React.FC = () => {
                     size="sm"
                     onClick={() => navigate(`/daily-fit?date=${selectedDate}`)}
                     icon={<Sparkles className="w-3.5 h-3.5" />}
+                    className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold"
                   >
                     Curate
                   </Button>

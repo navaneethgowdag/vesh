@@ -2590,6 +2590,7 @@ class RecommendationService:
                                 user_id=user_id,
                                 name=f"{occasion} Look",
                                 occasion=occasion,
+                                season="All-Season",
                             )
                         outfit.clothing_items = items
                         rec = self.db.query(Recommendation).filter(Recommendation.outfit_id == outfit.id).first()

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { useApp, useCurrentUser } from '../context/AppContext';
 import { api } from '../services/api';
 import { Occasion, CreatePollPayload } from '../types';
@@ -292,29 +293,27 @@ export const CreatePost: React.FC = () => {
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto pb-12">
-        {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            Publish Look or Poll
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-            Share your daily styling as a permanent look, 24-hour discovery moment, or ask the community with a fashion poll.
-          </p>
-        </div>
+        {/* Editorial Page Header */}
+        <EditorialPageHeader
+          eyebrow="COMMUNITY ATELIER & PUBLICATION"
+          title="Publish Look"
+          italicTitle="or Poll."
+          description="Share your daily styling as a permanent look, 24-hour discovery moment, or ask the community with a fashion poll."
+        />
 
         {/* Publication Type Selector */}
-        <div className="mb-6 bg-white dark:bg-zinc-900 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+        <div className="mb-6 bg-white dark:bg-[#1F1922] p-4 rounded-[3px] border border-[#DCD4CC] dark:border-[#392F3E]">
+          <label className="block text-[10px] font-mono uppercase tracking-[0.16em] text-[#777078] mb-2">
             Publication Channel
           </label>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setPublishType('post')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-[2px] text-xs font-mono uppercase tracking-[0.12em] transition-all cursor-pointer border ${
                 publishType === 'post'
-                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
-                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                  ? 'bg-[#29202B] dark:bg-[#FAF6F0] text-[#F3EEE8] dark:text-[#29202B] border-transparent font-semibold shadow-xs'
+                  : 'bg-[#FAF6F0] dark:bg-[#241D27] text-[#777078] dark:text-[#DCD4CC] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
               }`}
             >
               <Layers className="w-4 h-4 flex-shrink-0" />
@@ -323,10 +322,10 @@ export const CreatePost: React.FC = () => {
             <button
               type="button"
               onClick={() => setPublishType('moment')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-[2px] text-xs font-mono uppercase tracking-[0.12em] transition-all cursor-pointer border ${
                 publishType === 'moment'
-                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
-                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                  ? 'bg-[#29202B] dark:bg-[#FAF6F0] text-[#F3EEE8] dark:text-[#29202B] border-transparent font-semibold shadow-xs'
+                  : 'bg-[#FAF6F0] dark:bg-[#241D27] text-[#777078] dark:text-[#DCD4CC] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
               }`}
             >
               <Clock className="w-4 h-4 flex-shrink-0" />
@@ -335,32 +334,32 @@ export const CreatePost: React.FC = () => {
             <button
               type="button"
               onClick={() => setPublishType('poll')}
-              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+              className={`flex items-center justify-center gap-1.5 py-3 px-2 sm:px-4 min-h-[44px] rounded-[2px] text-xs font-mono uppercase tracking-[0.12em] transition-all cursor-pointer border ${
                 publishType === 'poll'
-                  ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent'
-                  : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                  ? 'bg-[#29202B] dark:bg-[#FAF6F0] text-[#F3EEE8] dark:text-[#29202B] border-transparent font-semibold shadow-xs'
+                  : 'bg-[#FAF6F0] dark:bg-[#241D27] text-[#777078] dark:text-[#DCD4CC] border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
               }`}
             >
               <BarChart2 className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">Community Poll</span>
             </button>
           </div>
-          <div className="mt-2.5 px-1 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+          <div className="mt-2.5 px-1 text-xs text-[#777078] font-mono flex items-center gap-1.5">
             {publishType === 'post' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#743C49] inline-block flex-shrink-0" />
                 <span>Permanent Post: Stays on your profile grid and appears in your followers&apos; feed with optional poll.</span>
               </>
             )}
             {publishType === 'moment' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-amber-500 inline-block flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B49B82] inline-block flex-shrink-0" />
                 <span>24-Hour Moment: Appears in For You discovery deck. Automatically expires after 24 hours.</span>
               </>
             )}
             {publishType === 'poll' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-blue-500 inline-block flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D5A6A0] inline-block flex-shrink-0" />
                 <span>Community Poll: Collect style opinions, vote on pieces or outfit pairings directly from the fashion community.</span>
               </>
             )}

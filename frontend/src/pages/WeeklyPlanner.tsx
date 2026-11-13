@@ -18,6 +18,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
+import { EditorialPageHeader } from '../components/editorial/EditorialPageHeader';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { useApp } from '../context/AppContext';
@@ -185,90 +186,83 @@ export const WeeklyPlanner: React.FC = () => {
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-8 select-none">
-        {/* Header with Navigation & Generation */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <span className="text-xs uppercase tracking-widest font-semibold text-[#777C75] dark:text-[#A3ABA0] block mb-1">
-              AI Wardrobe Intelligence
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] tracking-tight">
-              Weekly Outfit Planner
-            </h1>
-            <p className="text-xs md:text-sm text-[#777C75] dark:text-[#A3ABA0] mt-1 font-sans">
-              Coordinated 7-day looks powered by calendar events, weather forecasts & colour harmony.
-            </p>
-          </div>
+        {/* Editorial Page Header */}
+        <EditorialPageHeader
+          eyebrow="AI Wardrobe Intelligence"
+          title="Weekly Outfit"
+          italicTitle="Planner."
+          description="Coordinated 7-day looks powered by calendar events, weather forecasts & colour harmony."
+          actions={
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center bg-white dark:bg-[#1F1922] rounded-[2px] p-1 border border-[#DCD4CC] dark:border-[#392F3E] shadow-xs">
+                <button
+                  onClick={() => shiftWeek(-1)}
+                  className="p-1.5 rounded-[2px] hover:bg-[#FAF6F0] dark:hover:bg-[#201824] text-[#29202B] dark:text-[#F3EEE8] transition-colors cursor-pointer"
+                  title="Previous Week"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-3 text-xs font-mono font-medium text-[#29202B] dark:text-[#F3EEE8] min-w-[130px] text-center">
+                  {formatWeekRange(currentWeekStart)}
+                </span>
+                <button
+                  onClick={() => shiftWeek(1)}
+                  className="p-1.5 rounded-[2px] hover:bg-[#FAF6F0] dark:hover:bg-[#201824] text-[#29202B] dark:text-[#F3EEE8] transition-colors cursor-pointer"
+                  title="Next Week"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
 
-          {/* Week Selector & Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center bg-white dark:bg-[#1C201D] rounded-xl p-1 border border-[#E2DDD3] dark:border-[#2D342F] shadow-xs">
-              <button
-                onClick={() => shiftWeek(-1)}
-                className="p-1.5 rounded-lg hover:bg-[#F8F6F1] dark:hover:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] transition-colors cursor-pointer"
-                title="Previous Week"
+              <Button
+                onClick={() => handleGeneratePlan(plan !== null)}
+                isLoading={generating}
+                variant="primary"
+                className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold px-4 py-2"
               >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-3 text-xs font-mono font-semibold text-[#202321] dark:text-[#F8F6F1] min-w-[130px] text-center">
-                {formatWeekRange(currentWeekStart)}
-              </span>
-              <button
-                onClick={() => shiftWeek(1)}
-                className="p-1.5 rounded-lg hover:bg-[#F8F6F1] dark:hover:bg-[#242A25] text-[#202321] dark:text-[#F8F6F1] transition-colors cursor-pointer"
-                title="Next Week"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                {generating ? (
+                  <span>Generating...</span>
+                ) : plan ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Regenerate Week</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Generate Plan</span>
+                  </>
+                )}
+              </Button>
             </div>
-
-            <Button
-              onClick={() => handleGeneratePlan(plan !== null)}
-              isLoading={generating}
-              variant="primary"
-              className="flex items-center gap-1.5 shadow-xs"
-            >
-              {generating ? (
-                <span>Generating...</span>
-              ) : plan ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Regenerate Week</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Generate Plan</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-10 h-10 border-2 border-[#E2DDD3] dark:border-[#2D342F] border-t-[#727D69] rounded-full animate-spin mb-4" />
-            <p className="text-sm font-medium text-[#777C75] dark:text-[#A3ABA0]">
+            <div className="w-10 h-10 border-2 border-[#DCD4CC] dark:border-[#392F3E] border-t-[#743C49] rounded-full animate-spin mb-4" />
+            <p className="text-sm font-medium text-[#777078] dark:text-[#DCD4CC]">
               Loading your weekly schedule & outfits...
             </p>
           </div>
         ) : !plan || plan.days.length === 0 ? (
           /* Empty / Unplanned State */
-          <div className="bg-white dark:bg-[#1C201D] rounded-2xl p-12 border border-[#E2DDD3] dark:border-[#2D342F] text-center max-w-xl mx-auto shadow-xs">
-            <div className="w-16 h-16 rounded-2xl bg-[#899783]/20 flex items-center justify-center mx-auto mb-5 text-[#727D69] dark:text-[#A3ABA0]">
-              <CalendarIcon className="w-8 h-8 text-[#727D69]" />
+          <div className="bg-white dark:bg-[#1F1922] rounded-[3px] p-12 border border-[#DCD4CC] dark:border-[#392F3E] text-center max-w-xl mx-auto shadow-xs">
+            <div className="w-16 h-16 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] flex items-center justify-center mx-auto mb-5 text-[#743C49] dark:text-[#D5A6A0]">
+              <CalendarIcon className="w-8 h-8 text-[#743C49]" />
             </div>
-            <h3 className="text-xl font-serif font-bold text-[#202321] dark:text-[#F8F6F1] mb-2">
+            <h3 className="text-2xl font-normal font-serif text-[#29202B] dark:text-[#F3EEE8] mb-2">
               No Plan for {formatWeekRange(currentWeekStart)}
             </h3>
-            <p className="text-xs md:text-sm text-[#777C75] dark:text-[#A3ABA0] mb-6 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs md:text-sm text-[#777078] dark:text-[#DCD4CC] mb-6 max-w-sm mx-auto leading-relaxed font-sans">
               Generate a tailored seven-day plan matched to your calendar events, local weather, and rotation history.
             </p>
             <Button
               onClick={() => handleGeneratePlan(false)}
               isLoading={generating}
               variant="primary"
-              className="px-6"
+              className="rounded-[2px] bg-[#743C49] hover:bg-[#5b2f3a] text-white uppercase tracking-[0.14em] text-xs font-semibold px-6"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate 7-Day Plan
@@ -289,43 +283,43 @@ export const WeeklyPlanner: React.FC = () => {
                 <div
                   key={day.id}
                   className={cn(
-                    'flex flex-col bg-white dark:bg-[#1C201D] rounded-2xl border transition-all duration-300 overflow-hidden shadow-xs',
+                    'flex flex-col bg-white dark:bg-[#1F1922] rounded-[3px] border transition-all duration-300 overflow-hidden shadow-xs',
                     isToday
-                      ? 'border-[#727D69] ring-2 ring-[#727D69]/20'
-                      : 'border-[#E2DDD3] dark:border-[#2D342F] hover:border-[#899783]'
+                      ? 'border-[#743C49] ring-1 ring-[#743C49]/30'
+                      : 'border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49]'
                   )}
                 >
                   {/* Card Header: Day & Date */}
                   <div className={cn(
                     'p-3.5 border-b flex items-center justify-between',
                     isToday
-                      ? 'bg-[#899783]/15 dark:bg-[#899783]/10 border-[#727D69]/30'
-                      : 'bg-[#F8F6F1]/70 dark:bg-[#242A25]/40 border-[#E2DDD3] dark:border-[#2D342F]'
+                      ? 'bg-[#FAF6F0] dark:bg-[#201824] border-[#743C49]/30'
+                      : 'bg-[#FAF6F0]/50 dark:bg-[#201824]/40 border-[#DCD4CC] dark:border-[#392F3E]'
                   )}>
                     <div>
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#777C75] dark:text-[#A3ABA0]">
+                      <span className="text-[10px] font-mono font-medium uppercase tracking-[0.16em] text-[#777078] dark:text-[#D5A6A0]">
                         {weekday}
                       </span>
-                      <div className="text-xs font-semibold text-[#202321] dark:text-[#F8F6F1]">
+                      <div className="text-xs font-serif font-normal text-[#29202B] dark:text-[#F3EEE8]">
                         {dateFormatted}
                       </div>
                     </div>
 
                     {/* Status Pill */}
                     {day.status === 'worn' ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40">
+                      <span className="px-2 py-0.5 rounded-[2px] text-[9px] font-mono font-medium uppercase tracking-[0.1em] bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40">
                         Worn
                       </span>
                     ) : day.status === 'accepted' ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                      <span className="px-2 py-0.5 rounded-[2px] text-[9px] font-mono font-medium uppercase tracking-[0.1em] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
                         Accepted
                       </span>
                     ) : day.status === 'needs_manual_selection' ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
+                      <span className="px-2 py-0.5 rounded-[2px] text-[9px] font-mono font-medium uppercase tracking-[0.1em] bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
                         Manual
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-[#E9E6DE] dark:bg-[#2D342F] text-[#202321] dark:text-[#F8F6F1]">
+                      <span className="px-2 py-0.5 rounded-[2px] text-[9px] font-mono font-medium uppercase tracking-[0.1em] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8]">
                         Planned
                       </span>
                     )}

@@ -72,7 +72,7 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
   return (
     <div className={`space-y-1.5 ${className}`} ref={containerRef}>
       {/* Label and Badge Row */}
-      <div className="flex items-center justify-between gap-1.5 text-xs">
+      <div className="flex items-center justify-between gap-1.5 text-xs min-h-[22px]">
         <label className="font-semibold text-[#29202B] dark:text-[#F3EEE8] flex items-center gap-1 font-sans">
           {label}
           {required && <span className="text-[#A33D42]">*</span>}

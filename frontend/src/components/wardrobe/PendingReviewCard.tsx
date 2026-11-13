@@ -88,14 +88,14 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
   return (
     <div
       onClick={() => isReady && onReview(item)}
-      className={`group relative bg-white dark:bg-[#1C201D] rounded-2xl border overflow-hidden transition-all duration-300 flex flex-col ${
+      className={`group relative bg-white dark:bg-[#1F1922] rounded-[3px] border overflow-hidden transition-all duration-300 flex flex-col ${
         isReady
-          ? 'border-[#B5AA99]/60 hover:border-[#899783] cursor-pointer shadow-sm hover:shadow-md'
-          : 'border-[#E2DDD3] dark:border-[#2D342F] opacity-90'
+          ? 'border-[#DCD4CC] dark:border-[#392F3E] hover:border-[#743C49] dark:hover:border-[#D5A6A0] cursor-pointer shadow-xs'
+          : 'border-[#DCD4CC]/60 dark:border-[#392F3E]/60 opacity-90'
       }`}
     >
       {/* Garment Image */}
-      <div className="relative aspect-[3/4] bg-[#F1EEE7] dark:bg-[#242A25] overflow-hidden">
+      <div className="relative aspect-[3/4] bg-[#FAF6F0] dark:bg-[#201824] overflow-hidden">
         <img
           src={imgUrl}
           alt={item.name}
@@ -111,29 +111,29 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
         {/* Status Pills */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
           {isProcessing && (
-            <span className="bg-[#202321]/90 backdrop-blur-md text-[#F8F6F1] text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-white/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#899783] animate-ping" />
+            <span className="bg-[#29202B]/95 backdrop-blur-md text-[#F3EEE8] text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1.5 shadow-xs border border-white/10">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D5A6A0] animate-ping" />
               AI Analyzing...
             </span>
           )}
 
           {isFailed && (
-            <span className="bg-rose-700/90 backdrop-blur-md text-white text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+            <span className="bg-rose-700/95 backdrop-blur-md text-white text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1 shadow-xs">
               <AlertCircle className="w-3 h-3" />
               Analysis Failed
             </span>
           )}
 
           {isManualReview && (
-            <span className="bg-amber-900/90 backdrop-blur-md text-amber-100 text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-amber-600/30">
-              <AlertCircle className="w-3 h-3 text-amber-300" />
+            <span className="bg-[#B49B82]/95 backdrop-blur-md text-[#29202B] text-[9px] uppercase tracking-[0.14em] font-semibold px-2 py-1 rounded-[2px] flex items-center gap-1 shadow-xs border border-[#29202B]/20">
+              <AlertCircle className="w-3 h-3 text-[#29202B]" />
               Manual Review Needed
             </span>
           )}
 
           {isReady && !isManualReview && (
-            <span className="bg-[#202321]/90 backdrop-blur-md text-[#B5AA99] text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-[#B5AA99]/30">
-              <Sparkles className="w-3 h-3 text-[#B5AA99]" />
+            <span className="bg-[#29202B]/90 backdrop-blur-md text-[#D5A6A0] text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1.5 shadow-xs border border-[#D5A6A0]/30">
+              <Sparkles className="w-3 h-3 text-[#D5A6A0]" />
               Review Needed
             </span>
           )}
@@ -143,7 +143,7 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
         <button
           onClick={handleDelete}
           disabled={isLocked}
-          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-rose-600 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-[2px] bg-black/60 backdrop-blur-md text-white hover:bg-[#743C49] transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
           title="Delete pending garment"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -154,13 +154,13 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
       <div className="p-4 flex flex-col flex-1 justify-between gap-3">
         <div>
           <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#727D69] dark:text-[#A3ABA0] bg-[#E9E6DE]/60 dark:bg-[#242A25] px-2 py-0.5 rounded-full">
+            <span className="text-[9px] font-medium uppercase tracking-[0.16em] text-[#743C49] dark:text-[#D5A6A0] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] px-2 py-0.5 rounded-[2px]">
               {item.category || 'Apparel'}
             </span>
             {item.color && (
-              <span className="text-[11px] text-[#777C75] dark:text-[#A3ABA0] flex items-center gap-1.5">
+              <span className="text-[11px] text-[#777078] dark:text-[#D5A6A0] flex items-center gap-1.5 font-sans">
                 <span
-                  className="w-2.5 h-2.5 rounded-full border border-black/20"
+                  className="w-2.5 h-2.5 rounded-[2px] border border-black/20"
                   style={{ backgroundColor: item.color.toLowerCase() }}
                 />
                 {item.color}
@@ -168,24 +168,24 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
             )}
           </div>
 
-          <h3 className="text-sm font-semibold text-[#202321] dark:text-[#F8F6F1] truncate" title={item.name}>
+          <h3 className="font-serif text-base font-normal text-[#29202B] dark:text-[#F3EEE8] truncate group-hover:text-[#743C49] dark:group-hover:text-[#D5A6A0] transition-colors" title={item.name}>
             {item.name}
           </h3>
 
           {/* Predicted Attribute Badges */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
             {item.pattern && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E9E6DE]/50 dark:bg-[#242A25] text-[#292D29] dark:text-[#A3ABA0] font-mono">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] text-[#29202B] dark:text-[#F3EEE8] font-mono uppercase tracking-[0.05em]">
                 {item.pattern}
               </span>
             )}
             {item.season && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E9E6DE]/50 dark:bg-[#242A25] text-[#292D29] dark:text-[#A3ABA0]">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] dark:text-[#B49B82] uppercase tracking-[0.08em]">
                 {item.season}
               </span>
             )}
             {item.style && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E9E6DE]/50 dark:bg-[#242A25] text-[#292D29] dark:text-[#A3ABA0]">
+              <span className="text-[9px] px-2 py-0.5 rounded-[2px] bg-[#FAF6F0] dark:bg-[#201824] border border-[#DCD4CC] dark:border-[#392F3E] text-[#777078] dark:text-[#B49B82] uppercase tracking-[0.08em]">
                 {item.style}
               </span>
             )}
@@ -193,7 +193,7 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="pt-2 border-t border-[#E2DDD3] dark:border-[#2D342F] flex items-center gap-2">
+        <div className="pt-2 border-t border-[#DCD4CC] dark:border-[#392F3E] flex items-center gap-2">
           {isReady && (
             <>
               <Button
@@ -201,7 +201,7 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
                 size="sm"
                 onClick={() => onReview(item)}
                 icon={<ArrowRight className="w-3.5 h-3.5" />}
-                className="w-full text-xs h-8"
+                className="w-full text-xs h-8 rounded-[2px] uppercase tracking-[0.1em]"
               >
                 Review Piece
               </Button>
@@ -212,7 +212,7 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
                 disabled={isLocked}
                 title="Quick Accept with AI predictions"
                 icon={<Check className="w-3.5 h-3.5 text-emerald-600" />}
-                className="px-2.5 h-8 flex-shrink-0"
+                className="px-2.5 h-8 flex-shrink-0 rounded-[2px] border-[#DCD4CC]"
               />
             </>
           )}
@@ -224,15 +224,15 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
               onClick={handleRetry}
               disabled={isLocked}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
-              className="w-full text-xs h-8"
+              className="w-full text-xs h-8 rounded-[2px] uppercase tracking-[0.1em] border-[#DCD4CC]"
             >
               Retry AI Analysis
             </Button>
           )}
 
           {isProcessing && (
-            <div className="w-full text-center py-1.5 text-xs text-[#777C75] dark:text-[#A3ABA0] flex items-center justify-center gap-1.5 font-mono">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#899783]" />
+            <div className="w-full text-center py-1.5 text-xs text-[#777078] dark:text-[#D5A6A0] flex items-center justify-center gap-1.5 font-mono">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#743C49]" />
               <span>Analyzing...</span>
             </div>
           )}
