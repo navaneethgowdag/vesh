@@ -206,6 +206,7 @@ async def batch_upload_clothing_images(
     image_service = ClothingImageService(db)
 
     first_valid_clothing_id = None
+    valid_clothing_ids: List[UUID] = []
     seen_hashes_in_batch = set()
 
     for idx, file in enumerate(files):
@@ -289,6 +290,7 @@ async def batch_upload_clothing_images(
             })
             analysis.feature_vector = fv
 
+            valid_clothing_ids.append(clothing.id)
             if first_valid_clothing_id is None:
                 first_valid_clothing_id = clothing.id
         else:
@@ -324,16 +326,17 @@ async def batch_upload_clothing_images(
 
     db.commit()
 
-    # Enqueue only the first valid item to initiate sequential processing
-    if first_valid_clothing_id is not None:
+    # Enqueue every valid item for durable background AI processing
+    if valid_clothing_ids:
         job_service = JobService(db)
-        job_service.enqueue_garment_processing(
-            user_id=current_user.id,
-            clothing_id=first_valid_clothing_id,
-            batch_id=batch_id,
-            sequence_order=0,
-        )
-        logger.info(f"[BatchUpload] Batch {batch_id} created with {len(files)} items. Initiated with item {first_valid_clothing_id}.")
+        for seq_idx, cid in enumerate(valid_clothing_ids):
+            job_service.enqueue_garment_processing(
+                user_id=current_user.id,
+                clothing_id=cid,
+                batch_id=batch_id,
+                sequence_order=seq_idx,
+            )
+        logger.info(f"[BatchUpload] Batch {batch_id} created with {len(files)} items. Enqueued {len(valid_clothing_ids)} items for AI processing.")
 
     return BatchUploadResponse(
         batch_id=batch_id,

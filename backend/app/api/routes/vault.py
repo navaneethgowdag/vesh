@@ -76,6 +76,7 @@ def list_vault_items(
 
 
 @router.put("/items/{item_id}/settings", response_model=ClothingResponse)
+@router.post("/items/{item_id}/settings", response_model=ClothingResponse)
 def update_vault_settings(
     item_id: UUID,
     settings_in: VaultSettingsUpdateRequest,
@@ -246,19 +247,25 @@ def prepare_event_outfit(
     one_pieces = [i for i in eligible_vault if classify_garment(i) in ("western_dress", "indian_saree", "indian_lehenga")]
 
     for op in one_pieces[:2]:
+        p_data = [{"id": str(op.id), "name": op.name, "category": op.category, "color": op.color, "image": op.preferred_image_url, "image_url": op.preferred_image_url}]
         recommended_combos.append({
             "style": "One-Piece / Traditional",
-            "items": [{"id": str(op.id), "name": op.name, "category": op.category, "color": op.color, "image_url": op.preferred_image_url}],
+            "style_notes": "One-Piece / Traditional",
+            "items": p_data,
+            "pieces": p_data,
             "ready": True,
         })
     for t in tops[:2]:
         for b in bottoms[:2]:
+            p_data = [
+                {"id": str(t.id), "name": t.name, "category": t.category, "color": t.color, "image": t.preferred_image_url, "image_url": t.preferred_image_url},
+                {"id": str(b.id), "name": b.name, "category": b.category, "color": b.color, "image": b.preferred_image_url, "image_url": b.preferred_image_url},
+            ]
             recommended_combos.append({
                 "style": "Coordinated Two-Piece",
-                "items": [
-                    {"id": str(t.id), "name": t.name, "category": t.category, "color": t.color, "image_url": t.preferred_image_url},
-                    {"id": str(b.id), "name": b.name, "category": b.category, "color": b.color, "image_url": b.preferred_image_url},
-                ],
+                "style_notes": "Coordinated Two-Piece",
+                "items": p_data,
+                "pieces": p_data,
                 "ready": True,
             })
 
@@ -266,17 +273,22 @@ def prepare_event_outfit(
     if missing_components:
         status_readiness = "needs_attention" if any(m["severity"] == "critical" for m in missing_components) else "partial"
 
+    readiness_score = 100 if status_readiness == "ready" else (65 if status_readiness == "partial" else 35)
+
     return VaultEventPrepResponse(
         occasion=canon.display_name,
+        event_name=req.event_name or f"{canon.display_name} Event",
         event_date=target_date,
         attendee_role=req.attendee_role or "guest",
         target_formality=round(target_formality, 2),
+        readiness_score=readiness_score,
+        status=status_readiness,
+        readiness_status=status_readiness,
         eligible_vault_items=eligible_vault[:15],
         recommended_combinations=recommended_combos[:3],
         missing_components=missing_components,
         care_reminders=care_reminders[:5],
         weather_note=f"Targeting formal elevation {round(target_formality, 2)} for {canon.display_name}.",
-        readiness_status=status_readiness,
     )
 
 
@@ -304,15 +316,15 @@ def get_vault_analytics(
 
     # Valuation & CPW
     prices = [float(i.purchase_price) for i in vault_items if getattr(i, "purchase_price", None) is not None]
-    total_val = sum(prices) if prices else None
+    total_val = sum(prices) if prices else 0.0
 
     cpw_list = [i.cost_per_wear for i in vault_items if i.cost_per_wear is not None]
-    avg_cpw = round(sum(cpw_list) / len(cpw_list), 2) if cpw_list else None
+    avg_cpw = round(sum(cpw_list) / len(cpw_list), 2) if cpw_list else 0.0
 
     # Most worn & never worn
     worn_items = sorted(vault_items, key=lambda x: x.wear_count, reverse=True)
     most_used = [
-        {"id": str(i.id), "name": i.name, "wear_count": i.wear_count, "cost_per_wear": i.cost_per_wear, "image_url": i.preferred_image_url}
+        {"id": str(i.id), "name": i.name, "times_worn": i.wear_count, "wear_count": i.wear_count, "cost_per_wear": i.cost_per_wear or 0.0, "image_url": i.preferred_image_url}
         for i in worn_items if i.wear_count > 0
     ][:5]
 
@@ -331,12 +343,16 @@ def get_vault_analytics(
         total_vault_items=len(vault_items),
         luxury_items_count=luxury_count,
         elevated_items_count=elevated_count,
+        reserved_items_count=reserved_count,
         reserved_count=reserved_count,
         in_care_count=in_care_count,
+        most_worn_luxury=most_used,
         most_used_special_items=most_used,
         never_worn_special_items=never_worn,
+        total_valuation=total_val,
         total_vault_valuation=total_val,
         items_with_price_count=len(prices),
         average_cost_per_wear=avg_cpw,
+        care_type_breakdown=care_breakdown,
         care_breakdown=care_breakdown,
     )

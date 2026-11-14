@@ -283,7 +283,7 @@ def process_garment_image_job(
             except Exception as jup_err:
                 logger.warning(f"Could not update BackgroundJob status: {jup_err}")
 
-        # Batch Advancement Hook: advance sequential processing to next queued item in batch
+        # Batch Sync Hook: synchronize batch processing status in Neon DB
         try:
             clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
             batch_id_str = None
@@ -294,23 +294,12 @@ def process_garment_image_job(
 
             if batch_id_str:
                 from app.services.batch_upload_service import BatchUploadService
-                from app.services.job_service import JobService
                 batch_svc = BatchUploadService(db)
                 batch_uuid = UUID(batch_id_str)
-                next_cid = batch_svc.get_next_queued_item(batch_id=batch_uuid, user_id=user_uuid)
-                if next_cid:
-                    logger.info(f"[Worker:BatchAdvance] Advancing batch {batch_uuid} to next item: {next_cid}")
-                    job_svc = JobService(db)
-                    job_svc.enqueue_garment_processing(
-                        user_id=user_uuid,
-                        clothing_id=next_cid,
-                        batch_id=batch_uuid,
-                    )
-                else:
-                    logger.info(f"[Worker:BatchComplete] Batch {batch_uuid} processing cycle finished.")
-                    batch_svc.get_batch_status(batch_uuid, user_uuid)
-        except Exception as b_adv_err:
-            logger.warning(f"[Worker:BatchAdvance] Error attempting to advance batch: {b_adv_err}")
+                batch_svc.get_batch_status(batch_uuid, user_uuid)
+                logger.info(f"[Worker:BatchSync] Synchronized batch status for batch {batch_uuid}.")
+        except Exception as b_sync_err:
+            logger.warning(f"[Worker:BatchSync] Error synchronizing batch status: {b_sync_err}")
 
         logger.info(f"[Worker:Completed] Garment job_id={job_id}, clothing_id={clothing_id} finished in {dur}s with status '{result.get('status')}'.")
         return result
@@ -329,7 +318,7 @@ def process_garment_image_job(
                         job.error_message = str(e)
                         db.commit()
 
-            # Advance batch even on failure so remaining queue does not stall
+            # Synchronize batch status even on failure
             batch_id_str = None
             clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
             if clothing_item and clothing_item.analysis and clothing_item.analysis.feature_vector:
@@ -339,22 +328,11 @@ def process_garment_image_job(
 
             if batch_id_str and user_uuid:
                 from app.services.batch_upload_service import BatchUploadService
-                from app.services.job_service import JobService
                 batch_svc = BatchUploadService(db)
                 batch_uuid = UUID(batch_id_str)
-                next_cid = batch_svc.get_next_queued_item(batch_id=batch_uuid, user_id=user_uuid)
-                if next_cid:
-                    logger.info(f"[Worker:BatchAdvanceOnError] Advancing batch {batch_uuid} to next item after error: {next_cid}")
-                    job_svc = JobService(db)
-                    job_svc.enqueue_garment_processing(
-                        user_id=user_uuid,
-                        clothing_id=next_cid,
-                        batch_id=batch_uuid,
-                    )
-                else:
-                    batch_svc.get_batch_status(batch_uuid, user_uuid)
+                batch_svc.get_batch_status(batch_uuid, user_uuid)
         except Exception as b_adv_fail_err:
-            logger.warning(f"[Worker:BatchAdvanceOnError] Could not advance batch after error: {b_adv_fail_err}")
+            logger.warning(f"[Worker:BatchSyncOnError] Could not synchronize batch after error: {b_adv_fail_err}")
         raise
     finally:
         # Release concurrency lock

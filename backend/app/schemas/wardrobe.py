@@ -316,6 +316,7 @@ class VaultReserveToggleRequest(BaseModel):
 
 class VaultEventPrepRequest(BaseModel):
     event_id: Optional[UUID] = None
+    event_name: Optional[str] = None
     occasion: Optional[str] = None
     event_date: Optional[date] = None
     attendee_role: Optional[str] = "guest"  # 'guest', 'close_family', 'wedding_party', 'groom_bride', 'formal_guest', 'traditional_guest'
@@ -323,29 +324,36 @@ class VaultEventPrepRequest(BaseModel):
 
 class VaultEventPrepResponse(BaseModel):
     occasion: str
+    event_name: Optional[str] = "Special Occasion"
     event_date: Optional[date] = None
     attendee_role: str = "guest"
-    target_formality: float
+    target_formality: float = 0.8
+    readiness_score: int = 100
+    status: str = "ready"  # 'ready', 'needs_prep', 'action_required', 'partial', 'needs_attention'
+    readiness_status: str = "ready"
     eligible_vault_items: List[ClothingResponse] = Field(default_factory=list)
     recommended_combinations: List[dict] = Field(default_factory=list)
     missing_components: List[dict] = Field(default_factory=list)
-    care_reminders: List[str] = Field(default_factory=list)
+    care_reminders: List[Any] = Field(default_factory=list)
     weather_note: Optional[str] = None
-    readiness_status: str  # 'ready', 'partial', 'needs_attention'
 
 
 class VaultAnalyticsResponse(BaseModel):
-    total_vault_items: int
-    luxury_items_count: int
-    elevated_items_count: int
-    reserved_count: int
-    in_care_count: int
+    total_vault_items: int = 0
+    luxury_items_count: int = 0
+    elevated_items_count: int = 0
+    reserved_items_count: int = 0
+    reserved_count: int = 0
+    in_care_count: int = 0
+    total_valuation: float = 0.0
+    total_vault_valuation: Optional[float] = 0.0
+    items_with_price_count: int = 0
+    average_cost_per_wear: float = 0.0
+    care_type_breakdown: dict = Field(default_factory=dict)
+    care_breakdown: dict = Field(default_factory=dict)
+    most_worn_luxury: List[dict] = Field(default_factory=list)
     most_used_special_items: List[dict] = Field(default_factory=list)
     never_worn_special_items: List[dict] = Field(default_factory=list)
-    total_vault_valuation: Optional[float] = None
-    items_with_price_count: int
-    average_cost_per_wear: Optional[float] = None
-    care_type_breakdown: dict = Field(default_factory=dict)
 
 
 

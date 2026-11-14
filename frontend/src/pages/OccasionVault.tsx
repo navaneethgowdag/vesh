@@ -294,25 +294,25 @@ export const OccasionVault: React.FC = () => {
               <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-[2px] border border-white/10">
                 <span className="text-[#DCD4CC] block text-[10px] uppercase tracking-[0.14em] font-mono">Vault Valuation</span>
                 <span className="text-2xl font-light font-serif text-[#D5A6A0] mt-0.5 block">
-                  ${analytics.total_valuation.toLocaleString()}
+                  ${Math.round(Number(analytics.total_valuation ?? (analytics as any).total_vault_valuation ?? 0)).toLocaleString()}
                 </span>
               </div>
               <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-[2px] border border-white/10">
                 <span className="text-[#DCD4CC] block text-[10px] uppercase tracking-[0.14em] font-mono">Avg. Cost Per Wear</span>
                 <span className="text-2xl font-light font-serif text-[#F3EEE8] mt-0.5 block">
-                  ${Math.round(analytics.average_cost_per_wear)} <span className="text-xs text-[#DCD4CC] font-sans">/ wear</span>
+                  ${Math.round(Number(analytics.average_cost_per_wear ?? 0))} <span className="text-xs text-[#DCD4CC] font-sans">/ wear</span>
                 </span>
               </div>
               <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-[2px] border border-white/10">
                 <span className="text-[#DCD4CC] block text-[10px] uppercase tracking-[0.14em] font-mono">Luxury & Special</span>
                 <span className="text-2xl font-light font-serif text-[#F3EEE8] mt-0.5 block">
-                  {analytics.luxury_items_count} <span className="text-xs text-[#DCD4CC] font-sans">pieces</span>
+                  {analytics.luxury_items_count ?? 0} <span className="text-xs text-[#DCD4CC] font-sans">pieces</span>
                 </span>
               </div>
               <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-[2px] border border-white/10">
                 <span className="text-[#DCD4CC] block text-[10px] uppercase tracking-[0.14em] font-mono">Reserved Garments</span>
                 <span className="text-2xl font-light font-serif text-emerald-400 mt-0.5 block">
-                  {analytics.reserved_items_count} <span className="text-xs text-[#DCD4CC] font-sans">locked</span>
+                  {(analytics.reserved_items_count ?? (analytics as any).reserved_count ?? 0)} <span className="text-xs text-[#DCD4CC] font-sans">locked</span>
                 </span>
               </div>
             </div>
@@ -456,11 +456,18 @@ export const OccasionVault: React.FC = () => {
                     <span>Garment Care & Dry Cleaning Reminders</span>
                   </div>
                   <ul className="space-y-1.5 text-xs text-amber-900 dark:text-amber-200 pl-6 list-disc">
-                    {prepResult.care_reminders.map((care, idx) => (
-                      <li key={idx}>
-                        <span className="font-semibold">{care.item_name}</span>: {care.action} ({care.care_type.replace('_', ' ')})
-                      </li>
-                    ))}
+                    {prepResult.care_reminders.map((care: any, idx) => {
+                      const isObj = typeof care === 'object' && care !== null;
+                      const name = isObj ? care.item_name : '';
+                      const action = isObj ? care.action : String(care);
+                      const careType = isObj && care.care_type && care.care_type !== 'care_instruction' ? ` (${care.care_type.replace('_', ' ')})` : '';
+                      return (
+                        <li key={idx}>
+                          {name && <span className="font-semibold">{name}: </span>}
+                          {action}{careType}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -489,36 +496,40 @@ export const OccasionVault: React.FC = () => {
                     Curated Vault Combinations
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {prepResult.recommended_combinations.map((comb, cIdx) => (
-                      <div
-                        key={cIdx}
-                        className="p-4 rounded-[3px] bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-3"
-                      >
-                        <p className="text-xs text-[#29202B]/80 dark:text-[#F3EEE8]/80 font-serif italic">
-                          &ldquo;{comb.style_notes}&rdquo;
-                        </p>
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                          {comb.pieces.map((p) => (
-                            <div
-                              key={p.id}
-                              className="w-16 h-20 rounded-[2px] overflow-hidden bg-[#FAF6F0] dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] shrink-0 relative group"
-                            >
-                              <img
-                                src={resolveImageUrl(p.image)}
-                                alt={p.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = FALLBACK_POST_IMAGE;
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-[#29202B]/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-1 text-[9px] text-[#F3EEE8] text-center font-mono uppercase tracking-[0.08em]">
-                                {p.name}
+                    {prepResult.recommended_combinations.map((comb: any, cIdx) => {
+                      const pieces: any[] = comb.pieces || comb.items || [];
+                      const styleDesc = comb.style_notes || comb.style || 'Curated Styling';
+                      return (
+                        <div
+                          key={cIdx}
+                          className="p-4 rounded-[3px] bg-[#FAF6F0] dark:bg-[#241D27] border border-[#DCD4CC] dark:border-[#392F3E] space-y-3"
+                        >
+                          <p className="text-xs text-[#29202B]/80 dark:text-[#F3EEE8]/80 font-serif italic">
+                            &ldquo;{styleDesc}&rdquo;
+                          </p>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                            {pieces.map((p) => (
+                              <div
+                                key={p.id}
+                                className="w-16 h-20 rounded-[2px] overflow-hidden bg-[#FAF6F0] dark:bg-[#1F1922] border border-[#DCD4CC] dark:border-[#392F3E] shrink-0 relative group"
+                              >
+                                <img
+                                  src={resolveImageUrl(p.image || p.image_url)}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = FALLBACK_POST_IMAGE;
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-[#29202B]/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-1 text-[9px] text-[#F3EEE8] text-center font-mono uppercase tracking-[0.08em]">
+                                  {p.name}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
