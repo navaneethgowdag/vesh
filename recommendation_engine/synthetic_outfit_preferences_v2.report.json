@@ -1,0 +1,9 @@
+{
+  "source_rows": 12733,
+  "augmented_rows": 24016,
+  "total_rows": 36749,
+  "source_users": 500,
+  "copies_requested": 2,
+  "label_type": "synthetic heuristic; not human feedback",
+  "augmentation": "bounded outfit attribute perturbations; recomputed pairwise colour features and adjusted heuristic score"
+}

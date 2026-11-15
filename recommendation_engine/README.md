@@ -1,23 +1,48 @@
-# TailorBird recommendation model v2
+# TailorBird recommendation model v2 — development package
 
-Generated from uploaded TailorBird project audit and accompanying schema CSVs.
+## What was built
+- `synthetic_outfit_preferences_v2.csv`: 36,749 total source + augmented rows (see report).
+- `augment_dataset.py`: reproducible, seeded augmentation script.
+- `train_recommendation_v2.py`: group-aware training and evaluation.
+- `tailorbird_preference_model_v2.joblib`: trained scikit-learn pipeline + metadata.
+- `tailorbird_preference_model_v2.json`: model metadata and evaluation metrics.
+- `recommend.py`: minimal inference helper.
+- `image_model_integration.md`: image model integration notes.
 
-Files:
-- synthetic_users.csv: 500 synthetic profile rows using audited onboarding fields/options.
-- synthetic_outfit_preferences.csv: 12733 synthetic user/occasion/outfit examples.
-- color_pair_features.csv: pairwise features for the audited 19 canonical clothing colours.
-- train_recommendation.py: RandomForest preference-score baseline.
+## Training result
+The model was evaluated with a user-disjoint holdout split (400 train users / 100 test users).
+- MAE: 0.04479
+- RMSE: 0.05649
+- R²: 0.87622
 
-Important:
-- Synthetic profile IDs are invented identifiers, not real accounts.
-- No real user records or wardrobe records were exported into these CSVs.
-- Onboarding feature names/options are drawn from the supplied audit.
-- The 30 occasion IDs are drawn from the supplied occasion taxonomy CSV.
-- Color taxonomy uses the 19 canonical colors in the audit report.
-- Pairwise color scores are transparent approximations based on documented harmony examples and neutral rules; they are NOT the exact production HARMONY_MATRIX. In production, use ColorCoordinationService directly.
-- Candidate outfit templates are illustrative training feature examples, not actual wardrobe items.
-- Keep occasion/dress-code/ownership/availability/laundry/luxury rules as hard filters outside the ML model.
-- Synthetic labels represent a heuristic preference simulator, not actual human preference.
-- Evaluate and calibrate against real feedback before promoting this model.
-- Budget fields should affect shopping recommendations, not preference ranking for garments already owned.
-- The audit reports existing live DB rows (including 1,307 users and 69 feedback rows). Verify those figures and data provenance before using historical data; this package intentionally does not include personal rows.
+These metrics measure fit to the generated synthetic heuristic labels. They are **not** evidence of equivalent performance on real users. Augmented examples are related to their source users and remain in the same group during splitting.
+
+## Run
+Install compatible dependencies:
+`pip install pandas numpy scikit-learn joblib`
+
+Regenerate augmented data (from the folder containing original CSVs):
+`python augment_dataset.py --input synthetic_outfit_preferences.csv --output synthetic_outfit_preferences_v2.csv --copies 2`
+
+Train:
+`python train_recommendation_v2.py --csv synthetic_outfit_preferences_v2.csv --out tailorbird_preference_model_v2.joblib`
+
+Use:
+```python
+import joblib
+from recommend import score_outfits
+bundle = joblib.load("tailorbird_preference_model_v2.joblib")
+ranked = score_outfits(user_profile, candidate_outfits, bundle, top_k=10)
+```
+`user_profile` and each candidate outfit must use the same column names/representations as the training CSV. Missing model inputs are imputed by the pipeline.
+
+## Recommendation architecture
+1. Decode garment images into garment attributes.
+2. Normalize those attributes to the TailorBird canonical taxonomy.
+3. Build candidate outfit feature rows using the production colour coordination service and user preference features.
+4. Apply hard eligibility filters (occasion, dress code, ownership, availability, laundry, safety/product constraints).
+5. Score eligible candidates with the `.joblib` model.
+6. Add diversity/reranking after scoring so the feed does not contain near-duplicate outfits.
+7. Collect explicit feedback and retrain/calibrate against real feedback.
+
+Budget/shopping philosophy should affect shopping candidates, not preference ranking for garments already owned.
