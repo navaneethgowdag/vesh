@@ -51,7 +51,19 @@ def run_worker():
 
     logger.info("[Worker Startup] Connected to Redis / Upstash broker successfully.")
 
-    # 3. Choose appropriate Worker Class based on OS
+    # 3. Preload AI classification model into memory
+    try:
+        from app.ai.fashion_model import fashion_model_service
+        logger.info("[Worker Startup] Preloading MultiTaskEfficientNetB0 fashion classification model...")
+        loaded = fashion_model_service.load_model()
+        if loaded:
+            logger.info(f"[Worker Startup] Model ready. Version: {fashion_model_service.model_version}, Device: {fashion_model_service.device}")
+        else:
+            logger.warning(f"[Worker Startup] Fashion model load warning: {fashion_model_service.load_error}. Will attempt lazy load per job.")
+    except Exception as me:
+        logger.warning(f"[Worker Startup] Model preload notice: {me}")
+
+    # 4. Choose appropriate Worker Class based on OS
     if os.name == "nt":
         logger.info("[Worker Startup] OS: Windows -> Using rq.SimpleWorker (in-process execution without fork).")
         from rq import SimpleWorker as WorkerClass

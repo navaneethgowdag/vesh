@@ -295,11 +295,24 @@ class FashionModelService:
                 with open(prod_meta_path, "r", encoding="utf-8") as pf:
                     prod_info = json.load(pf)
                     cand_path = prod_info.get("checkpoint_path", "")
-                    # Resolve relative to artifacts_dir or repo root
-                    if not os.path.isabs(cand_path):
-                        cand_path = os.path.abspath(cand_path)
-                    if os.path.exists(cand_path):
-                        active_checkpoint = cand_path
+                    # Resolve relative to artifacts_dir or fall back to basename in artifacts_dir
+                    resolved_cand = None
+                    if cand_path:
+                        if not os.path.isabs(cand_path):
+                            candidate = os.path.normpath(os.path.join(self.artifacts_dir, cand_path))
+                            if os.path.exists(candidate):
+                                resolved_cand = candidate
+                        elif os.path.exists(cand_path):
+                            resolved_cand = cand_path
+                        else:
+                            # If path is an absolute path from another machine (e.g. Windows on Linux)
+                            base_name = os.path.basename(cand_path.replace("\\", "/"))
+                            fallback = os.path.join(self.artifacts_dir, base_name)
+                            if os.path.exists(fallback):
+                                resolved_cand = fallback
+
+                    if resolved_cand:
+                        active_checkpoint = resolved_cand
                         raw_tag = prod_info.get("version_tag", "1.0.0")
                         active_version = "1.0.0" if raw_tag in ("v1.0.0", "1.0.0") else raw_tag
             except Exception as pe:

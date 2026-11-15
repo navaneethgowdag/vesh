@@ -9,6 +9,7 @@ from PIL import Image
 
 from app.core.database import SessionLocal
 from app.core.redis import get_rq_redis_client
+from sqlalchemy.orm import joinedload
 from app.models.background_job import BackgroundJob
 from app.models.clothing import Clothing
 from app.models.clothing_analysis import ClothingAnalysis
@@ -228,10 +229,20 @@ def process_garment_image_job(
         except Exception as lock_err:
             logger.warning(f"[Worker] Redis concurrency lock check encountered error ({lock_err}). Proceeding with DB guards.")
 
-        # 2. Idempotency check: if garment is already ready_for_review
-        clothing = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
-        if clothing and clothing.processing_status in ("ready_for_review", "completed"):
-            logger.info(f"[Worker:Idempotent] Garment {clothing_id} already successfully processed. Returning cached state.")
+        # 2. Idempotency check: if garment is already ready_for_review with actual AI predictions
+        clothing = db.query(Clothing).options(joinedload(Clothing.analysis)).filter(Clothing.id == clothing_uuid).first()
+        if not clothing:
+            logger.error(f"[Worker:NotFound] Clothing {clothing_id} not found in database.")
+            return {"status": "failed", "error": "Clothing item not found"}
+
+        has_ai_predictions = bool(
+            clothing.analysis
+            and isinstance(clothing.analysis.feature_vector, dict)
+            and clothing.analysis.feature_vector.get("ai_predictions")
+        )
+
+        if has_ai_predictions and clothing.processing_status in ("ready_for_review", "completed"):
+            logger.info(f"[Worker:Idempotent] Garment {clothing_id} already successfully processed with AI predictions. Returning cached state.")
             return {
                 "status": clothing.processing_status,
                 "stage": clothing.processing_stage,
@@ -266,7 +277,11 @@ def process_garment_image_job(
         # 4. Run end-to-end garment processing pipeline
         from app.services.clothing_processing_service import ClothingProcessingService
         processor = ClothingProcessingService(db)
-        result = processor.process_clothing_item(clothing_id=clothing_uuid, user_id=user_uuid)
+        result = processor.process_clothing_item(
+            clothing_id=clothing_uuid,
+            user_id=user_uuid,
+            job_id=job_id,
+        )
 
         dur = round(time.time() - t0, 2)
         if job:

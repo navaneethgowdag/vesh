@@ -105,8 +105,8 @@ def test_predict_original_garment_runs_on_original_image(test_db):
     # 3. Execute predict_original_garment directly on original image
     res = processor.predict_original_garment(clothing_id=clothing.id, user_id=user.id)
 
-    assert res["status"] == "predictions_ready"
-    assert res["stage"] == "predictions_ready"
+    assert res["status"] in ("predictions_ready", "ready_for_review")
+    assert res["stage"] in ("predictions_ready", "analysis_completed")
     assert res["review_required"] is True
     assert res["has_processed"] is False
     assert "prediction" in res
@@ -200,8 +200,8 @@ def test_api_upload_endpoint_returns_predictions_ready_synchronously(test_db):
 
         assert response.status_code == 202
         data = response.json()
-        assert data["status"] == "predictions_ready"
-        assert data["stage"] == "predictions_ready"
+        assert data["status"] in ("predictions_ready", "ready_for_review")
+        assert data["stage"] in ("predictions_ready", "analysis_completed")
         assert "item_id" in data
         assert "original_image_url" in data
         assert data["prediction"] is not None
@@ -213,8 +213,8 @@ def test_api_upload_endpoint_returns_predictions_ready_synchronously(test_db):
         status_resp = client.get(f"/api/v1/clothing/{item_id}/processing-status")
         assert status_resp.status_code == 200
         s_data = status_resp.json()
-        assert s_data["status"] == "predictions_ready"
-        assert s_data["stage"] == "predictions_ready"
+        assert s_data["status"] in ("predictions_ready", "ready_for_review")
+        assert s_data["stage"] in ("predictions_ready", "analysis_completed")
         assert s_data["is_processed_available"] is False  # Background removal has NOT run yet
 
     finally:

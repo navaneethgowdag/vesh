@@ -140,11 +140,19 @@ class BatchUploadService:
             review_req = bool(fv.get("review_required", False))
             quality_info = fv.get("quality_assessment")
 
-            if proc_status in ("ready_for_review", "completed"):
+            is_item_done = proc_status in (
+                "ready_for_review",
+                "predictions_ready",
+                "manual_review_required",
+                "completed",
+                "accepted",
+            ) or bool(fv.get("ai_predictions"))
+
+            if is_item_done:
                 completed_count += 1
             elif proc_status == "failed":
                 failed_count += 1
-            elif proc_status == "processing":
+            elif proc_status in ("processing", "analyzing_clothing", "claimed_by_worker"):
                 processing_count += 1
             else:
                 queued_count += 1
@@ -155,7 +163,7 @@ class BatchUploadService:
                 "sequence_order": seq,
                 "status": proc_status,
                 "stage": stage,
-                "has_processed": has_proc,
+                "has_processed": is_item_done or has_proc,
                 "review_required": review_req,
                 "original_image_url": f"/api/v1/clothing/{cid}/image/original",
                 "processed_image_url": f"/api/v1/clothing/{cid}/image/processed" if has_proc else None,

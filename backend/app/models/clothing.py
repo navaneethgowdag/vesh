@@ -162,10 +162,15 @@ class Clothing(Base):
     @property
     def processing_status(self) -> str:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
-            return self.analysis.feature_vector.get("processing_status", "completed")
+            fv = self.analysis.feature_vector
+            if "processing_status" in fv:
+                return fv["processing_status"]
+            if "ai_predictions" in fv:
+                return "completed" if fv.get("is_finalized") else "ready_for_review"
+            return "queued" if self.image_url else "uploaded"
         if hasattr(self, "_laundry_dict") and "processing_status" in self._laundry_dict:
             return self._laundry_dict["processing_status"]
-        return "completed" if self.image_url else "uploaded"
+        return "queued" if self.image_url else "uploaded"
 
     @processing_status.setter
     def processing_status(self, val: str):
@@ -174,10 +179,15 @@ class Clothing(Base):
     @property
     def processing_stage(self) -> str:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
-            return self.analysis.feature_vector.get("processing_stage", "completed")
+            fv = self.analysis.feature_vector
+            if "processing_stage" in fv:
+                return fv["processing_stage"]
+            if "ai_predictions" in fv:
+                return "completed" if fv.get("is_finalized") else "analysis_completed"
+            return "queued" if self.image_url else "uploaded"
         if hasattr(self, "_laundry_dict") and "processing_stage" in self._laundry_dict:
             return self._laundry_dict["processing_stage"]
-        return "completed" if self.image_url else "uploaded"
+        return "queued" if self.image_url else "uploaded"
 
     @processing_stage.setter
     def processing_stage(self, val: str):
@@ -186,7 +196,15 @@ class Clothing(Base):
     @property
     def review_required(self) -> bool:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
-            return bool(self.analysis.feature_vector.get("review_required", False))
+            fv = self.analysis.feature_vector
+            if "review_required" in fv:
+                return bool(fv["review_required"])
+            if fv.get("is_finalized"):
+                return False
+            # If predictions exist but item not finalized, review is required
+            if "ai_predictions" in fv:
+                return True
+            return False
         if hasattr(self, "_laundry_dict") and "review_required" in self._laundry_dict:
             return bool(self._laundry_dict["review_required"])
         return False
@@ -221,9 +239,12 @@ class Clothing(Base):
                 return bool(fv["is_finalized"])
             if fv.get("review_required") or fv.get("processing_status") in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed"):
                 return False
+            if "ai_predictions" not in fv:
+                return False
+            return True
         if hasattr(self, "_laundry_dict") and "is_finalized" in self._laundry_dict:
             return bool(self._laundry_dict["is_finalized"])
-        return True
+        return False
 
     @is_finalized.setter
     def is_finalized(self, val: bool):

@@ -70,14 +70,15 @@ class ClothingPredictionService:
         color_palette = prediction_result.get("color_palette", [])
 
         # Mirror into ClothingAnalysis standard columns
-        analysis.detected_category = prediction_result.get("predicted_category")
-        analysis.detected_colors = color_palette
+        analysis.detected_category = predicted_attrs.get("category") or prediction_result.get("predicted_category")
+        analysis.detected_subcategory = predicted_attrs.get("article_type") or predicted_attrs.get("subcategory")
+        analysis.detected_colors = color_palette or [{"name": predicted_attrs.get("base_colour", "Black"), "hex": "#000000", "percentage": 85.0}]
         analysis.detected_pattern = predicted_attrs.get("pattern")
         analysis.detected_material = predicted_attrs.get("fabric")
         analysis.confidence = float(prediction_result.get("category_score", 0.5))
-        analysis.style_tags = [predicted_attrs.get("style")] if predicted_attrs.get("style") else []
-        analysis.season_tags = [predicted_attrs.get("season")] if predicted_attrs.get("season") else []
-        analysis.occasion_tags = [predicted_attrs.get("occasion")] if predicted_attrs.get("occasion") else []
+        analysis.style_tags = [predicted_attrs.get("style")] if predicted_attrs.get("style") else [predicted_attrs.get("usage", "Casual")]
+        analysis.season_tags = [predicted_attrs.get("season")] if predicted_attrs.get("season") else [predicted_attrs.get("season", "All-Season")]
+        analysis.occasion_tags = [predicted_attrs.get("occasion")] if predicted_attrs.get("occasion") else [predicted_attrs.get("usage", "Casual")]
 
         pred_payload = {
             "id": str(uuid.uuid4()),
@@ -124,25 +125,44 @@ class ClothingPredictionService:
             except Exception:
                 db.rollback()
 
-        # Update clothing default values if they are empty and user hasn't already confirmed attributes
+        # Update clothing default values with predictions if user hasn't already confirmed attributes
         is_user_confirmed = fv.get("is_finalized", False) or fv.get("user_confirmed", False) or ("user_corrections" in fv and len(fv["user_corrections"]) > 0)
         if not is_user_confirmed:
-            if not clothing.category or clothing.category == "other":
-                clothing.category = predicted_attrs.get("category")
-            if not clothing.subcategory:
-                clothing.subcategory = predicted_attrs.get("subcategory")
-            if not clothing.color:
-                clothing.color = predicted_attrs.get("primary_color") or predicted_attrs.get("color")
-            if not clothing.secondary_color:
+            # Map category from article_type and master_category
+            art_type = predicted_attrs.get("article_type") or predicted_attrs.get("subcategory") or ""
+            m_cat = predicted_attrs.get("master_category", "")
+            s_cat = predicted_attrs.get("sub_category", "")
+            from app.ai.fashion_model import fashion_model_service
+            mapped_cat = fashion_model_service.map_wardrobe_category(art_type, s_cat, m_cat) or predicted_attrs.get("category")
+            if mapped_cat:
+                clothing.category = mapped_cat
+            if art_type:
+                clothing.subcategory = art_type
+
+            pred_color = predicted_attrs.get("base_colour") or predicted_attrs.get("primary_color") or predicted_attrs.get("color")
+            if pred_color:
+                clothing.color = pred_color
+
+            if predicted_attrs.get("secondary_color"):
                 clothing.secondary_color = predicted_attrs.get("secondary_color")
-            if not clothing.pattern or clothing.pattern == "Solid":
+            if predicted_attrs.get("pattern"):
                 clothing.pattern = predicted_attrs.get("pattern")
-            if not clothing.material:
+            if predicted_attrs.get("fabric") and predicted_attrs.get("fabric") != "unknown":
                 clothing.material = predicted_attrs.get("fabric")
-            if not clothing.season or clothing.season == "All-Season":
+            if predicted_attrs.get("season"):
                 clothing.season = predicted_attrs.get("season")
-            if not clothing.occasion or clothing.occasion == "Casual Daily":
-                clothing.occasion = predicted_attrs.get("occasion")
+            if predicted_attrs.get("occasion") or predicted_attrs.get("usage"):
+                clothing.occasion = predicted_attrs.get("occasion") or predicted_attrs.get("usage")
+
+            # If name is generic or unformatted filename, give it an informative default
+            raw_name = (clothing.name or "").strip()
+            is_generic_name = (
+                not raw_name
+                or raw_name.lower().startswith(("item ", "piece ", "upload ", "img", "photo", "image", "dsc", "new "))
+                or raw_name.lower() in ("clothing", "piece", "wardrobe item", "item")
+            )
+            if is_generic_name and pred_color and art_type:
+                clothing.name = f"{pred_color} {art_type}".strip()
 
         db.commit()
         return pred_payload

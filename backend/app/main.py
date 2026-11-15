@@ -169,7 +169,7 @@ def readiness_check(response: Response):
     db_ok = verify_database_connection(fast=True)
     redis_health = check_redis_health()
     model_readiness = fashion_model_service.get_model_readiness()
-    ai_status = model_readiness.get("status", "unavailable")
+    ai_status = model_readiness.get("load_status") or model_readiness.get("status", "unavailable")
 
     if redis_health.get("status") == "ok":
         bg_status = "active"

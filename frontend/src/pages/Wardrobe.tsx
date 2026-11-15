@@ -110,13 +110,21 @@ export const Wardrobe: React.FC = () => {
   }, [wardrobe]);
 
   const readyToReviewItems = useMemo(() => {
-    return pendingItems.filter(
-      (item) =>
-        item.processingStatus !== 'failed' &&
-        item.processingStage !== 'failed' &&
-        item.processingStatus !== 'queued' &&
-        item.processingStatus !== 'processing'
-    );
+    return pendingItems.filter((item) => {
+      const isReady =
+        item.processingStatus === 'ready_for_review' ||
+        item.processingStatus === 'predictions_ready' ||
+        item.processingStatus === 'manual_review_required' ||
+        Boolean(item.reviewRequired);
+      const isFailed = item.processingStatus === 'failed' || item.processingStage === 'failed';
+      const isStillProcessing =
+        item.processingStatus === 'queued' ||
+        item.processingStatus === 'processing' ||
+        item.processingStage === 'queued' ||
+        item.processingStage === 'analyzing_clothing' ||
+        item.processingStage === 'claimed_by_worker';
+      return isReady && !isFailed && !isStillProcessing;
+    });
   }, [pendingItems]);
 
   // Active polling: auto-refresh while any garment is actively queued or processing

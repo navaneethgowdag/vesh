@@ -31,15 +31,23 @@ export const PendingReviewCard: React.FC<PendingReviewCardProps> = ({
   const { execute: runAction, isLocked } = useAsyncLock();
 
   const isFailed = item.processingStatus === 'failed' || item.processingStage === 'failed';
-  const isProcessing =
-    item.processingStatus === 'queued' ||
-    item.processingStatus === 'processing' ||
-    item.processingStage === 'queued' ||
-    item.processingStage === 'analyzing_clothing';
   const isManualReview =
     item.processingStatus === 'manual_review_required' ||
     item.processingStage === 'manual_review_required';
-  const isReady = !isFailed && !isProcessing;
+  const isReady =
+    item.processingStatus === 'ready_for_review' ||
+    item.processingStatus === 'predictions_ready' ||
+    item.processingStatus === 'completed' ||
+    Boolean(item.reviewRequired) ||
+    isManualReview;
+  const isProcessing =
+    !isReady &&
+    !isFailed &&
+    (item.processingStatus === 'queued' ||
+      item.processingStatus === 'processing' ||
+      item.processingStage === 'queued' ||
+      item.processingStage === 'analyzing_clothing' ||
+      item.processingStage === 'claimed_by_worker');
 
   const imgUrl = resolveImageUrl(
     item.originalImageUrl || item.preferredImageUrl || item.image

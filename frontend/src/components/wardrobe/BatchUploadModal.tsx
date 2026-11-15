@@ -582,10 +582,15 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
             {/* Item-by-item sequential queue listing */}
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {items.map((item) => {
-                const isReady = item.status === 'ready_for_review' || item.status === 'completed';
-                const isItemProcessing = item.status === 'processing';
+                const isReady =
+                  item.status === 'ready_for_review' ||
+                  item.status === 'predictions_ready' ||
+                  item.status === 'manual_review_required' ||
+                  item.status === 'completed' ||
+                  item.has_processed;
+                const isItemProcessing = !isReady && (item.status === 'processing' || item.stage === 'analyzing_clothing' || item.stage === 'claimed_by_worker');
                 const isItemFailed = item.status === 'failed';
-                const isItemQueued = item.status === 'queued';
+                const isItemQueued = !isReady && !isItemProcessing && !isItemFailed;
 
                 return (
                   <div

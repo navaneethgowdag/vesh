@@ -33,6 +33,17 @@ class JobService:
         except Exception:
             return False
 
+    @staticmethod
+    def _has_active_workers(redis_client, queue_name: str) -> bool:
+        """Check whether any live RQ workers are currently subscribed to queue_name."""
+        try:
+            from rq import Worker
+            workers = Worker.all(connection=redis_client)
+            return any(queue_name in [q.name for q in w.queues] for w in workers)
+        except Exception as e:
+            logger.debug(f"[JobService] Worker heartbeat check notice: {e}")
+            return False
+
     def enqueue_clothing_analysis(
         self,
         user_id: UUID,
@@ -42,8 +53,8 @@ class JobService:
         """
         Durable job creation:
         1. Persists JobRecord in PostgreSQL with 'queued' status.
-        2. Enqueues job into Redis with bounded retries & backoff interval if workers are active.
-        3. If Redis is disabled/offline or no workers are active, executes in fallback mode to ensure zero downtime.
+        2. If active RQ workers are listening on Redis, enqueues into Redis queue.
+        3. If Redis is offline or no workers are listening, executes via non-blocking background thread.
         """
         job_id = uuid.uuid4()
         payload_ref = {}
@@ -74,68 +85,50 @@ class JobService:
         user_id_str = str(user_id)
         clothing_id_str = str(clothing_id) if clothing_id else None
 
-        # 2. Enqueue directly to RQ queue 'stylesphere-default'
+        # 2. Check for active RQ workers on Redis
         redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
         if redis_client is not None:
             try:
-                q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
-                q.enqueue(
-                    process_clothing_analysis_job,
-                    job_id_str,
-                    user_id_str,
-                    image_url,
-                    clothing_id=clothing_id_str,
-                    job_id=job_id_str,
-                    retry=Retry(max=3, interval=[5, 25, 120]),
-                    job_timeout=180,
-                )
-                logger.info(f"[JobService:Enqueued] job_id={job_id_str}, type=clothing_analysis into queue='{DEFAULT_QUEUE_NAME}'")
-                return job
+                if self._has_active_workers(redis_client, DEFAULT_QUEUE_NAME):
+                    q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
+                    q.enqueue(
+                        process_clothing_analysis_job,
+                        job_id_str,
+                        user_id_str,
+                        image_url,
+                        clothing_id=clothing_id_str,
+                        job_id=job_id_str,
+                        retry=Retry(max=3, interval=[5, 25, 120]),
+                        job_timeout=180,
+                    )
+                    logger.info(f"[JobService:Enqueued] job_id={job_id_str}, type=clothing_analysis into RQ queue='{DEFAULT_QUEUE_NAME}'")
+                    return job
+                else:
+                    logger.info(f"[JobService] No active RQ workers listening on '{DEFAULT_QUEUE_NAME}'. Routing to background thread fallback.")
             except Exception as e:
-                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}).")
+                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}). Routing to fallback.")
 
-        # 3. Fallback execution (when Redis is disabled/offline)
-        allow_fallback = (
-            getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", False)
-            or settings.APP_ENV.lower() not in ("production", "prod")
+        # 3. Fallback execution via background thread (to keep API non-blocking)
+        def _run_analysis_worker():
+            try:
+                logger.info(f"[JobService] Executing analysis job {job_id_str} via background daemon thread.")
+                process_clothing_analysis_job(
+                    job_id=job_id_str,
+                    user_id=user_id_str,
+                    image_url=image_url,
+                    clothing_id=clothing_id_str,
+                )
+            except Exception as exc:
+                logger.error(f"[JobService] Background thread execution error for {job_id_str}: {exc}")
+
+        worker_thread = threading.Thread(
+            target=_run_analysis_worker,
+            name=f"analysis-proc-{job_id_str[:8]}",
+            daemon=True,
         )
-        if not allow_fallback:
-            err_msg = "Redis/RQ queue broker unavailable. Background job cannot be durably queued."
-            logger.error(f"[JobService:EnqueueFailed] {err_msg} job_id={job_id_str}")
-            job.status = "failed"
-            job.error_message = err_msg
-            if self._has_table:
-                try:
-                    self.db.commit()
-                except Exception:
-                    pass
-            return job
-
-        try:
-            logger.info(f"[JobService] [DevFallback] Executing analysis job {job_id_str} synchronously via in-process fallback.")
-            process_clothing_analysis_job(
-                job_id=job_id_str,
-                user_id=user_id_str,
-                image_url=image_url,
-                clothing_id=clothing_id_str,
-                db=self.db,
-            )
-            if self._has_table:
-                try:
-                    self.db.refresh(job)
-                except Exception:
-                    pass
-            return job
-        except Exception as e:
-            logger.error(f"[JobService] Fallback job execution error for {job_id_str}: {e}")
-            job.status = "failed"
-            job.error_message = str(e)
-            if self._has_table:
-                try:
-                    self.db.commit()
-                except Exception:
-                    pass
-            return job
+        worker_thread.start()
+        logger.info(f"[JobService:StartedFallbackThread] job_id={job_id_str}")
+        return job
 
     def enqueue_garment_processing(
         self,
@@ -178,58 +171,32 @@ class JobService:
         user_id_str = str(user_id)
         clothing_id_str = str(clothing_id)
 
-        # 1. Enqueue directly to RQ queue 'stylesphere-default'
+        # 1. Enqueue to RQ if Redis is enabled AND active workers are listening
         redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
         if redis_client is not None:
             try:
-                q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
-                q.enqueue(
-                    process_garment_image_job,
-                    job_id_str,
-                    user_id_str,
-                    clothing_id_str,
-                    job_id=job_id_str,
-                    retry=Retry(max=2, interval=[5, 20]),
-                    job_timeout=180,
-                )
-                logger.info(f"[JobService:Enqueued] job_id={job_id_str}, clothing_id={clothing_id_str} into RQ queue '{DEFAULT_QUEUE_NAME}'")
-                return job
+                if self._has_active_workers(redis_client, DEFAULT_QUEUE_NAME):
+                    q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
+                    q.enqueue(
+                        process_garment_image_job,
+                        job_id_str,
+                        user_id_str,
+                        clothing_id_str,
+                        job_id=job_id_str,
+                        retry=Retry(max=2, interval=[5, 20]),
+                        job_timeout=180,
+                    )
+                    logger.info(f"[JobService:Enqueued] job_id={job_id_str}, clothing_id={clothing_id_str} into RQ queue '{DEFAULT_QUEUE_NAME}'")
+                    return job
+                else:
+                    logger.info(f"[JobService] No active RQ workers listening on '{DEFAULT_QUEUE_NAME}'. Routing garment {clothing_id_str} to background thread execution.")
             except Exception as e:
-                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}).")
+                logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}). Routing to fallback.")
 
-        # 2. If Redis/RQ unavailable:
-        allow_fallback = (
-            getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", False)
-            or settings.APP_ENV.lower() not in ("production", "prod")
-        )
-
-        if not allow_fallback:
-            err_msg = "Redis/RQ queue broker unavailable. Background job cannot be durably queued."
-            logger.error(f"[JobService:EnqueueFailed] {err_msg} job_id={job_id_str}, clothing_id={clothing_id_str}")
-            job.status = "failed"
-            job.error_message = err_msg
-            if self._has_table:
-                try:
-                    self.db.commit()
-                except Exception:
-                    pass
-            try:
-                clothing_item = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
-                if clothing_item and clothing_item.analysis:
-                    fv = dict(clothing_item.analysis.feature_vector or {})
-                    fv["processing_status"] = "failed"
-                    fv["processing_stage"] = "enqueue_failed"
-                    fv["error_message"] = err_msg
-                    clothing_item.analysis.feature_vector = fv
-                    self.db.commit()
-            except Exception as ce:
-                logger.warning(f"Failed to update clothing error status: {ce}")
-            return job
-
-        # 3. Development only fallback
+        # 2. Resilient background execution fallback (ensures batch items are never stranded)
         def _run_worker():
             try:
-                logger.info(f"[JobService] [DevFallback] Executing garment job {job_id_str} via background daemon thread (clothing_id={clothing_id_str}).")
+                logger.info(f"[JobService] Executing garment job {job_id_str} via background daemon thread (clothing_id={clothing_id_str}).")
                 process_garment_image_job(
                     job_id=job_id_str,
                     user_id=user_id_str,

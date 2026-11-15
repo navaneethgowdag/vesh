@@ -92,6 +92,8 @@ class ClothingProcessingService:
         self,
         clothing_id: UUID,
         user_id: UUID,
+        job_id: Optional[str] = None,
+        upload_type: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute AI garment attribute prediction on the ORIGINAL uploaded photograph:
@@ -101,15 +103,24 @@ class ClothingProcessingService:
         4. Extract 9 classification heads (articleType, masterCategory, subCategory,
            gender, baseColour, season, usage, pattern, ageGroup).
         5. Persist predictions in Neon database (ClothingPrediction and ClothingAnalysis).
-        6. Transition state to 'predictions_ready' (review_required=True, has_processed=False).
+        6. Transition state to 'ready_for_review' (review_required=True, has_processed=False).
         Returns predicted attributes, scores, and alternatives for immediate user review.
         """
         t0 = time.time()
+        start_iso = datetime.now(timezone.utc).isoformat()
         clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
         if not clothing:
             raise ValueError("Clothing item not found")
         if clothing.user_id != user_id:
             raise PermissionError("Access denied to this clothing item")
+
+        # Determine upload type if not provided
+        if not upload_type:
+            analysis_rec = self.db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing_id).first()
+            if analysis_rec and isinstance(analysis_rec.feature_vector, dict) and analysis_rec.feature_vector.get("batch_id"):
+                upload_type = "batch"
+            else:
+                upload_type = "single"
 
         # 1. Fetch original image binary from Neon
         orig_res = self.image_service.get_image(clothing_id, user_id, image_type="original")
@@ -120,6 +131,10 @@ class ClothingProcessingService:
                 stage="failed",
                 error_message="Original image binary not found in database.",
                 commit=True,
+            )
+            logger.error(
+                f"[AIClothingAnalysis] clothing_id={clothing_id} job_id={job_id or 'none'} "
+                f"upload_type={upload_type} inference_status=failed error='Original image not found'"
             )
             return {"status": "failed", "error": "Original image not found"}
 
@@ -153,6 +168,7 @@ class ClothingProcessingService:
             )
 
             dur = round(time.time() - t0, 3)
+            end_iso = datetime.now(timezone.utc).isoformat()
 
             # Mark analysis completed and ready for review
             self._update_metadata(
@@ -166,8 +182,13 @@ class ClothingProcessingService:
             )
 
             logger.info(
-                f"[Pipeline:PredictOriginal] clothing_id={clothing_id} => "
-                f"Predicted in {dur}s on original image ({orig_w}x{orig_h}). Status: ready_for_review."
+                f"[AIClothingAnalysis] clothing_id={clothing_id} job_id={job_id or 'none'} "
+                f"upload_type={upload_type} checkpoint_id={fashion_model_service.model_version} "
+                f"start_time={start_iso} end_time={end_iso} duration_seconds={dur} "
+                f"inference_status=success persistence_status=persisted "
+                f"article_type='{model_pred.get('article_type', {}).get('prediction')}' "
+                f"color='{model_pred.get('base_colour', {}).get('prediction')}' "
+                f"overall_confidence={model_pred.get('overall_confidence', 0.0)}"
             )
 
             return {
@@ -193,6 +214,10 @@ class ClothingProcessingService:
                 duration=dur,
                 commit=True,
             )
+            logger.error(
+                f"[AIClothingAnalysis] clothing_id={clothing_id} job_id={job_id or 'none'} "
+                f"upload_type={upload_type} duration_seconds={dur} inference_status=failed error='{ve}'"
+            )
             return {
                 "status": "failed",
                 "stage": "failed",
@@ -215,6 +240,10 @@ class ClothingProcessingService:
                 error_message=f"Automatic classification unavailable ({e}). Manual attribute review required.",
                 duration=dur,
                 commit=True,
+            )
+            logger.error(
+                f"[AIClothingAnalysis] clothing_id={clothing_id} job_id={job_id or 'none'} "
+                f"upload_type={upload_type} duration_seconds={dur} inference_status=failed error='{e}'"
             )
             return {
                 "status": "manual_review_required",
@@ -373,6 +402,7 @@ class ClothingProcessingService:
         self,
         clothing_id: UUID,
         user_id: UUID,
+        job_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Garment pipeline coordinator for batch upload and queue workers:
@@ -396,7 +426,12 @@ class ClothingProcessingService:
         )
 
         # AI Prediction directly on the ORIGINAL uploaded photo
-        pred_res = self.predict_original_garment(clothing_id=clothing_id, user_id=user_id)
+        pred_res = self.predict_original_garment(
+            clothing_id=clothing_id,
+            user_id=user_id,
+            job_id=job_id,
+            upload_type="batch",
+        )
 
         # Set image_url to original image
         clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"

@@ -81,23 +81,23 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
         />
 
         {/* Processing / Status Badges */}
-        {(item.processingStatus === 'queued' || item.processingStatus === 'processing') && (
+        {!item.isFinalized && (item.processingStatus === 'queued' || item.processingStatus === 'processing') && (
           <span className="absolute top-2.5 left-2.5 bg-[#29202B]/95 backdrop-blur-md text-[#F3EEE8] text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1.5 shadow-xs border border-white/10">
             <span className="w-1.5 h-1.5 rounded-full bg-[#D5A6A0] animate-ping" />
             AI Processing
           </span>
         )}
-        {item.processingStatus === 'ready_for_review' && (
+        {!item.isFinalized && item.processingStatus === 'ready_for_review' && (
           <span className="absolute top-2.5 left-2.5 bg-[#743C49]/95 backdrop-blur-md text-white text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1 shadow-xs">
             Review Needed
           </span>
         )}
-        {item.processingStatus === 'manual_review_required' && (
+        {!item.isFinalized && item.processingStatus === 'manual_review_required' && (
           <span className="absolute top-2.5 left-2.5 bg-[#B49B82]/95 backdrop-blur-md text-[#29202B] text-[9px] uppercase tracking-[0.14em] font-semibold px-2 py-1 rounded-[2px] flex items-center gap-1 shadow-xs border border-[#29202B]/20">
             Manual Review
           </span>
         )}
-        {item.processingStatus === 'failed' && (
+        {!item.isFinalized && item.processingStatus === 'failed' && (
           <span className="absolute top-2.5 left-2.5 bg-rose-700/95 backdrop-blur-md text-white text-[9px] uppercase tracking-[0.14em] font-medium px-2 py-1 rounded-[2px] flex items-center gap-1 shadow-xs">
             Failed
           </span>
