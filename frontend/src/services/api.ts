@@ -483,6 +483,55 @@ export function mapPoll(p: any): Poll {
   };
 }
 
+export function mapPostItem(p: any): Post {
+  return {
+    id: String(p.id),
+    user: {
+      id: String(p.user?.id || ''),
+      name: p.user?.name || 'User',
+      username: p.user?.username || 'user',
+      avatar: resolveImageUrl(p.user?.avatar) || getDefaultAvatar(p.user?.gender, p.user?.avatar_style),
+      isVerified: p.user?.is_verified,
+      isFollowing: p.user?.is_following,
+    },
+    image: resolveImageUrl(p.image_url),
+    caption: p.caption,
+    tags: p.tags || [],
+    taggedItems: (p.tagged_items || []).map((ti: any) => ({
+      id: String(ti.id),
+      name: ti.name,
+      category: ti.category,
+      color: ti.color,
+      style: ti.occasion || 'Casual',
+      season: ti.season || 'All-Season',
+      image: resolveImageUrl(ti.image_url),
+      createdAt: ti.created_at || new Date().toISOString(),
+    })),
+    occasion: (p.occasion as Occasion) || 'Casual Daily',
+    location: p.location,
+    likesCount: p.likes_count || 0,
+    commentsCount: p.comments_count || 0,
+    savesCount: p.saves_count || 0,
+    isLiked: p.is_liked || false,
+    isSaved: p.is_saved || false,
+    comments: (p.comments || []).map((c: any) => ({
+      id: String(c.id),
+      postId: String(p.id),
+      user: {
+        id: String(c.user?.id || ''),
+        name: c.user?.name || 'User',
+        username: c.user?.username || 'user',
+        avatar: resolveImageUrl(c.user?.avatar) || '',
+      },
+      text: c.text,
+      createdAt: c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now',
+      likesCount: c.likes_count || 0,
+    })),
+    createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+    poll: p.poll ? mapPoll(p.poll) : undefined,
+  };
+}
+
 function mapApiRecommendation(rec: any): Recommendation {
   const outfit = rec.outfit || {};
   const pieces = (outfit.clothing_items || []).map((ci: any) => ({
@@ -1309,52 +1358,12 @@ export const api = {
     async listFeed(feedType: 'for_you' | 'following' = 'for_you'): Promise<Post[]> {
       const query = feedType === 'following' ? '?feed_type=following' : '';
       const posts = await request<any[]>(`/posts${query}`, { cacheTTL: 15000 });
-      return posts.map((p) => ({
-        id: String(p.id),
-        user: {
-          id: String(p.user?.id || ''),
-          name: p.user?.name || 'User',
-          username: p.user?.username || 'user',
-          avatar: resolveImageUrl(p.user?.avatar) || getDefaultAvatar(p.user?.gender, p.user?.avatar_style),
-          isVerified: p.user?.is_verified,
-          isFollowing: p.user?.is_following,
-        },
-        image: resolveImageUrl(p.image_url),
-        caption: p.caption,
-        tags: p.tags || [],
-        taggedItems: (p.tagged_items || []).map((ti: any) => ({
-          id: String(ti.id),
-          name: ti.name,
-          category: ti.category,
-          color: ti.color,
-          style: ti.occasion || 'Casual',
-          season: ti.season || 'All-Season',
-          image: resolveImageUrl(ti.image_url),
-          createdAt: ti.created_at || new Date().toISOString(),
-        })),
-        occasion: (p.occasion as Occasion) || 'Casual Daily',
-        location: p.location,
-        likesCount: p.likes_count || 0,
-        commentsCount: p.comments_count || 0,
-        savesCount: p.saves_count || 0,
-        isLiked: p.is_liked || false,
-        isSaved: p.is_saved || false,
-        comments: (p.comments || []).map((c: any) => ({
-          id: String(c.id),
-          postId: String(p.id),
-          user: {
-            id: String(c.user?.id || ''),
-            name: c.user?.name || 'User',
-            username: c.user?.username || 'user',
-            avatar: resolveImageUrl(c.user?.avatar) || '',
-          },
-          text: c.text,
-          createdAt: c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now',
-          likesCount: c.likes_count || 0,
-        })),
-        createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
-        poll: p.poll ? mapPoll(p.poll) : undefined,
-      }));
+      return posts.map(mapPostItem);
+    },
+
+    async listByUser(userId: string, limit: number = 50): Promise<Post[]> {
+      const posts = await request<any[]>(`/posts/user/${userId}?limit=${limit}`, { cacheTTL: 5000 });
+      return posts.map(mapPostItem);
     },
 
     async create(postData: {

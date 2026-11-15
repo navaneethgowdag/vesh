@@ -16,6 +16,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Search,
 } from 'lucide-react';
 import { useApp, useCurrentUser } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -36,6 +37,7 @@ export const Sidebar: React.FC = () => {
     { name: '24h Moments', path: '/moments', icon: Sparkles, badge: 'Swipe' },
     { name: 'Calendar', path: '/calendar', icon: CalendarIcon },
     { name: 'Weekly Planner', path: '/planner', icon: CalendarDays },
+    { name: 'Discover People', path: '/discover', icon: Search },
     { name: 'Wardrobe Insights', path: '/insights', icon: BarChart2 },
     { name: 'Wardrobe Gap', path: '/wardrobe-gap', icon: Layers },
   ];

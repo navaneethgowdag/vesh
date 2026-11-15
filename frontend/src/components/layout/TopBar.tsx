@@ -11,6 +11,7 @@ import {
   CloudLightning,
   Cloud,
   User,
+  Search,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -70,6 +71,16 @@ export const TopBar: React.FC = () => {
               <span className="text-[11px] font-mono">Weather</span>
             </>
           )}
+        </button>
+
+        {/* Search People Button */}
+        <button
+          onClick={() => navigate('/discover')}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[#50564E] dark:text-[#A3ABA0] hover:text-[#202321] dark:hover:text-[#F8F6F1] hover:bg-[#F1EEE7] dark:hover:bg-[#252A26] transition-colors cursor-pointer"
+          aria-label="Discover Tastemakers"
+          title="Search People"
+        >
+          <Search className="w-4 h-4" />
         </button>
 
         {/* Theme Toggle */}

@@ -34,6 +34,7 @@ const WardrobeInsights = lazy(() => import('./pages/WardrobeInsights').then((m) 
 const OccasionVault = lazy(() => import('./pages/OccasionVault').then((m) => ({ default: m.OccasionVault })));
 const ModelLearning = lazy(() => import('./pages/ModelLearning').then((m) => ({ default: m.ModelLearning })));
 const Moments = lazy(() => import('./pages/Moments').then((m) => ({ default: m.Moments })));
+const DiscoverPeople = lazy(() => import('./pages/DiscoverPeople').then((m) => ({ default: m.DiscoverPeople })));
 
 // Admin Console Routes (Restricted ML Ops & Governance)
 const AdminProtectedRoute = lazy(() => import('./components/admin/AdminProtectedRoute').then((m) => ({ default: m.AdminProtectedRoute })));
@@ -146,11 +147,27 @@ export const App: React.FC = () => {
                 />
                 <Route
                   path="/create"
-                  element={<Navigate to="/wardrobe" replace />}
+                  element={
+                    <ProtectedRoute>
+                      <CreatePost />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/explore"
-                  element={<Navigate to="/home" replace />}
+                  element={<Navigate to="/discover" replace />}
+                />
+                <Route
+                  path="/search"
+                  element={<Navigate to="/discover" replace />}
+                />
+                <Route
+                  path="/discover"
+                  element={
+                    <ProtectedRoute>
+                      <DiscoverPeople />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/daily-fit"

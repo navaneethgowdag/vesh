@@ -25,9 +25,10 @@ import { useAsyncLock } from '../../hooks/useAsyncLock';
 
 interface PostCardProps {
   post: Post;
+  onDelete?: (postId: string) => void;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onDelete }) => {
   const {
     toggleLikePost,
     toggleSavePost,
@@ -85,6 +86,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       try {
         await deletePost(post.id);
         setIsDeleteDialogOpen(false);
+        onDelete?.(post.id);
       } catch {
         // Handled via toast in AppContext
       }
