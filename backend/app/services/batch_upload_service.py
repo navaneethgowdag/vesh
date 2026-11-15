@@ -295,6 +295,7 @@ class BatchUploadService:
         return {
             "retried_count": len(analyses),
             "first_clothing_id": first_retry_id,
+            "retried_clothing_ids": [a.clothing_id for a in sorted_failed] if analyses else [],
             "batch_status": self.get_batch_status(batch_id, user_id),
         }
 

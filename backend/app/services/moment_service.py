@@ -182,13 +182,15 @@ class MomentService:
         current_user_id: Optional[UUID] = None,
         limit: int = 30,
         offset: int = 0,
+        include_seen: bool = False,
     ) -> List[Dict[str, Any]]:
         """
         Returns active unexpired 24-hour outfit moments for For You discovery.
         Following-Only Audience Rule:
         Only shows moments from creators where:
         current_user follows creator.
-        Excludes current user's own moments, already liked moments, and skipped moments.
+        Excludes current user's own moments.
+        If include_seen is False, also excludes already liked and skipped moments.
         Unauthenticated requests receive [].
         """
         if not current_user_id:
@@ -213,14 +215,15 @@ class MomentService:
             )
         )
 
-        # Exclude already liked moments
-        liked_subq = self.db.query(Like.post_id).filter(Like.user_id == current_user_id).scalar_subquery()
-        q = q.filter(~Post.id.in_(liked_subq))
+        if not include_seen:
+            # Exclude already liked moments
+            liked_subq = self.db.query(Like.post_id).filter(Like.user_id == current_user_id).scalar_subquery()
+            q = q.filter(~Post.id.in_(liked_subq))
 
-        # Exclude skipped moments
-        skipped_ids = self._get_skipped_ids(current_user_id)
-        if skipped_ids:
-            q = q.filter(~Post.id.in_(skipped_ids))
+            # Exclude skipped moments
+            skipped_ids = self._get_skipped_ids(current_user_id)
+            if skipped_ids:
+                q = q.filter(~Post.id.in_(skipped_ids))
 
         moments = (
             q.order_by(Post.created_at.desc())

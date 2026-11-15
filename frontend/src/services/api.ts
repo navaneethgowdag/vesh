@@ -1355,9 +1355,17 @@ export const api = {
 
   // --- POSTS / SOCIAL FEED ---
   posts: {
-    async listFeed(feedType: 'for_you' | 'following' = 'for_you'): Promise<Post[]> {
-      const query = feedType === 'following' ? '?feed_type=following' : '';
-      const posts = await request<any[]>(`/posts${query}`, { cacheTTL: 15000 });
+    async listFeed(
+      feedType: 'for_you' | 'following' = 'for_you',
+      limit: number = 30,
+      offset: number = 0,
+    ): Promise<Post[]> {
+      const params = new URLSearchParams();
+      if (feedType === 'following') params.set('feed_type', 'following');
+      if (limit) params.set('limit', String(limit));
+      if (offset) params.set('offset', String(offset));
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const posts = await request<any[]>(`/posts${query}`, { cacheTTL: 10000 });
       return posts.map(mapPostItem);
     },
 
@@ -1435,8 +1443,15 @@ export const api = {
 
   // --- 24-HOUR OUTFIT MOMENTS ---
   moments: {
-    async listFeed(limit: number = 30, offset: number = 0): Promise<OutfitMoment[]> {
-      const items = await request<any[]>(`/moments/feed?limit=${limit}&offset=${offset}`, { cacheTTL: 15000 });
+    async listFeed(
+      limit: number = 30,
+      offset: number = 0,
+      includeSeen: boolean = true,
+    ): Promise<OutfitMoment[]> {
+      const items = await request<any[]>(
+        `/moments/feed?limit=${limit}&offset=${offset}&include_seen=${includeSeen}`,
+        { cacheTTL: 10000 },
+      );
       return items.map((m) => ({
         id: String(m.id),
         user: {

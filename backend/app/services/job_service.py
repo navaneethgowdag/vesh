@@ -172,35 +172,30 @@ class JobService:
         user_id_str = str(user_id)
         clothing_id_str = str(clothing_id)
 
-        # 1. Enqueue to RQ if Redis is enabled
+        # 1. Enqueue to RQ if Redis is enabled AND active workers are listening
         redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
         if redis_client is not None:
             try:
-                q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
-                q.enqueue(
-                    process_garment_image_job,
-                    job_id_str,
-                    user_id_str,
-                    clothing_id_str,
-                    job_id=job_id_str,
-                    retry=Retry(max=2, interval=[5, 20]),
-                    job_timeout=180,
-                )
                 has_workers = self._has_active_workers(redis_client, DEFAULT_QUEUE_NAME)
                 if has_workers:
+                    q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
+                    q.enqueue(
+                        process_garment_image_job,
+                        job_id_str,
+                        user_id_str,
+                        clothing_id_str,
+                        job_id=job_id_str,
+                        retry=Retry(max=2, interval=[5, 20]),
+                        job_timeout=180,
+                    )
                     logger.info(f"[JobService:Enqueued] job_id={job_id_str}, clothing_id={clothing_id_str} into RQ queue '{DEFAULT_QUEUE_NAME}' (Worker Active)")
                     return job
                 else:
-                    # In production or when worker service is running, leave job queued in Redis for worker pickup
-                    is_production = settings.APP_ENV == "production" or os.getenv("RENDER") == "true"
-                    if is_production or not getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", True):
-                        logger.info(f"[JobService:Enqueued] job_id={job_id_str}, clothing_id={clothing_id_str} queued in Redis '{DEFAULT_QUEUE_NAME}' (Awaiting worker pickup)")
-                        return job
-                    logger.info(f"[JobService] Enqueued to Redis '{DEFAULT_QUEUE_NAME}'. Dispatching local worker thread for dev responsiveness.")
+                    logger.info(f"[JobService] No active RQ workers listening on '{DEFAULT_QUEUE_NAME}'. Dispatching background thread execution.")
             except Exception as e:
                 logger.warning(f"[JobService] Failed to enqueue job {job_id_str} into Redis ({e}). Routing to fallback.")
 
-        # 2. Resilient background execution fallback (ensures batch items are never stranded in dev/fallback)
+        # 2. Resilient background execution fallback (ensures items are never stranded when no RQ worker is active)
         def _run_worker():
             try:
                 logger.info(f"[JobService] Executing garment job {job_id_str} via background daemon thread (clothing_id={clothing_id_str}).")
@@ -227,9 +222,10 @@ class JobService:
     ) -> List[BackgroundJob]:
         """
         Batch-optimized job enqueueing:
-        - Reuses single Redis client connection and Queue instance for the entire batch.
-        - Checks worker state once.
-        - Enqueues all items sequentially in FIFO order without repeated connection overhead.
+        - When active RQ workers are listening, enqueues all items into the Redis queue in FIFO order.
+        - When no active RQ workers are listening (e.g. dev, worker offline), dispatches a dedicated
+          sequential background batch runner thread that processes items one-by-one in FIFO sequence.
+        - Sequential execution prevents database connection pool exhaustion and avoids PyTorch CPU thrashing.
         """
         if not batch_items:
             return []
@@ -241,13 +237,17 @@ class JobService:
 
         if redis_client is not None:
             try:
-                q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
                 has_workers = self._has_active_workers(redis_client, DEFAULT_QUEUE_NAME)
+                if has_workers:
+                    q = Queue(DEFAULT_QUEUE_NAME, connection=redis_client)
+                else:
+                    logger.info(f"[JobService] No active RQ workers on '{DEFAULT_QUEUE_NAME}'. Batch items will run via sequential background worker.")
             except Exception as e:
                 logger.warning(f"[JobService] Batch Redis initialization error: {e}")
                 q = None
+                has_workers = False
 
-        is_production = settings.APP_ENV == "production" or os.getenv("RENDER") == "true"
+        items_for_worker: List[Dict[str, Any]] = []
 
         for item in batch_items:
             user_id = item["user_id"]
@@ -276,8 +276,15 @@ class JobService:
             user_id_str = str(user_id)
             clothing_id_str = str(clothing_id)
 
-            enqueued_to_redis = False
-            if q is not None:
+            item_dict = {
+                "job_id": job_id_str,
+                "user_id": user_id_str,
+                "clothing_id": clothing_id_str,
+                "sequence_order": sequence_order,
+            }
+            items_for_worker.append(item_dict)
+
+            if q is not None and has_workers:
                 try:
                     q.enqueue(
                         process_garment_image_job,
@@ -288,28 +295,48 @@ class JobService:
                         retry=Retry(max=2, interval=[5, 20]),
                         job_timeout=180,
                     )
-                    enqueued_to_redis = True
                 except Exception as q_err:
                     logger.warning(f"[JobService] Batch Redis enqueue error for item {clothing_id_str}: {q_err}")
 
-            if enqueued_to_redis and (has_workers or is_production or not getattr(settings, "ALLOW_BACKGROUND_THREAD_FALLBACK", True)):
-                continue
+        # If no active RQ workers, execute the entire batch sequentially in a dedicated background daemon thread
+        if not (q is not None and has_workers):
+            # Sort items by sequence_order to ensure strict FIFO execution
+            items_for_worker.sort(key=lambda x: x.get("sequence_order", 0))
 
-            # Fallback thread execution for development / offline Redis
-            def _make_runner(jid: str, uid: str, cid: str):
-                def _run():
+            def _run_batch_sequentially(items_to_process: List[Dict[str, Any]]):
+                logger.info(f"[JobService:BatchWorker] Starting sequential background execution of {len(items_to_process)} items.")
+                for b_item in items_to_process:
+                    jid = b_item["job_id"]
+                    uid = b_item["user_id"]
+                    cid = b_item["clothing_id"]
                     try:
+                        logger.info(f"[JobService:BatchWorker] Processing clothing_id={cid} (job_id={jid}).")
                         process_garment_image_job(job_id=jid, user_id=uid, clothing_id=cid)
                     except Exception as exc:
-                        logger.error(f"[JobService] Background batch item execution error for {jid}: {exc}")
-                return _run
+                        logger.error(f"[JobService:BatchWorker] Item {cid} processing error: {exc}")
+                logger.info(f"[JobService:BatchWorker] Sequential background execution finished for {len(items_to_process)} items.")
 
+            batch_id_str = str(batch_items[0].get("batch_id") or uuid.uuid4())[:8]
             worker_thread = threading.Thread(
-                target=_make_runner(job_id_str, user_id_str, clothing_id_str),
-                name=f"batch-garment-{job_id_str[:8]}",
+                target=_run_batch_sequentially,
+                args=(items_for_worker,),
+                name=f"batch-seq-{batch_id_str}",
                 daemon=True,
             )
             worker_thread.start()
+            logger.info(f"[JobService] Started sequential background thread for batch of {len(items_for_worker)} items.")
+
+        if self._has_table and jobs:
+            try:
+                for j in jobs:
+                    self.db.add(j)
+                self.db.commit()
+            except Exception as dbe:
+                logger.warning(f"Could not persist batch background job records: {dbe}")
+                self.db.rollback()
+
+        logger.info(f"[JobService] Enqueued batch of {len(jobs)} garment jobs (Redis={q is not None}, WorkersActive={has_workers}).")
+        return jobs
 
         if self._has_table and jobs:
             try:

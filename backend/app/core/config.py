@@ -96,13 +96,14 @@ def _with_query_param(database_url: str, key: str, value: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
-def _pin_host_address(database_url: str) -> str:
+def _pin_host_address(database_url: str, enable_pinning: bool = False) -> str:
     """
     Resolve the database host once and pin it via libpq's `hostaddr`.
     Only enabled on local Windows when ENABLE_DNS_PINNING=true.
     Disabled by default on Render and Linux to avoid breaking cloud DNS.
     """
-    if os.getenv("RENDER") == "true" or bool(os.getenv("RENDER_SERVICE_ID")) or os.getenv("ENABLE_DNS_PINNING", "false").lower() != "true":
+    pinning_requested = enable_pinning or os.getenv("ENABLE_DNS_PINNING", "false").lower() == "true"
+    if os.getenv("RENDER") == "true" or bool(os.getenv("RENDER_SERVICE_ID")) or not pinning_requested:
         return database_url
 
     parts = _split_url(database_url)
@@ -154,7 +155,8 @@ class Settings(BaseSettings):
     FASHION_MODEL_DOWNLOAD_URL: Optional[str] = None
     FASHION_MODEL_EXPECTED_SIZE: Optional[int] = None
     FASHION_MODEL_SHA256: Optional[str] = None
-    ALLOW_BACKGROUND_THREAD_FALLBACK: bool = False
+    ALLOW_BACKGROUND_THREAD_FALLBACK: bool = True
+    ENABLE_DNS_PINNING: bool = False
     AI_ENABLE_ML: bool = True
     AI_ENABLE_IMAGE_ANALYSIS: bool = True
     
@@ -264,7 +266,7 @@ class Settings(BaseSettings):
                 "postgresql+psycopg://user:password@host/dbname?sslmode=require"
             )
         url = _with_query_param(url, "connect_timeout", "10")
-        resolved = _pin_host_address(url)
+        resolved = _pin_host_address(url, enable_pinning=self.ENABLE_DNS_PINNING)
         self._cached_resolved_url = resolved
         return resolved
 

@@ -8,6 +8,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Heritage Luxury Wardrobe Official Palette (TailorBird Editorial)
+        heritage: {
+          espresso: '#25231F',   // Main typography and dark surfaces
+          champagne: '#EAE3D8',  // Soft section backgrounds
+          ivory: '#F8F6F1',      // Main page background
+          brass: '#75624D',      // Primary accent (Antique Brass)
+          olive: '#526052',      // Secondary accent (Deep Olive)
+          taupe: '#A68B72',      // Supporting elements (Warm Taupe)
+          stone: '#B8A99A',      // Borders and muted details (Stone)
+          white: '#FFFFFF',      // Clean content surfaces (Pure White)
+          // Dark luxury complementary variants
+          darkBg: '#181614',
+          darkSurface: '#211E1B',
+          darkBorder: '#36322D',
+          darkText: '#F8F6F1',
+          darkMuted: '#A68B72',
+          darkSubtle: '#2A2622',
+        },
+
         // Editorial Atelier Official Palette
         atelier: {
           aubergine: '#29202B',  // Midnight Aubergine (Primary text, navigation)
@@ -168,6 +187,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          '"Manrope"',
           '"Plus Jakarta Sans"',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -176,6 +196,7 @@ export default {
           'sans-serif',
         ],
         serif: [
+          '"Bodoni Moda"',
           '"Cormorant Garamond"',
           '"Playfair Display"',
           'Georgia',
@@ -184,6 +205,7 @@ export default {
           'serif',
         ],
         editorial: [
+          '"Bodoni Moda"',
           '"Cormorant Garamond"',
           'Georgia',
           'serif',

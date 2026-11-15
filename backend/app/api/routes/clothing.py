@@ -2,6 +2,7 @@ import io
 import uuid
 import logging
 import hashlib
+import threading
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from uuid import UUID
@@ -19,6 +20,8 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.config import settings
+from app.core.redis import get_rq_redis_client
 from app.api.deps import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
 from app.models.clothing import Clothing
@@ -40,7 +43,7 @@ from app.schemas.wardrobe import (
     BatchStatusResponse,
 )
 from app.services.clothing_image_service import ClothingImageService
-from app.services.job_service import JobService
+from app.services.job_service import JobService, DEFAULT_QUEUE_NAME
 from app.services.batch_upload_service import BatchUploadService
 from app.services.garment_classifier_service import garment_classifier
 from app.services.clothing_prediction_service import prediction_service
@@ -363,6 +366,7 @@ def get_batch_processing_status(
     """
     Poll overall batch progress and individual item stages.
     Returns calculated progress, current item being processed, and individual item thumbnails.
+    Includes auto-healing: resumes orphaned batches if no worker is actively running.
     """
     batch_svc = BatchUploadService(db)
     try:
@@ -372,6 +376,38 @@ def get_batch_processing_status(
 
     if status_dict.get("status") == "not_found":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found.")
+
+    # Auto-healing guard: if batch has queued items but no active thread or worker, resume processing
+    if status_dict.get("status") in ("queued", "processing") and status_dict.get("queued_items", 0) > 0:
+        batch_id_prefix = str(batch_id)[:8]
+        is_thread_alive = any(t.name.startswith(f"batch-seq-{batch_id_prefix}") and t.is_alive() for t in threading.enumerate())
+        if not is_thread_alive:
+            redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
+            has_workers = JobService._has_active_workers(redis_client, DEFAULT_QUEUE_NAME) if redis_client else False
+            if not has_workers:
+                queued_analyses = (
+                    db.query(ClothingAnalysis)
+                    .filter(
+                        ClothingAnalysis.feature_vector["batch_id"].astext == str(batch_id),
+                        ClothingAnalysis.feature_vector["processing_status"].astext == "queued",
+                    )
+                    .all()
+                )
+                if queued_analyses:
+                    items_payload = [
+                        {
+                            "user_id": current_user.id,
+                            "clothing_id": a.clothing_id,
+                            "batch_id": batch_id,
+                            "sequence_order": int((a.feature_vector or {}).get("sequence_order", 0)),
+                        }
+                        for a in queued_analyses
+                    ]
+                    job_svc = JobService(db)
+                    job_svc.enqueue_garment_processing_batch(items_payload)
+                    logger.info(f"[BatchAutoResume] Resumed {len(items_payload)} queued items for batch {batch_id}.")
+                    # Refresh status after initiating processing
+                    status_dict = batch_svc.get_batch_status(batch_id=batch_id, user_id=current_user.id)
 
     return BatchStatusResponse(**status_dict)
 
@@ -395,15 +431,20 @@ def retry_failed_batch_items(
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this batch.")
 
-    first_clothing_id = retry_res.get("first_clothing_id")
-    if first_clothing_id:
+    retried_ids = retry_res.get("retried_clothing_ids") or []
+    if retried_ids:
         job_service = JobService(db)
-        job_service.enqueue_garment_processing(
-            user_id=current_user.id,
-            clothing_id=first_clothing_id,
-            batch_id=batch_id,
-        )
-        logger.info(f"[BatchUpload] Retrying batch {batch_id}: enqueued item {first_clothing_id}.")
+        items_payload = [
+            {
+                "user_id": current_user.id,
+                "clothing_id": cid,
+                "batch_id": batch_id,
+                "sequence_order": seq_idx,
+            }
+            for seq_idx, cid in enumerate(retried_ids)
+        ]
+        job_service.enqueue_garment_processing_batch(items_payload)
+        logger.info(f"[BatchUpload] Retrying batch {batch_id}: enqueued {len(retried_ids)} items.")
 
     return BatchStatusResponse(**retry_res["batch_status"])
 
@@ -453,6 +494,31 @@ def get_pending_review_clothing(
         item for item in items
         if not item.is_finalized or item.review_required or item.processing_status in ("predictions_ready", "ready_for_review", "manual_review_required", "queued", "processing", "failed")
     ]
+
+    # Auto-resume stalled queued items for this user if no active worker/thread is currently processing them
+    stalled_queued = [
+        it for it in pending_items
+        if it.processing_status == "queued" and not (it.analysis and it.analysis.feature_vector and it.analysis.feature_vector.get("ai_predictions"))
+    ]
+    if stalled_queued:
+        redis_client = get_rq_redis_client() if settings.REDIS_ENABLED else None
+        has_workers = JobService._has_active_workers(redis_client, DEFAULT_QUEUE_NAME) if redis_client else False
+        if not has_workers:
+            any_batch_thread = any(t.name.startswith("batch-seq-") and t.is_alive() for t in threading.enumerate())
+            if not any_batch_thread:
+                items_payload = [
+                    {
+                        "user_id": current_user.id,
+                        "clothing_id": it.id,
+                        "batch_id": (it.analysis.feature_vector or {}).get("batch_id") if it.analysis else None,
+                        "sequence_order": int((it.analysis.feature_vector or {}).get("sequence_order", 0)) if it.analysis else 0,
+                    }
+                    for it in stalled_queued
+                ]
+                job_svc = JobService(db)
+                job_svc.enqueue_garment_processing_batch(items_payload)
+                logger.info(f"[PendingReviewAutoResume] Dispatched processing for {len(items_payload)} stalled queued items.")
+
     return pending_items
 
 

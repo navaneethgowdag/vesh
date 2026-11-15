@@ -59,6 +59,16 @@ async def lifespan(app: FastAPI):
     import threading
     threading.Thread(target=_warmup_segmentation, name="segmentation-warmup", daemon=True).start()
 
+    # Recover any orphaned or stuck analyses in background thread
+    def _run_recovery():
+        try:
+            from app.services.clothing_recovery_service import recover_stuck_clothing_analyses
+            recover_stuck_clothing_analyses(max_items=30)
+        except Exception as re:
+            logger.warning(f"[Startup:Recovery] Background recovery notice: {re}")
+
+    threading.Thread(target=_run_recovery, name="clothing-recovery", daemon=True).start()
+
     elapsed = time.time() - start_time
     logger.info(f"[Startup:Complete] Startup sequence completed in {elapsed:.3f}s. Binding socket and accepting traffic.")
     yield

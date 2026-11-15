@@ -4,6 +4,16 @@
 
 @layer base {
   :root {
+    /* Heritage Luxury Wardrobe Palette Tokens */
+    --heritage-espresso: #25231F;
+    --heritage-champagne: #EAE3D8;
+    --heritage-ivory: #F8F6F1;
+    --heritage-brass: #75624D;
+    --heritage-olive: #526052;
+    --heritage-taupe: #A68B72;
+    --heritage-stone: #B8A99A;
+    --heritage-white: #FFFFFF;
+
     /* Exact Editorial Atelier Design Tokens */
     --color-primary: #29202B;          /* Midnight Aubergine */
     --color-background: #F3EEE8;       /* Porcelain */
@@ -41,6 +51,16 @@
   }
 
   .dark {
+    /* Heritage Luxury Wardrobe Dark Mode Complements */
+    --heritage-espresso: #F8F6F1;
+    --heritage-champagne: #2A2622;
+    --heritage-ivory: #181614;
+    --heritage-brass: #C2AB95;
+    --heritage-olive: #7E8E7E;
+    --heritage-taupe: #B8A99A;
+    --heritage-stone: #4A443E;
+    --heritage-white: #211E1B;
+
     /* Exact Editorial Atelier Tokens (Dark Atelier Mode) */
     --color-primary: #F3EEE8;
     --color-background: #1A151C;
@@ -94,7 +114,7 @@
   body {
     background-color: var(--luxury-bg);
     color: var(--luxury-text);
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Manrope", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;

@@ -243,7 +243,9 @@ export const Profile: React.FC = () => {
                 <div className="text-center sm:text-left">
                   <span className="text-3xl font-light font-serif text-[#29202B] dark:text-[#F3EEE8] flex items-center gap-1.5">
                     {wardrobe.length}
-                    <Lock className="w-3.5 h-3.5 text-[#777078] opacity-70" title="Private capsule" />
+                    <span title="Private capsule">
+                      <Lock className="w-3.5 h-3.5 text-[#777078] opacity-70" />
+                    </span>
                   </span>
                   <span className="text-[10px] text-[#777078] dark:text-[#D5A6A0] uppercase tracking-[0.14em] font-medium">Wardrobe</span>
                 </div>

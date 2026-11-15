@@ -333,12 +333,24 @@ def process_garment_image_job(
                         job.error_message = str(e)
                         db.commit()
 
-            # Synchronize batch status even on failure
+            # Persist failure status into ClothingAnalysis to avoid stranded 'processing' states
             batch_id_str = None
-            clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
-            if clothing_item and clothing_item.analysis and clothing_item.analysis.feature_vector:
-                batch_id_str = clothing_item.analysis.feature_vector.get("batch_id")
-            elif job and job.payload_ref:
+            if clothing_uuid:
+                clothing_item = db.query(Clothing).filter(Clothing.id == clothing_uuid).first()
+                if clothing_item:
+                    analysis = db.query(ClothingAnalysis).filter(ClothingAnalysis.clothing_id == clothing_uuid).first()
+                    if analysis:
+                        fv = dict(analysis.feature_vector) if isinstance(analysis.feature_vector, dict) else {}
+                        batch_id_str = fv.get("batch_id")
+                        fv["processing_status"] = "failed"
+                        fv["processing_stage"] = "failed"
+                        fv["error_message"] = str(e)
+                        fv["review_required"] = False
+                        fv["has_processed"] = False
+                        analysis.feature_vector = fv
+                        db.commit()
+
+            if not batch_id_str and job and job.payload_ref:
                 batch_id_str = job.payload_ref.get("batch_id")
 
             if batch_id_str and user_uuid:

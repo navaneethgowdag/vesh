@@ -17,16 +17,17 @@ router = APIRouter(prefix="/moments", tags=["moments"])
 def get_discovery_feed(
     limit: int = Query(30, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    include_seen: bool = Query(False, description="Whether to include seen/liked moments in stories tray"),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """
     Get active 24-hour outfit moments for For You discovery.
-    Excludes expired moments, own moments, and previously seen/liked/skipped moments.
+    Excludes expired moments and own moments.
     """
     service = MomentService(db)
     viewer_id = current_user.id if current_user else None
-    return service.get_discovery_feed(current_user_id=viewer_id, limit=limit, offset=offset)
+    return service.get_discovery_feed(current_user_id=viewer_id, limit=limit, offset=offset, include_seen=include_seen)
 
 
 @router.get("/me", response_model=List[MomentResponse])

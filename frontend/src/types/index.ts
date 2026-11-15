@@ -120,6 +120,8 @@ export interface ClothingItem {
   season: Season;
   brand?: string;
   image: string;
+  imageUrl?: string;
+  image_url?: string;
   material?: string;
   notes?: string;
   createdAt: string;
@@ -392,6 +394,7 @@ export interface Post {
     isFollowing?: boolean;
   };
   image: string;
+  imageUrl?: string;
   image_url?: string;
   caption: string;
   tags: string[];
@@ -588,6 +591,7 @@ export interface CalendarEvent {
 
   // Google Calendar extension
   title?: string;
+  display_title?: string;
   description?: string;
   location?: string;
   timezone?: string;
@@ -681,6 +685,7 @@ export interface UserSearchResult {
   displayName: string;
   bio?: string;
   avatar?: string;
+  profileImageUrl?: string;
   gender?: string;
   avatarStyle?: string;
   isVerified: boolean;
