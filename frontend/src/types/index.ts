@@ -134,6 +134,7 @@ export interface ClothingItem {
   originalImageUrl?: string;
   processedImageUrl?: string;
   preferredImageUrl?: string;
+  thumbnailUrl?: string;
   isFinalized?: boolean;
   formality?: number;
   verifiedAttributes?: Record<string, any>;

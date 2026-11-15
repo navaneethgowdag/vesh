@@ -45,6 +45,10 @@ async def generate_recommendations(
     """
     service = RecommendationService(db)
     resolved_limit = req.limit if req.limit is not None else limit
+    effective_city = city
+    if city == "New York" and getattr(current_user, "location", None) and str(current_user.location).strip():
+        effective_city = str(current_user.location).strip()
+
     return await service.generate_recommendations(
         user_id=current_user.id,
         calendar_event_id=req.calendar_event_id,
@@ -65,7 +69,7 @@ async def generate_recommendations(
         avoided_colors=req.avoided_colors,
         specific_clothing_id=req.specific_clothing_id,
         limit=resolved_limit,
-        city=city,
+        city=effective_city,
         latitude=latitude,
         longitude=longitude,
         force_regenerate=req.force_regenerate or False,
@@ -87,7 +91,7 @@ def get_occasion_taxonomy():
     }
 
 
-@router.get("/active", response_model=RecommendationResponse)
+@router.get("/active", response_model=Optional[RecommendationResponse])
 def get_active_recommendation(
     occasion: str = Query("Everyday"),
     target_date: Optional[date] = Query(None),
@@ -97,7 +101,7 @@ def get_active_recommendation(
 ):
     """
     Retrieves the currently active recommendation for the specified occasion and date.
-    Used for instant page-navigation persistence without re-generation.
+    Returns 200 with recommendation payload or 200 with null when no active recommendation exists.
     """
     service = RecommendationService(db)
     rec = service.get_active_recommendation(
@@ -106,11 +110,6 @@ def get_active_recommendation(
         target_date=target_date,
         calendar_event_id=calendar_event_id,
     )
-    if not rec:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No active recommendation found for occasion '{occasion}'.",
-        )
     return rec
 
 

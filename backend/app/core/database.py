@@ -30,7 +30,10 @@ def _build_engine(url: str) -> Engine:
         max_overflow=10,
         pool_timeout=30,
         echo=False,
-        connect_args={"application_name": "stylesphere-api"},
+        connect_args={
+            "application_name": "stylesphere-api",
+            "connect_timeout": 10,
+        },
     )
 
 

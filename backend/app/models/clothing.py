@@ -488,6 +488,10 @@ class Clothing(Base):
         return self.image_url or (f"/api/v1/clothing/{self.id}/image/original" if self.id else None)
 
     @property
+    def thumbnail_url(self) -> Optional[str]:
+        return f"/api/v1/clothing/{self.id}/image/thumbnail" if self.id else None
+
+    @property
     def sleeve_type(self) -> Optional[str]:
         if self.analysis and isinstance(self.analysis.feature_vector, dict):
             va = self.analysis.feature_vector.get("verified_attributes") or {}

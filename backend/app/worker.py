@@ -51,15 +51,24 @@ def run_worker():
 
     logger.info("[Worker Startup] Connected to Redis / Upstash broker successfully.")
 
-    # 3. Preload AI classification model into memory
+    # 3. Preload AI classification and segmentation models into memory
     try:
         from app.ai.fashion_model import fashion_model_service
+        from app.services.garment_segmentation_service import garment_segmentation_service
+
         logger.info("[Worker Startup] Preloading MultiTaskEfficientNetB0 fashion classification model...")
         loaded = fashion_model_service.load_model()
         if loaded:
-            logger.info(f"[Worker Startup] Model ready. Version: {fashion_model_service.model_version}, Device: {fashion_model_service.device}")
+            logger.info(f"[Worker Startup] Fashion model ready. Version: {fashion_model_service.model_version}, Device: {fashion_model_service.device}")
         else:
             logger.warning(f"[Worker Startup] Fashion model load warning: {fashion_model_service.load_error}. Will attempt lazy load per job.")
+
+        logger.info("[Worker Startup] Preloading and warming ONNX garment segmentation model...")
+        seg_ok = garment_segmentation_service.warmup()
+        if seg_ok:
+            logger.info("[Worker Startup] Garment segmentation model ready on CPU.")
+        else:
+            logger.info("[Worker Startup] Garment segmentation model using OpenCV fallback.")
     except Exception as me:
         logger.warning(f"[Worker Startup] Model preload notice: {me}")
 

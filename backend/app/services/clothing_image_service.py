@@ -43,9 +43,11 @@ class ClothingImageService:
         mime_type: Optional[str] = None,
         width: Optional[int] = None,
         height: Optional[int] = None,
+        commit: bool = True,
     ) -> ClothingImage:
         """
         Store image binary payload into PostgreSQL with user ownership verification.
+        When commit=False, performs db.flush() for batch transactional operations.
         """
         clothing = self.db.query(Clothing).filter(Clothing.id == clothing_id).first()
         if not clothing:
@@ -80,8 +82,11 @@ class ClothingImageService:
                 existing.width = width
                 existing.height = height
                 existing.created_at = datetime.now(timezone.utc)
-                self.db.commit()
-                self.db.refresh(existing)
+                if commit:
+                    self.db.commit()
+                    self.db.refresh(existing)
+                else:
+                    self.db.flush()
                 return existing
             else:
                 new_img = ClothingImage(
@@ -95,8 +100,11 @@ class ClothingImageService:
                     height=height,
                 )
                 self.db.add(new_img)
-                self.db.commit()
-                self.db.refresh(new_img)
+                if commit:
+                    self.db.commit()
+                    self.db.refresh(new_img)
+                else:
+                    self.db.flush()
                 return new_img
         else:
             # Fallback persistence for environments with restricted schema permissions
@@ -119,7 +127,10 @@ class ClothingImageService:
                 feature_dict["has_processed"] = True
 
             analysis.feature_vector = feature_dict
-            self.db.commit()
+            if commit:
+                self.db.commit()
+            else:
+                self.db.flush()
 
             # Return synthetic ClothingImage instance
             dummy = ClothingImage(

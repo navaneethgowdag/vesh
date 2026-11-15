@@ -97,6 +97,7 @@ class ClothingResponse(ClothingBase):
     formality: Optional[float] = 0.5
     verified_attributes: Optional[dict] = Field(default_factory=dict)
     preferred_image_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
     sleeve_type: Optional[str] = None
     neckline: Optional[str] = None
     category_group: Optional[str] = None

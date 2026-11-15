@@ -20,6 +20,7 @@ import os
 import io
 import json
 import logging
+import threading
 from typing import Dict, Any, List, Optional, Union
 from PIL import Image
 import numpy as np
@@ -30,6 +31,17 @@ import torchvision.transforms as T
 from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
+
+# Control PyTorch CPU threads once during process initialization to avoid oversubscribing CPU cores
+_target_cpu_threads = max(1, (os.cpu_count() or 4) // 2)
+if torch.get_num_threads() > _target_cpu_threads:
+    try:
+        torch.set_num_threads(_target_cpu_threads)
+    except Exception:
+        pass
+
+# Concurrency semaphore: serializes CPU model forward passes to eliminate context-switching thrashing
+_inference_semaphore = threading.Semaphore(1)
 
 TASK_SNAKE_MAP: Dict[str, str] = {
     "articleType": "article_type",
@@ -443,6 +455,13 @@ class FashionModelService:
         except Exception as exif_err:
             logger.debug(f"[FashionModelService] EXIF transpose notice: {exif_err}")
 
+        # Pre-scale extraordinarily large images to save CPU and memory before model transformation
+        orig_max = max(img.size)
+        if orig_max > 1600:
+            scale = 1600.0 / orig_max
+            new_size = (max(1, int(img.size[0] * scale)), max(1, int(img.size[1] * scale)))
+            img = img.resize(new_size, Image.Resampling.BILINEAR)
+
         if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
             bg = Image.new("RGB", img.size, (255, 255, 255))
             rgba = img.convert("RGBA")
@@ -478,8 +497,9 @@ class FashionModelService:
         orig_w, orig_h = pil_img.size
         tensor = self.transform(pil_img).unsqueeze(0).to(self.device)
 
-        with torch.inference_mode():
-            outputs = self.model(tensor)
+        with _inference_semaphore:
+            with torch.inference_mode():
+                outputs = self.model(tensor)
 
         task_results: Dict[str, Any] = {}
         confidences: List[float] = []

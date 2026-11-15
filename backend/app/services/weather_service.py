@@ -1,8 +1,11 @@
+import json
+import time
 import logging
 from typing import Dict, Any, Optional, Tuple
 import httpx
 from fastapi import HTTPException, status
 from app.core.config import get_settings
+from app.core.redis import get_async_redis_client
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -38,6 +41,14 @@ WMO_WEATHER_CODES = {
     99: ("Thunderstorm", "cloud-lightning", "Severe thunderstorm with heavy hail. Stay indoors or dress warmly."),
 }
 
+# In-memory fallbacks when Redis is disabled or offline
+_mem_geo_cache: Dict[str, Tuple[float, float, str, str]] = {}
+_mem_rev_geo_cache: Dict[str, Tuple[str, str]] = {}
+_mem_weather_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
+WEATHER_CACHE_TTL = 900       # 15 minutes
+GEO_CACHE_TTL = 86400         # 24 hours
+
 
 class WeatherService:
     def __init__(self):
@@ -47,11 +58,28 @@ class WeatherService:
     async def geocode_city(self, city: str) -> Optional[Tuple[float, float, str, str]]:
         """
         Geocode city name to (lat, lon, resolved_city, country) via Open-Meteo Geocoding API.
-        Pure live lookup with zero static mock tables.
+        Caches results in Redis (or in-memory) for 24 hours.
         """
         clean_name = city.strip()
         if not clean_name:
             return None
+
+        cache_key = f"weather:geo:{clean_name.lower()}"
+
+        # 1. Check Redis cache
+        redis_client = get_async_redis_client()
+        if redis_client is not None:
+            try:
+                cached = await redis_client.get(cache_key)
+                if cached:
+                    data = json.loads(cached)
+                    return (data[0], data[1], data[2], data[3])
+            except Exception as re:
+                logger.debug(f"[WeatherService] Redis geocode get notice: {re}")
+
+        # 2. Check in-memory cache
+        if clean_name.lower() in _mem_geo_cache:
+            return _mem_geo_cache[clean_name.lower()]
 
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
@@ -64,12 +92,21 @@ class WeatherService:
                     results = data.get("results")
                     if results and len(results) > 0:
                         first = results[0]
-                        return (
+                        res = (
                             float(first["latitude"]),
                             float(first["longitude"]),
                             first.get("name", clean_name),
                             first.get("country_code", first.get("country", "")).upper(),
                         )
+                        # Save to memory
+                        _mem_geo_cache[clean_name.lower()] = res
+                        # Save to Redis
+                        if redis_client is not None:
+                            try:
+                                await redis_client.setex(cache_key, GEO_CACHE_TTL, json.dumps(list(res)))
+                            except Exception:
+                                pass
+                        return res
         except Exception as e:
             logger.warning(f"Open-Meteo geocoding error for city '{city}': {e}")
 
@@ -78,8 +115,28 @@ class WeatherService:
     async def reverse_geocode(self, lat: float, lon: float) -> Tuple[str, str]:
         """
         Resolve real city and country from GPS latitude and longitude.
-        Uses BigDataCloud and Nominatim reverse geocoding services.
+        Caches in Redis (or in-memory) for 24 hours.
         """
+        cache_key = f"weather:rev:{lat:.2f}:{lon:.2f}"
+
+        # 1. Check Redis cache
+        redis_client = get_async_redis_client()
+        if redis_client is not None:
+            try:
+                cached = await redis_client.get(cache_key)
+                if cached:
+                    data = json.loads(cached)
+                    return (data[0], data[1])
+            except Exception as re:
+                logger.debug(f"[WeatherService] Redis reverse geocode get notice: {re}")
+
+        # 2. Check in-memory cache
+        mem_key = f"{lat:.2f}:{lon:.2f}"
+        if mem_key in _mem_rev_geo_cache:
+            return _mem_rev_geo_cache[mem_key]
+
+        res = (f"{lat:.2f}, {lon:.2f}", "")
+
         # 1. Try BigDataCloud free client reverse geocoding
         try:
             async with httpx.AsyncClient(timeout=4.0) as client:
@@ -96,34 +153,43 @@ class WeatherService:
                         or f"{lat:.2f}, {lon:.2f}"
                     )
                     country = data.get("countryCode") or data.get("countryName") or ""
-                    return city, country.upper()
+                    res = (city, country.upper())
         except Exception as e:
             logger.warning(f"BigDataCloud reverse geocode error for ({lat}, {lon}): {e}")
 
-        # 2. Try OpenStreetMap Nominatim
-        try:
-            async with httpx.AsyncClient(timeout=4.0, headers={"User-Agent": "StyleSphereApp/1.0"}) as client:
-                resp = await client.get(
-                    "https://nominatim.openstreetmap.org/reverse",
-                    params={"lat": lat, "lon": lon, "format": "json"},
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    address = data.get("address", {})
-                    city = (
-                        address.get("city")
-                        or address.get("town")
-                        or address.get("village")
-                        or address.get("suburb")
-                        or address.get("county")
-                        or f"{lat:.2f}, {lon:.2f}"
+        # 2. Try OpenStreetMap Nominatim if BigDataCloud did not resolve city name
+        if res[0] == f"{lat:.2f}, {lon:.2f}":
+            try:
+                async with httpx.AsyncClient(timeout=4.0, headers={"User-Agent": "StyleSphereApp/1.0"}) as client:
+                    resp = await client.get(
+                        "https://nominatim.openstreetmap.org/reverse",
+                        params={"lat": lat, "lon": lon, "format": "json"},
                     )
-                    country = address.get("country_code", "").upper()
-                    return city, country
-        except Exception as e:
-            logger.warning(f"Nominatim reverse geocode error for ({lat}, {lon}): {e}")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        address = data.get("address", {})
+                        city = (
+                            address.get("city")
+                            or address.get("town")
+                            or address.get("village")
+                            or address.get("suburb")
+                            or address.get("county")
+                            or f"{lat:.2f}, {lon:.2f}"
+                        )
+                        country = address.get("country_code", "").upper()
+                        res = (city, country)
+            except Exception as e:
+                logger.warning(f"Nominatim reverse geocode error for ({lat}, {lon}): {e}")
 
-        return f"{lat:.2f}, {lon:.2f}", ""
+        # Save to memory and Redis
+        _mem_rev_geo_cache[mem_key] = res
+        if redis_client is not None:
+            try:
+                await redis_client.setex(cache_key, GEO_CACHE_TTL, json.dumps(list(res)))
+            except Exception:
+                pass
+
+        return res
 
     async def get_current_weather(
         self,
@@ -133,7 +199,7 @@ class WeatherService:
     ) -> Dict[str, Any]:
         """
         Fetch real live weather from Open-Meteo API.
-        Zero dummy/mock data used.
+        Caches responses per coordinate grid for 15 minutes (900s) to avoid repeated outbound calls.
         """
         lat = latitude
         lon = longitude
@@ -165,6 +231,30 @@ class WeatherService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Location coordinates or city name must be provided.",
             )
+
+        # Cache lookup using rounded coordinates (0.01 deg ~= 1.1 km precision)
+        cache_key = f"weather:forecast:{lat:.2f}:{lon:.2f}"
+
+        # 1. Check Redis cache
+        redis_client = get_async_redis_client()
+        if redis_client is not None:
+            try:
+                cached = await redis_client.get(cache_key)
+                if cached:
+                    cached_data = json.loads(cached)
+                    # Preserve resolved city/country from current request
+                    if resolved_city and not cached_data.get("city"):
+                        cached_data["city"] = resolved_city
+                    return cached_data
+            except Exception as re:
+                logger.debug(f"[WeatherService] Redis weather get notice: {re}")
+
+        # 2. Check in-memory cache
+        mem_key = f"{lat:.2f}:{lon:.2f}"
+        if mem_key in _mem_weather_cache:
+            ts, cached_data = _mem_weather_cache[mem_key]
+            if time.time() - ts < WEATHER_CACHE_TTL:
+                return dict(cached_data)
 
         # Query Open-Meteo Forecast API with real coordinates
         try:
@@ -217,7 +307,7 @@ class WeatherService:
                     ("Partly Cloudy", "cloud-sun", f"Conditions in {resolved_city}."),
                 )
 
-                return {
+                result = {
                     "city": resolved_city,
                     "country": resolved_country,
                     "temp": temp,
@@ -236,6 +326,19 @@ class WeatherService:
                     "longitude": lon,
                     "summary": f"{cond_name} in {resolved_city}. {default_summary}",
                 }
+
+                # Save to in-memory cache
+                _mem_weather_cache[mem_key] = (time.time(), result)
+
+                # Save to Redis cache
+                if redis_client is not None:
+                    try:
+                        await redis_client.setex(cache_key, WEATHER_CACHE_TTL, json.dumps(result))
+                    except Exception as set_err:
+                        logger.debug(f"[WeatherService] Redis weather set notice: {set_err}")
+
+                return result
+
         except HTTPException:
             raise
         except Exception as e:

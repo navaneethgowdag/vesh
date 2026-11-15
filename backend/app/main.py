@@ -48,6 +48,17 @@ async def lifespan(app: FastAPI):
     # Dispatch fashion model loading in background thread so Uvicorn binds port immediately
     fashion_model_service.load_model_in_background()
 
+    # Pre-warm garment segmentation model in background thread
+    def _warmup_segmentation():
+        try:
+            from app.services.garment_segmentation_service import garment_segmentation_service
+            garment_segmentation_service.warmup()
+        except Exception as se:
+            logger.warning(f"[Startup:Segmentation] Background segmentation warmup notice: {se}")
+
+    import threading
+    threading.Thread(target=_warmup_segmentation, name="segmentation-warmup", daemon=True).start()
+
     elapsed = time.time() - start_time
     logger.info(f"[Startup:Complete] Startup sequence completed in {elapsed:.3f}s. Binding socket and accepting traffic.")
     yield
@@ -96,6 +107,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 # Ensure static upload directory exists and mount static file serving with CORS support
@@ -225,5 +237,13 @@ def api_health_check():
 
 # Include all v1 API routes
 app.include_router(api_router, prefix="/api/v1")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # In local development, restrict file watching to 'app' source directory
+    # to prevent uploads, cache files, and model artifacts from triggering reloads.
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("app.main:app", host="127.0.0.1", port=port, reload=True, reload_dirs=["app"])
 
 

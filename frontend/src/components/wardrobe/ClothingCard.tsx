@@ -69,7 +69,7 @@ export const ClothingCard: React.FC<ClothingCardProps> = ({ item, onEdit }) => {
       {/* Garment Image */}
       <div className="relative aspect-[3/4] bg-[#FAF6F0] dark:bg-[#201824] overflow-hidden">
         <img
-          src={resolveImageUrl(item.preferredImageUrl || item.image) || FALLBACK_POST_IMAGE}
+          src={resolveImageUrl(item.thumbnailUrl || item.preferredImageUrl || item.image) || FALLBACK_POST_IMAGE}
           alt={item.name}
           onError={(e) => {
             if (e.currentTarget.src !== FALLBACK_POST_IMAGE) {

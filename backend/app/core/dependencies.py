@@ -1,11 +1,15 @@
 import uuid
+import logging
 from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 from app.core.database import get_db
 from app.core.security import AUTH_COOKIE_NAME, decode_access_token
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login",
@@ -55,7 +59,15 @@ def get_current_user(
     except ValueError:
         raise credentials_exception
         
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+    except OperationalError as oe:
+        logger.error(f"[Auth] Transient database operational error during user lookup: {oe}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service temporarily unavailable. Please retry momentarily.",
+            headers={"Retry-After": "3"},
+        )
     if user is None:
         raise credentials_exception
     if not user.is_active:

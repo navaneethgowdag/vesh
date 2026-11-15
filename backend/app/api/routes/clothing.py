@@ -258,13 +258,14 @@ async def batch_upload_clothing_images(
         mime_type = file.content_type or "image/jpeg"
 
         if is_readable:
-            # Store original binary into Neon BYTEA
+            # Store original binary into Neon BYTEA (flushed in memory; committed at batch end)
             image_service.store_image(
                 clothing_id=clothing.id,
                 user_id=current_user.id,
                 image_bytes=image_bytes,
                 image_type="original",
                 mime_type=mime_type,
+                commit=False,
             )
             clothing.image_url = f"/api/v1/clothing/{clothing.id}/image/original"
 
@@ -324,18 +325,22 @@ async def batch_upload_clothing_images(
             })
             analysis.feature_vector = fv
 
+    # Single transactional commit for all clothing records and BYTEA payloads in the batch
     db.commit()
 
-    # Enqueue every valid item for durable background AI processing
+    # Enqueue valid items in a single optimized pass reusing Redis connection and worker state
     if valid_clothing_ids:
         job_service = JobService(db)
-        for seq_idx, cid in enumerate(valid_clothing_ids):
-            job_service.enqueue_garment_processing(
-                user_id=current_user.id,
-                clothing_id=cid,
-                batch_id=batch_id,
-                sequence_order=seq_idx,
-            )
+        items_payload = [
+            {
+                "user_id": current_user.id,
+                "clothing_id": cid,
+                "batch_id": batch_id,
+                "sequence_order": seq_idx,
+            }
+            for seq_idx, cid in enumerate(valid_clothing_ids)
+        ]
+        job_service.enqueue_garment_processing_batch(items_payload)
         logger.info(f"[BatchUpload] Batch {batch_id} created with {len(files)} items. Enqueued {len(valid_clothing_ids)} items for AI processing.")
 
     return BatchUploadResponse(

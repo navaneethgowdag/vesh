@@ -42,7 +42,7 @@ type CategoryFilter = typeof CATEGORIES[number];
 type WardrobeSection = 'accepted' | 'pending' | 'all';
 
 export const Wardrobe: React.FC = () => {
-  const { wardrobe, refreshData, showToast } = useApp();
+  const { wardrobe, refreshData, refreshWardrobe, showToast } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -141,10 +141,10 @@ export const Wardrobe: React.FC = () => {
   useEffect(() => {
     if (!hasActiveProcessingItems) return;
     const interval = setInterval(() => {
-      refreshData(true);
+      refreshWardrobe();
     }, 3000);
     return () => clearInterval(interval);
-  }, [hasActiveProcessingItems, refreshData]);
+  }, [hasActiveProcessingItems, refreshWardrobe]);
 
   const totalItems = wardrobe.length;
   const topsCount = acceptedItems.filter((i) =>

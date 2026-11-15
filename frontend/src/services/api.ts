@@ -178,6 +178,8 @@ const DEFAULT_ENDPOINT_TTLS: Array<{ pattern: RegExp | string; ttlMs: number }> 
   { pattern: '/posts', ttlMs: 45 * 1000 },
   { pattern: '/saved/collections', ttlMs: 60 * 1000 },
   { pattern: '/notifications', ttlMs: 30 * 1000 },
+  { pattern: '/social/following', ttlMs: 60 * 1000 },
+  { pattern: '/social', ttlMs: 60 * 1000 },
 ];
 
 export const apiCache = {
@@ -731,6 +733,7 @@ export const api = {
         preferredImageUrl: (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
           ? `/api/v1/clothing/${item.id}/image/processed`
           : (item.image_url || `/api/v1/clothing/${item.id}/image/original`),
+        thumbnailUrl: item.thumbnail_url || (item.id ? `/api/v1/clothing/${item.id}/image/thumbnail` : undefined),
         sleeveType: item.sleeve_type,
         neckline: item.neckline,
         categoryGroup: item.category_group,
@@ -1255,6 +1258,7 @@ export const api = {
         preferredImageUrl: (item.is_processed_available && item.processing_status !== 'rejected_original_kept')
           ? `/api/v1/clothing/${item.id}/image/processed`
           : (item.image_url || `/api/v1/clothing/${item.id}/image/original`),
+        thumbnailUrl: item.thumbnail_url || (item.id ? `/api/v1/clothing/${item.id}/image/thumbnail` : undefined),
         sleeveType: item.sleeve_type,
         neckline: item.neckline,
         categoryGroup: item.category_group,

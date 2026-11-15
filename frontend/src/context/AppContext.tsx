@@ -112,6 +112,7 @@ interface AppContextType {
   markAllNotificationsAsRead: () => Promise<void>;
   allCreators: User[];
   refreshData: (bypassCache?: boolean) => Promise<void>;
+  refreshWardrobe: () => Promise<void>;
   unreadMessagesCount: number;
   refreshUnreadMessagesCount: () => Promise<void>;
 }
@@ -568,6 +569,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     refreshDataPromiseRef.current = p;
     return p;
   }, [showToast, syncSettingsFromUser]);
+
+  const refreshWardrobe = useCallback(async () => {
+    try {
+      const items = await api.wardrobe.list(undefined, { bypassCache: true });
+      setWardrobe(items);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     refreshData();
@@ -1255,6 +1263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         markAllNotificationsAsRead,
         allCreators: [],
         refreshData,
+        refreshWardrobe,
         unreadMessagesCount,
         refreshUnreadMessagesCount,
       }}
