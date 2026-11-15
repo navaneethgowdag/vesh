@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, Text
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Index, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -22,6 +22,11 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("idx_users_lower_email", func.lower(email)),
+        Index("idx_users_lower_username", func.lower(username)),
+    )
 
     # API compatibility virtual properties (not DB columns)
     @property

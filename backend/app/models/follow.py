@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, CheckConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -17,6 +17,7 @@ class Follow(Base):
     __table_args__ = (
         UniqueConstraint("follower_id", "following_id", name="uq_follower_following"),
         CheckConstraint("follower_id != following_id", name="ck_no_self_follow"),
+        Index("idx_follows_following_id", "following_id", "follower_id"),
     )
 
     # Relationships

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Table
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Table, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -11,6 +11,7 @@ outfit_clothing = Table(
     Base.metadata,
     Column("outfit_id", UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="CASCADE"), primary_key=True),
     Column("clothing_id", UUID(as_uuid=True), ForeignKey("clothing.id", ondelete="CASCADE"), primary_key=True),
+    Index("idx_outfit_clothing_clothing_id", "clothing_id", "outfit_id"),
 )
 
 

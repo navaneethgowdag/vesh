@@ -1,0 +1,2509 @@
+{
+  "database_info": {
+    "database": "neondb",
+    "user": "authenticated",
+    "version": "PostgreSQL 17.12 (14c6cec) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit"
+  },
+  "extensions": [
+    {
+      "name": "pg_session_jwt",
+      "version": "0.4.0"
+    },
+    {
+      "name": "pgcrypto",
+      "version": "1.3"
+    },
+    {
+      "name": "plpgsql",
+      "version": "1.0"
+    }
+  ],
+  "alembic_versions": "Table absent: (psycopg.errors.UndefinedTable) relation \"alembic_version\" does not exist",
+  "tables": [
+    {
+      "table_name": "clothing",
+      "exact_rows": 1546,
+      "estimated_rows": 1519,
+      "total_size": "688 kB",
+      "table_size": "336 kB",
+      "indexes_size": "312 kB",
+      "total_bytes": 704512,
+      "table_bytes": 344064,
+      "indexes_bytes": 319488
+    },
+    {
+      "table_name": "clothing_analysis",
+      "exact_rows": 1165,
+      "estimated_rows": 1127,
+      "total_size": "9920 kB",
+      "table_size": "584 kB",
+      "indexes_size": "160 kB",
+      "total_bytes": 10158080,
+      "table_bytes": 598016,
+      "indexes_bytes": 163840
+    },
+    {
+      "table_name": "collections",
+      "exact_rows": 2,
+      "estimated_rows": -1,
+      "total_size": "32 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_bytes": 32768,
+      "table_bytes": 8192,
+      "indexes_bytes": 16384
+    },
+    {
+      "table_name": "comments",
+      "exact_rows": 1,
+      "estimated_rows": -1,
+      "total_size": "32 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_bytes": 32768,
+      "table_bytes": 8192,
+      "indexes_bytes": 16384
+    },
+    {
+      "table_name": "follows",
+      "exact_rows": 76,
+      "estimated_rows": 41,
+      "total_size": "40 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_bytes": 40960,
+      "table_bytes": 8192,
+      "indexes_bytes": 32768
+    },
+    {
+      "table_name": "learned_preferences",
+      "exact_rows": 796,
+      "estimated_rows": 795,
+      "total_size": "912 kB",
+      "table_size": "496 kB",
+      "indexes_size": "168 kB",
+      "total_bytes": 933888,
+      "table_bytes": 507904,
+      "indexes_bytes": 172032
+    },
+    {
+      "table_name": "likes",
+      "exact_rows": 33,
+      "estimated_rows": 7,
+      "total_size": "40 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_bytes": 40960,
+      "table_bytes": 8192,
+      "indexes_bytes": 32768
+    },
+    {
+      "table_name": "notifications",
+      "exact_rows": 164,
+      "estimated_rows": 149,
+      "total_size": "80 kB",
+      "table_size": "32 kB",
+      "indexes_size": "16 kB",
+      "total_bytes": 81920,
+      "table_bytes": 32768,
+      "indexes_bytes": 16384
+    },
+    {
+      "table_name": "outfit_clothing",
+      "exact_rows": 1187,
+      "estimated_rows": 1136,
+      "total_size": "224 kB",
+      "table_size": "88 kB",
+      "indexes_size": "104 kB",
+      "total_bytes": 229376,
+      "table_bytes": 90112,
+      "indexes_bytes": 106496
+    },
+    {
+      "table_name": "outfits",
+      "exact_rows": 657,
+      "estimated_rows": 607,
+      "total_size": "352 kB",
+      "table_size": "224 kB",
+      "indexes_size": "96 kB",
+      "total_bytes": 360448,
+      "table_bytes": 229376,
+      "indexes_bytes": 98304
+    },
+    {
+      "table_name": "posts",
+      "exact_rows": 118,
+      "estimated_rows": 102,
+      "total_size": "72 kB",
+      "table_size": "24 kB",
+      "indexes_size": "16 kB",
+      "total_bytes": 73728,
+      "table_bytes": 24576,
+      "indexes_bytes": 16384
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "exact_rows": 76,
+      "estimated_rows": 48,
+      "total_size": "88 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "80 kB",
+      "total_bytes": 90112,
+      "table_bytes": 8192,
+      "indexes_bytes": 81920
+    },
+    {
+      "table_name": "recommendations",
+      "exact_rows": 650,
+      "estimated_rows": 600,
+      "total_size": "296 kB",
+      "table_size": "144 kB",
+      "indexes_size": "128 kB",
+      "total_bytes": 303104,
+      "table_bytes": 147456,
+      "indexes_bytes": 131072
+    },
+    {
+      "table_name": "saved",
+      "exact_rows": 2,
+      "estimated_rows": 1,
+      "total_size": "40 kB",
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_bytes": 40960,
+      "table_bytes": 8192,
+      "indexes_bytes": 32768
+    },
+    {
+      "table_name": "user_preferences",
+      "exact_rows": 623,
+      "estimated_rows": 623,
+      "total_size": "344 kB",
+      "table_size": "216 kB",
+      "indexes_size": "96 kB",
+      "total_bytes": 352256,
+      "table_bytes": 221184,
+      "indexes_bytes": 98304
+    },
+    {
+      "table_name": "users",
+      "exact_rows": 1424,
+      "estimated_rows": 1420,
+      "total_size": "608 kB",
+      "table_size": "256 kB",
+      "indexes_size": "312 kB",
+      "total_bytes": 622592,
+      "table_bytes": 262144,
+      "indexes_bytes": 319488
+    },
+    {
+      "table_name": "wear_history",
+      "exact_rows": 236,
+      "estimated_rows": 214,
+      "total_size": "152 kB",
+      "table_size": "48 kB",
+      "indexes_size": "80 kB",
+      "total_bytes": 155648,
+      "table_bytes": 49152,
+      "indexes_bytes": 81920
+    }
+  ],
+  "columns_by_table": {
+    "clothing": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "category",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "subcategory",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "color",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "secondary_color",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "pattern",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "material",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "fit",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "brand",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "size",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "season",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "occasion",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_favorite",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "wear_count",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "clothing_analysis": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "clothing_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "detected_category",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "detected_subcategory",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "detected_colors",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "detected_pattern",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "detected_material",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "detected_fit",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "style_tags",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "season_tags",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "occasion_tags",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "confidence",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "feature_vector",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "collections": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "comments": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "content",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "follows": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "follower_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "following_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "learned_preferences": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "style_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "color_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "category_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "fit_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "pattern_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "material_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "occasion_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "season_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "weather_scores",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "confidence_score",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "interaction_count",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "likes": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "notifications": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "type",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "title",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "message",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_read",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "outfit_clothing": [
+      {
+        "column_name": "outfit_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "clothing_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ],
+    "outfits": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "occasion",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "season",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "posts": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "caption",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "recommendation_feedback": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "recommendation_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "action",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "feedback_value",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "recommendations": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "outfit_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "temperature",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "feels_like_temperature",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "humidity",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "weather_condition",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "rain_probability",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "occasion",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "season",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "recommendation_score",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "model_version",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "saved": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "user_preferences": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "preferred_styles",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_colors",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_categories",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_fits",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_patterns",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_materials",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_occasions",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "preferred_seasons",
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "users": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "username",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "password_hash",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "first_name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_name",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "bio",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "avatar_url",
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "wear_history": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "outfit_id",
+        "data_type": "uuid",
+        "udt_name": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "worn_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "temperature",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "feels_like_temperature",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "humidity",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "weather_condition",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "rain_probability",
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "occasion",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "season",
+        "data_type": "character varying",
+        "udt_name": "varchar",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "user_rating",
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "udt_name": "timestamptz",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "existing_indexes": [
+    {
+      "table_name": "clothing",
+      "index_name": "clothing_pkey",
+      "index_def": "CREATE UNIQUE INDEX clothing_pkey ON public.clothing USING btree (id)"
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_category",
+      "index_def": "CREATE INDEX idx_clothing_category ON public.clothing USING btree (category)"
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_color",
+      "index_def": "CREATE INDEX idx_clothing_color ON public.clothing USING btree (color)"
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_occasion",
+      "index_def": "CREATE INDEX idx_clothing_occasion ON public.clothing USING btree (occasion)"
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_season",
+      "index_def": "CREATE INDEX idx_clothing_season ON public.clothing USING btree (season)"
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_user",
+      "index_def": "CREATE INDEX idx_clothing_user ON public.clothing USING btree (user_id)"
+    },
+    {
+      "table_name": "clothing_analysis",
+      "index_name": "clothing_analysis_clothing_id_key",
+      "index_def": "CREATE UNIQUE INDEX clothing_analysis_clothing_id_key ON public.clothing_analysis USING btree (clothing_id)"
+    },
+    {
+      "table_name": "clothing_analysis",
+      "index_name": "clothing_analysis_pkey",
+      "index_def": "CREATE UNIQUE INDEX clothing_analysis_pkey ON public.clothing_analysis USING btree (id)"
+    },
+    {
+      "table_name": "collections",
+      "index_name": "collections_pkey",
+      "index_def": "CREATE UNIQUE INDEX collections_pkey ON public.collections USING btree (id)"
+    },
+    {
+      "table_name": "comments",
+      "index_name": "comments_pkey",
+      "index_def": "CREATE UNIQUE INDEX comments_pkey ON public.comments USING btree (id)"
+    },
+    {
+      "table_name": "follows",
+      "index_name": "follows_pkey",
+      "index_def": "CREATE UNIQUE INDEX follows_pkey ON public.follows USING btree (id)"
+    },
+    {
+      "table_name": "follows",
+      "index_name": "uq_follow",
+      "index_def": "CREATE UNIQUE INDEX uq_follow ON public.follows USING btree (follower_id, following_id)"
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "idx_learned_preferences_user",
+      "index_def": "CREATE INDEX idx_learned_preferences_user ON public.learned_preferences USING btree (user_id)"
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "learned_preferences_pkey",
+      "index_def": "CREATE UNIQUE INDEX learned_preferences_pkey ON public.learned_preferences USING btree (id)"
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "learned_preferences_user_id_key",
+      "index_def": "CREATE UNIQUE INDEX learned_preferences_user_id_key ON public.learned_preferences USING btree (user_id)"
+    },
+    {
+      "table_name": "likes",
+      "index_name": "likes_pkey",
+      "index_def": "CREATE UNIQUE INDEX likes_pkey ON public.likes USING btree (id)"
+    },
+    {
+      "table_name": "likes",
+      "index_name": "uq_like_user_post",
+      "index_def": "CREATE UNIQUE INDEX uq_like_user_post ON public.likes USING btree (user_id, post_id)"
+    },
+    {
+      "table_name": "notifications",
+      "index_name": "notifications_pkey",
+      "index_def": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+    },
+    {
+      "table_name": "outfit_clothing",
+      "index_name": "outfit_clothing_pkey",
+      "index_def": "CREATE UNIQUE INDEX outfit_clothing_pkey ON public.outfit_clothing USING btree (outfit_id, clothing_id)"
+    },
+    {
+      "table_name": "outfits",
+      "index_name": "idx_outfits_user",
+      "index_def": "CREATE INDEX idx_outfits_user ON public.outfits USING btree (user_id)"
+    },
+    {
+      "table_name": "outfits",
+      "index_name": "outfits_pkey",
+      "index_def": "CREATE UNIQUE INDEX outfits_pkey ON public.outfits USING btree (id)"
+    },
+    {
+      "table_name": "posts",
+      "index_name": "posts_pkey",
+      "index_def": "CREATE UNIQUE INDEX posts_pkey ON public.posts USING btree (id)"
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_action",
+      "index_def": "CREATE INDEX idx_feedback_action ON public.recommendation_feedback USING btree (action)"
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_created",
+      "index_def": "CREATE INDEX idx_feedback_created ON public.recommendation_feedback USING btree (created_at)"
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_recommendation",
+      "index_def": "CREATE INDEX idx_feedback_recommendation ON public.recommendation_feedback USING btree (recommendation_id)"
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_user",
+      "index_def": "CREATE INDEX idx_feedback_user ON public.recommendation_feedback USING btree (user_id)"
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "recommendation_feedback_pkey",
+      "index_def": "CREATE UNIQUE INDEX recommendation_feedback_pkey ON public.recommendation_feedback USING btree (id)"
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "idx_recommendations_created",
+      "index_def": "CREATE INDEX idx_recommendations_created ON public.recommendations USING btree (created_at)"
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "idx_recommendations_user",
+      "index_def": "CREATE INDEX idx_recommendations_user ON public.recommendations USING btree (user_id)"
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "recommendations_pkey",
+      "index_def": "CREATE UNIQUE INDEX recommendations_pkey ON public.recommendations USING btree (id)"
+    },
+    {
+      "table_name": "saved",
+      "index_name": "saved_pkey",
+      "index_def": "CREATE UNIQUE INDEX saved_pkey ON public.saved USING btree (id)"
+    },
+    {
+      "table_name": "saved",
+      "index_name": "uq_saved_user_post",
+      "index_def": "CREATE UNIQUE INDEX uq_saved_user_post ON public.saved USING btree (user_id, post_id)"
+    },
+    {
+      "table_name": "user_preferences",
+      "index_name": "user_preferences_pkey",
+      "index_def": "CREATE UNIQUE INDEX user_preferences_pkey ON public.user_preferences USING btree (id)"
+    },
+    {
+      "table_name": "user_preferences",
+      "index_name": "user_preferences_user_id_key",
+      "index_def": "CREATE UNIQUE INDEX user_preferences_user_id_key ON public.user_preferences USING btree (user_id)"
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_email_key",
+      "index_def": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_pkey",
+      "index_def": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_username_key",
+      "index_def": "CREATE UNIQUE INDEX users_username_key ON public.users USING btree (username)"
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_outfit",
+      "index_def": "CREATE INDEX idx_wear_history_outfit ON public.wear_history USING btree (outfit_id)"
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_user",
+      "index_def": "CREATE INDEX idx_wear_history_user ON public.wear_history USING btree (user_id)"
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_worn_at",
+      "index_def": "CREATE INDEX idx_wear_history_worn_at ON public.wear_history USING btree (worn_at)"
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "wear_history_pkey",
+      "index_def": "CREATE UNIQUE INDEX wear_history_pkey ON public.wear_history USING btree (id)"
+    }
+  ],
+  "index_stats": [
+    {
+      "table_name": "clothing",
+      "index_name": "clothing_pkey",
+      "idx_scan": 48416,
+      "idx_tup_read": 48996,
+      "idx_tup_fetch": 39989
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_category",
+      "idx_scan": 1,
+      "idx_tup_read": 2,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_color",
+      "idx_scan": 1,
+      "idx_tup_read": 54,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_occasion",
+      "idx_scan": 1,
+      "idx_tup_read": 18,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_season",
+      "idx_scan": 1,
+      "idx_tup_read": 4,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "clothing",
+      "index_name": "idx_clothing_user",
+      "idx_scan": 3209,
+      "idx_tup_read": 87833,
+      "idx_tup_fetch": 687
+    },
+    {
+      "table_name": "clothing_analysis",
+      "index_name": "clothing_analysis_clothing_id_key",
+      "idx_scan": 44423,
+      "idx_tup_read": 41803,
+      "idx_tup_fetch": 40295
+    },
+    {
+      "table_name": "clothing_analysis",
+      "index_name": "clothing_analysis_pkey",
+      "idx_scan": 2996,
+      "idx_tup_read": 3366,
+      "idx_tup_fetch": 2996
+    },
+    {
+      "table_name": "collections",
+      "index_name": "collections_pkey",
+      "idx_scan": 11,
+      "idx_tup_read": 11,
+      "idx_tup_fetch": 11
+    },
+    {
+      "table_name": "comments",
+      "index_name": "comments_pkey",
+      "idx_scan": 35,
+      "idx_tup_read": 58,
+      "idx_tup_fetch": 33
+    },
+    {
+      "table_name": "follows",
+      "index_name": "follows_pkey",
+      "idx_scan": 13,
+      "idx_tup_read": 26,
+      "idx_tup_fetch": 18
+    },
+    {
+      "table_name": "follows",
+      "index_name": "uq_follow",
+      "idx_scan": 704,
+      "idx_tup_read": 183,
+      "idx_tup_fetch": 110
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "idx_learned_preferences_user",
+      "idx_scan": 10947,
+      "idx_tup_read": 15183,
+      "idx_tup_fetch": 10098
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "learned_preferences_pkey",
+      "idx_scan": 1130,
+      "idx_tup_read": 1345,
+      "idx_tup_fetch": 1130
+    },
+    {
+      "table_name": "learned_preferences",
+      "index_name": "learned_preferences_user_id_key",
+      "idx_scan": 0,
+      "idx_tup_read": 0,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "likes",
+      "index_name": "likes_pkey",
+      "idx_scan": 8,
+      "idx_tup_read": 8,
+      "idx_tup_fetch": 8
+    },
+    {
+      "table_name": "likes",
+      "index_name": "uq_like_user_post",
+      "idx_scan": 754,
+      "idx_tup_read": 225,
+      "idx_tup_fetch": 104
+    },
+    {
+      "table_name": "notifications",
+      "index_name": "notifications_pkey",
+      "idx_scan": 60,
+      "idx_tup_read": 60,
+      "idx_tup_fetch": 60
+    },
+    {
+      "table_name": "outfit_clothing",
+      "index_name": "outfit_clothing_pkey",
+      "idx_scan": 16233,
+      "idx_tup_read": 20294,
+      "idx_tup_fetch": 14813
+    },
+    {
+      "table_name": "outfits",
+      "index_name": "idx_outfits_user",
+      "idx_scan": 315,
+      "idx_tup_read": 216,
+      "idx_tup_fetch": 145
+    },
+    {
+      "table_name": "outfits",
+      "index_name": "outfits_pkey",
+      "idx_scan": 17713,
+      "idx_tup_read": 17717,
+      "idx_tup_fetch": 17713
+    },
+    {
+      "table_name": "posts",
+      "index_name": "posts_pkey",
+      "idx_scan": 380,
+      "idx_tup_read": 394,
+      "idx_tup_fetch": 350
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_action",
+      "idx_scan": 41,
+      "idx_tup_read": 364,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_created",
+      "idx_scan": 35,
+      "idx_tup_read": 35,
+      "idx_tup_fetch": 35
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_recommendation",
+      "idx_scan": 52,
+      "idx_tup_read": 6,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "idx_feedback_user",
+      "idx_scan": 90,
+      "idx_tup_read": 0,
+      "idx_tup_fetch": 0
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "index_name": "recommendation_feedback_pkey",
+      "idx_scan": 90,
+      "idx_tup_read": 90,
+      "idx_tup_fetch": 90
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "idx_recommendations_created",
+      "idx_scan": 312,
+      "idx_tup_read": 11448,
+      "idx_tup_fetch": 11082
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "idx_recommendations_user",
+      "idx_scan": 669,
+      "idx_tup_read": 2155,
+      "idx_tup_fetch": 802
+    },
+    {
+      "table_name": "recommendations",
+      "index_name": "recommendations_pkey",
+      "idx_scan": 1001,
+      "idx_tup_read": 1001,
+      "idx_tup_fetch": 1001
+    },
+    {
+      "table_name": "saved",
+      "index_name": "saved_pkey",
+      "idx_scan": 49,
+      "idx_tup_read": 49,
+      "idx_tup_fetch": 49
+    },
+    {
+      "table_name": "saved",
+      "index_name": "uq_saved_user_post",
+      "idx_scan": 596,
+      "idx_tup_read": 76,
+      "idx_tup_fetch": 76
+    },
+    {
+      "table_name": "user_preferences",
+      "index_name": "user_preferences_pkey",
+      "idx_scan": 166,
+      "idx_tup_read": 172,
+      "idx_tup_fetch": 166
+    },
+    {
+      "table_name": "user_preferences",
+      "index_name": "user_preferences_user_id_key",
+      "idx_scan": 3707,
+      "idx_tup_read": 1464,
+      "idx_tup_fetch": 1383
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_email_key",
+      "idx_scan": 551,
+      "idx_tup_read": 355,
+      "idx_tup_fetch": 320
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_pkey",
+      "idx_scan": 28087,
+      "idx_tup_read": 28317,
+      "idx_tup_fetch": 28143
+    },
+    {
+      "table_name": "users",
+      "index_name": "users_username_key",
+      "idx_scan": 52,
+      "idx_tup_read": 49,
+      "idx_tup_fetch": 15
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_outfit",
+      "idx_scan": 4372,
+      "idx_tup_read": 1939,
+      "idx_tup_fetch": 1935
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_user",
+      "idx_scan": 749,
+      "idx_tup_read": 684,
+      "idx_tup_fetch": 682
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "idx_wear_history_worn_at",
+      "idx_scan": 2984,
+      "idx_tup_read": 6501,
+      "idx_tup_fetch": 6256
+    },
+    {
+      "table_name": "wear_history",
+      "index_name": "wear_history_pkey",
+      "idx_scan": 159,
+      "idx_tup_read": 159,
+      "idx_tup_fetch": 147
+    }
+  ],
+  "table_stats": [
+    {
+      "table_name": "clothing",
+      "seq_scan": 3698,
+      "seq_tup_read": 427174,
+      "idx_scan": 51629,
+      "idx_tup_fetch": 86646,
+      "n_tup_ins": 2317,
+      "n_tup_upd": 2725,
+      "n_tup_del": 717,
+      "n_live_tup": 1546,
+      "n_dead_tup": 279
+    },
+    {
+      "table_name": "clothing_analysis",
+      "seq_scan": 2971,
+      "seq_tup_read": 892106,
+      "idx_scan": 47419,
+      "idx_tup_fetch": 43291,
+      "n_tup_ins": 1874,
+      "n_tup_upd": 2911,
+      "n_tup_del": 704,
+      "n_live_tup": 1165,
+      "n_dead_tup": 121
+    },
+    {
+      "table_name": "collections",
+      "seq_scan": 945,
+      "seq_tup_read": 1865,
+      "idx_scan": 11,
+      "idx_tup_fetch": 11,
+      "n_tup_ins": 11,
+      "n_tup_upd": 0,
+      "n_tup_del": 0,
+      "n_live_tup": 2,
+      "n_dead_tup": 0
+    },
+    {
+      "table_name": "comments",
+      "seq_scan": 5167,
+      "seq_tup_read": 3652,
+      "idx_scan": 35,
+      "idx_tup_fetch": 33,
+      "n_tup_ins": 38,
+      "n_tup_upd": 0,
+      "n_tup_del": 38,
+      "n_live_tup": 1,
+      "n_dead_tup": 6
+    },
+    {
+      "table_name": "follows",
+      "seq_scan": 7383,
+      "seq_tup_read": 373263,
+      "idx_scan": 717,
+      "idx_tup_fetch": 185,
+      "n_tup_ins": 122,
+      "n_tup_upd": 0,
+      "n_tup_del": 36,
+      "n_live_tup": 76,
+      "n_dead_tup": 20
+    },
+    {
+      "table_name": "learned_preferences",
+      "seq_scan": 349,
+      "seq_tup_read": 144630,
+      "idx_scan": 12077,
+      "idx_tup_fetch": 11228,
+      "n_tup_ins": 1151,
+      "n_tup_upd": 654,
+      "n_tup_del": 201,
+      "n_live_tup": 796,
+      "n_dead_tup": 162
+    },
+    {
+      "table_name": "likes",
+      "seq_scan": 4316,
+      "seq_tup_read": 66451,
+      "idx_scan": 762,
+      "idx_tup_fetch": 183,
+      "n_tup_ins": 126,
+      "n_tup_upd": 0,
+      "n_tup_del": 84,
+      "n_live_tup": 33,
+      "n_dead_tup": 17
+    },
+    {
+      "table_name": "notifications",
+      "seq_scan": 1282,
+      "seq_tup_read": 134975,
+      "idx_scan": 60,
+      "idx_tup_fetch": 60,
+      "n_tup_ins": 266,
+      "n_tup_upd": 31,
+      "n_tup_del": 60,
+      "n_live_tup": 164,
+      "n_dead_tup": 6
+    },
+    {
+      "table_name": "outfit_clothing",
+      "seq_scan": 3549,
+      "seq_tup_read": 3538064,
+      "idx_scan": 16233,
+      "idx_tup_fetch": 18925,
+      "n_tup_ins": 2308,
+      "n_tup_upd": 0,
+      "n_tup_del": 1041,
+      "n_live_tup": 1181,
+      "n_dead_tup": 259
+    },
+    {
+      "table_name": "outfits",
+      "seq_scan": 1460,
+      "seq_tup_read": 309797,
+      "idx_scan": 18028,
+      "idx_tup_fetch": 17877,
+      "n_tup_ins": 800,
+      "n_tup_upd": 1,
+      "n_tup_del": 114,
+      "n_live_tup": 657,
+      "n_dead_tup": 115
+    },
+    {
+      "table_name": "posts",
+      "seq_scan": 4095,
+      "seq_tup_read": 230403,
+      "idx_scan": 380,
+      "idx_tup_fetch": 350,
+      "n_tup_ins": 247,
+      "n_tup_upd": 3,
+      "n_tup_del": 94,
+      "n_live_tup": 118,
+      "n_dead_tup": 28
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "seq_scan": 400,
+      "seq_tup_read": 25337,
+      "idx_scan": 308,
+      "idx_tup_fetch": 495,
+      "n_tup_ins": 79,
+      "n_tup_upd": 0,
+      "n_tup_del": 0,
+      "n_live_tup": 76,
+      "n_dead_tup": 0
+    },
+    {
+      "table_name": "recommendations",
+      "seq_scan": 765,
+      "seq_tup_read": 172081,
+      "idx_scan": 1982,
+      "idx_tup_fetch": 14202,
+      "n_tup_ins": 782,
+      "n_tup_upd": 0,
+      "n_tup_del": 108,
+      "n_live_tup": 650,
+      "n_dead_tup": 108
+    },
+    {
+      "table_name": "saved",
+      "seq_scan": 3159,
+      "seq_tup_read": 5219,
+      "idx_scan": 645,
+      "idx_tup_fetch": 125,
+      "n_tup_ins": 28,
+      "n_tup_upd": 0,
+      "n_tup_del": 26,
+      "n_live_tup": 2,
+      "n_dead_tup": 4
+    },
+    {
+      "table_name": "user_preferences",
+      "seq_scan": 234,
+      "seq_tup_read": 27552,
+      "idx_scan": 3873,
+      "idx_tup_fetch": 1549,
+      "n_tup_ins": 940,
+      "n_tup_upd": 58,
+      "n_tup_del": 34,
+      "n_live_tup": 623,
+      "n_dead_tup": 36
+    },
+    {
+      "table_name": "users",
+      "seq_scan": 11047,
+      "seq_tup_read": 3539684,
+      "idx_scan": 28690,
+      "idx_tup_fetch": 28512,
+      "n_tup_ins": 1911,
+      "n_tup_upd": 188,
+      "n_tup_del": 206,
+      "n_live_tup": 1423,
+      "n_dead_tup": 93
+    },
+    {
+      "table_name": "wear_history",
+      "seq_scan": 2812,
+      "seq_tup_read": 432566,
+      "idx_scan": 8264,
+      "idx_tup_fetch": 9020,
+      "n_tup_ins": 274,
+      "n_tup_upd": 36,
+      "n_tup_del": 34,
+      "n_live_tup": 236,
+      "n_dead_tup": 56
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "clothing",
+      "constraint_name": "clothing_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "clothing",
+      "constraint_name": "clothing_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "clothing_analysis",
+      "constraint_name": "clothing_analysis_clothing_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "clothing_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "clothing_analysis",
+      "constraint_name": "clothing_analysis_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "clothing_analysis",
+      "constraint_name": "clothing_analysis_clothing_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "clothing_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "collections",
+      "constraint_name": "collections_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "collections",
+      "constraint_name": "collections_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "comments",
+      "constraint_name": "comments_post_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "post_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "comments",
+      "constraint_name": "comments_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "comments",
+      "constraint_name": "comments_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "follows",
+      "constraint_name": "follows_follower_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "follower_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "follows",
+      "constraint_name": "follows_following_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "following_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "follows",
+      "constraint_name": "follows_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "follows",
+      "constraint_name": "uq_follow",
+      "constraint_type": "UNIQUE",
+      "column_name": "follower_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "follows",
+      "constraint_name": "uq_follow",
+      "constraint_type": "UNIQUE",
+      "column_name": "following_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "learned_preferences",
+      "constraint_name": "learned_preferences_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "learned_preferences",
+      "constraint_name": "learned_preferences_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "learned_preferences",
+      "constraint_name": "learned_preferences_user_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "likes",
+      "constraint_name": "likes_post_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "post_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "likes",
+      "constraint_name": "likes_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "likes",
+      "constraint_name": "likes_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "likes",
+      "constraint_name": "uq_like_user_post",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "likes",
+      "constraint_name": "uq_like_user_post",
+      "constraint_type": "UNIQUE",
+      "column_name": "post_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "notifications",
+      "constraint_name": "notifications_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "notifications",
+      "constraint_name": "notifications_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfit_clothing",
+      "constraint_name": "outfit_clothing_clothing_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "clothing_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfit_clothing",
+      "constraint_name": "outfit_clothing_outfit_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "outfit_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfit_clothing",
+      "constraint_name": "outfit_clothing_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "outfit_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfit_clothing",
+      "constraint_name": "outfit_clothing_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "clothing_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfits",
+      "constraint_name": "outfits_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "outfits",
+      "constraint_name": "outfits_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "posts",
+      "constraint_name": "posts_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "posts",
+      "constraint_name": "posts_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "constraint_name": "recommendation_feedback_recommendation_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "recommendation_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "constraint_name": "recommendation_feedback_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendation_feedback",
+      "constraint_name": "recommendation_feedback_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendations",
+      "constraint_name": "recommendations_outfit_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "outfit_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendations",
+      "constraint_name": "recommendations_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "recommendations",
+      "constraint_name": "recommendations_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "saved",
+      "constraint_name": "saved_post_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "post_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "saved",
+      "constraint_name": "saved_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "saved",
+      "constraint_name": "saved_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "saved",
+      "constraint_name": "uq_saved_user_post",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "saved",
+      "constraint_name": "uq_saved_user_post",
+      "constraint_type": "UNIQUE",
+      "column_name": "post_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "user_preferences",
+      "constraint_name": "user_preferences_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "user_preferences",
+      "constraint_name": "user_preferences_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "user_preferences",
+      "constraint_name": "user_preferences_user_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_email_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "email",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "users",
+      "constraint_name": "users_username_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "username",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "wear_history",
+      "constraint_name": "wear_history_outfit_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "outfit_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "wear_history",
+      "constraint_name": "wear_history_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "wear_history",
+      "constraint_name": "wear_history_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    }
+  ],
+  "unindexed_foreign_keys": [
+    {
+      "table_name": "collections",
+      "fk_name": "collections_user_id_fkey",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "comments",
+      "fk_name": "comments_post_id_fkey",
+      "column_name": "post_id"
+    },
+    {
+      "table_name": "comments",
+      "fk_name": "comments_user_id_fkey",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "follows",
+      "fk_name": "follows_following_id_fkey",
+      "column_name": "following_id"
+    },
+    {
+      "table_name": "likes",
+      "fk_name": "likes_post_id_fkey",
+      "column_name": "post_id"
+    },
+    {
+      "table_name": "notifications",
+      "fk_name": "notifications_user_id_fkey",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "outfit_clothing",
+      "fk_name": "outfit_clothing_clothing_id_fkey",
+      "column_name": "clothing_id"
+    },
+    {
+      "table_name": "posts",
+      "fk_name": "posts_user_id_fkey",
+      "column_name": "user_id"
+    },
+    {
+      "table_name": "recommendations",
+      "fk_name": "recommendations_outfit_id_fkey",
+      "column_name": "outfit_id"
+    },
+    {
+      "table_name": "saved",
+      "fk_name": "saved_post_id_fkey",
+      "column_name": "post_id"
+    }
+  ],
+  "overlapping_indexes": [
+    {
+      "table_name": "learned_preferences",
+      "type": "EXACT_DUPLICATE",
+      "index1": "idx_learned_preferences_user",
+      "index2": "learned_preferences_user_id_key",
+      "index1_def": "CREATE INDEX idx_learned_preferences_user ON public.learned_preferences USING btree (user_id)",
+      "index2_def": "CREATE UNIQUE INDEX learned_preferences_user_id_key ON public.learned_preferences USING btree (user_id)"
+    }
+  ],
+  "pg_stat_statements": "Not available or accessible: (psycopg.errors.UndefinedTable) relation \"pg_stat_statements\" does not exist"
+}

@@ -21,7 +21,7 @@ class LearnedPreference(Base):
     __tablename__ = "learned_preferences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
 
     # Preference scores bounded [-1.0, 1.0] mapped by key
     style_scores = Column(JSONB, default=_empty_dict, nullable=False)

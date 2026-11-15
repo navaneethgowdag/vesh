@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -16,6 +16,11 @@ class Notification(Base):
     message = Column(Text, nullable=True)
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("idx_notifications_user_created", "user_id", "created_at"),
+        Index("idx_notifications_user_unread", "user_id", postgresql_where=(is_read == False)),
+    )
 
     # API compatibility properties
     @property

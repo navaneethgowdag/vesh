@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -16,6 +16,7 @@ class SavedItem(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "post_id", name="uq_saved_user_post"),
+        Index("idx_saved_post_id", "post_id"),
     )
 
     # API compatibility properties

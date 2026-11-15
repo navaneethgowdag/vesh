@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, Text, Float
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, Text, Float, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -30,6 +30,11 @@ class Clothing(Base):
     wear_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("idx_clothing_user_created", "user_id", "created_at"),
+        Index("idx_clothing_user_category", "user_id", "category"),
+    )
 
     # API compatibility properties
     @property

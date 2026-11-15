@@ -1,0 +1,382 @@
+[
+  {
+    "test_case": "posts_user_lookbook",
+    "target_table": "posts",
+    "index_name": "idx_posts_user_created",
+    "index_sql": "CREATE INDEX idx_posts_user_created ON b_posts (user_id, created_at DESC)",
+    "query_sql": "SELECT id, user_id, caption, created_at FROM b_posts WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' ORDER BY created_at DESC LIMIT 30",
+    "baseline": {
+      "exec_time_ms": 0.044,
+      "planning_time_ms": 0.081,
+      "cost": 20.18,
+      "scans": [
+        "Seq Scan (b_posts)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.027,
+      "planning_time_ms": 0.158,
+      "cost": 8.16,
+      "scans": [
+        "Index Scan (idx_posts_user_created)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 2.47,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "posts_global_feed",
+    "target_table": "posts",
+    "index_name": "idx_posts_created_at",
+    "index_sql": "CREATE INDEX idx_posts_created_at ON b_posts (created_at DESC)",
+    "query_sql": "SELECT id, user_id, caption, created_at FROM b_posts WHERE caption NOT LIKE '[MOMENT:%' ORDER BY created_at DESC LIMIT 30",
+    "baseline": {
+      "exec_time_ms": 0.063,
+      "planning_time_ms": 0.084,
+      "cost": 44.0,
+      "scans": [
+        "Seq Scan (b_posts)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.053,
+      "planning_time_ms": 0.149,
+      "cost": 4.77,
+      "scans": [
+        "Index Scan (idx_posts_created_at)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 9.22,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "follows_following_count",
+    "target_table": "follows",
+    "index_name": "idx_follows_following_id",
+    "index_sql": "CREATE INDEX idx_follows_following_id ON b_follows (following_id, follower_id)",
+    "query_sql": "SELECT count(*) FROM b_follows WHERE following_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2'",
+    "baseline": {
+      "exec_time_ms": 0.046,
+      "planning_time_ms": 0.125,
+      "cost": 23.4,
+      "scans": [
+        "Seq Scan (b_follows)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.04,
+      "planning_time_ms": 0.151,
+      "cost": 8.17,
+      "scans": [
+        "Index Only Scan (idx_follows_following_id)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 2.86,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "comments_by_post",
+    "target_table": "comments",
+    "index_name": "idx_comments_post_created",
+    "index_sql": "CREATE INDEX idx_comments_post_created ON b_comments (post_id, created_at ASC)",
+    "query_sql": "SELECT id, user_id, content, created_at FROM b_comments WHERE post_id = '27140dae-6a78-4467-8ca3-f5428bd674c7' ORDER BY created_at ASC",
+    "baseline": {
+      "exec_time_ms": 0.047,
+      "planning_time_ms": 0.085,
+      "cost": 18.8,
+      "scans": [
+        "Seq Scan (b_comments)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.028,
+      "planning_time_ms": 0.145,
+      "cost": 8.14,
+      "scans": [
+        "Index Scan (idx_comments_post_created)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 2.31,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "likes_count_by_post",
+    "target_table": "likes",
+    "index_name": "idx_likes_post_id",
+    "index_sql": "CREATE INDEX idx_likes_post_id ON b_likes (post_id)",
+    "query_sql": "SELECT count(*) FROM b_likes WHERE post_id = '27140dae-6a78-4467-8ca3-f5428bd674c7'",
+    "baseline": {
+      "exec_time_ms": 0.042,
+      "planning_time_ms": 0.076,
+      "cost": 22.15,
+      "scans": [
+        "Seq Scan (b_likes)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.049,
+      "planning_time_ms": 0.146,
+      "cost": 8.17,
+      "scans": [
+        "Index Only Scan (idx_likes_post_id)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 2.71,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "notifications_user_list",
+    "target_table": "notifications",
+    "index_name": "idx_notifications_user_created",
+    "index_sql": "CREATE INDEX idx_notifications_user_created ON b_notifications (user_id, created_at DESC)",
+    "query_sql": "SELECT id, type, title, is_read, created_at FROM b_notifications WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' ORDER BY created_at DESC LIMIT 50",
+    "baseline": {
+      "exec_time_ms": 0.046,
+      "planning_time_ms": 0.088,
+      "cost": 11.27,
+      "scans": [
+        "Seq Scan (b_notifications)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.029,
+      "planning_time_ms": 0.153,
+      "cost": 8.16,
+      "scans": [
+        "Index Scan (idx_notifications_user_created)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 1.38,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "notifications_unread_count",
+    "target_table": "notifications",
+    "index_name": "idx_notifications_user_unread",
+    "index_sql": "CREATE INDEX idx_notifications_user_unread ON b_notifications (user_id) WHERE is_read = false",
+    "query_sql": "SELECT count(*) FROM b_notifications WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' AND is_read = false",
+    "baseline": {
+      "exec_time_ms": 0.057,
+      "planning_time_ms": 0.082,
+      "cost": 11.26,
+      "scans": [
+        "Seq Scan (b_notifications)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.041,
+      "planning_time_ms": 0.174,
+      "cost": 8.17,
+      "scans": [
+        "Index Only Scan (idx_notifications_user_unread)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 1.38,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "clothing_user_wardrobe",
+    "target_table": "clothing",
+    "index_name": "idx_clothing_user_created",
+    "index_sql": "CREATE INDEX idx_clothing_user_created ON b_clothing (user_id, created_at DESC)",
+    "query_sql": "SELECT id, name, category, created_at FROM b_clothing WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' ORDER BY created_at DESC LIMIT 100",
+    "baseline": {
+      "exec_time_ms": 0.138,
+      "planning_time_ms": 0.089,
+      "cost": 36.02,
+      "scans": [
+        "Seq Scan (b_clothing)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.15,
+      "planning_time_ms": 0.186,
+      "cost": 24.58,
+      "scans": [
+        "Bitmap Heap Scan (b_clothing)",
+        "Bitmap Index Scan (idx_clothing_user_created)"
+      ],
+      "has_sort": true
+    },
+    "cost_reduction_ratio": 1.47,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "clothing_category_filter",
+    "target_table": "clothing",
+    "index_name": "idx_clothing_user_category",
+    "index_sql": "CREATE INDEX idx_clothing_user_category ON b_clothing (user_id, category)",
+    "query_sql": "SELECT id, name, category, created_at FROM b_clothing WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' AND category = 'Tops' ORDER BY created_at DESC LIMIT 100",
+    "baseline": {
+      "exec_time_ms": 0.143,
+      "planning_time_ms": 0.094,
+      "cost": 36.81,
+      "scans": [
+        "Seq Scan (b_clothing)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.045,
+      "planning_time_ms": 0.141,
+      "cost": 8.31,
+      "scans": [
+        "Index Scan (idx_clothing_user_category)"
+      ],
+      "has_sort": true
+    },
+    "cost_reduction_ratio": 4.43,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "recommendations_active_occasion",
+    "target_table": "recommendations",
+    "index_name": "idx_recommendations_user_occasion_created",
+    "index_sql": "CREATE INDEX idx_recommendations_user_occasion_created ON b_recs (user_id, occasion, created_at DESC)",
+    "query_sql": "SELECT id, outfit_id, occasion, recommendation_score, created_at FROM b_recs WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' AND occasion = 'Casual Daily' AND created_at >= NOW() - INTERVAL '24 hours' ORDER BY created_at DESC LIMIT 1",
+    "baseline": {
+      "exec_time_ms": 0.089,
+      "planning_time_ms": 0.101,
+      "cost": 25.38,
+      "scans": [
+        "Seq Scan (b_recs)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.031,
+      "planning_time_ms": 0.169,
+      "cost": 8.3,
+      "scans": [
+        "Index Scan (idx_recommendations_user_occasion_created)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 3.06,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "wear_history_repetition",
+    "target_table": "wear_history",
+    "index_name": "idx_wear_history_user_worn",
+    "index_sql": "CREATE INDEX idx_wear_history_user_worn ON b_wear (user_id, worn_at DESC)",
+    "query_sql": "SELECT id, outfit_id, worn_at FROM b_wear WHERE user_id = '0991fefd-0d6d-4fe1-b28b-a7e547577ec2' AND worn_at >= NOW() - INTERVAL '14 days' ORDER BY worn_at DESC",
+    "baseline": {
+      "exec_time_ms": 0.051,
+      "planning_time_ms": 0.092,
+      "cost": 29.42,
+      "scans": [
+        "Seq Scan (b_wear)"
+      ],
+      "has_sort": true
+    },
+    "optimized": {
+      "exec_time_ms": 0.035,
+      "planning_time_ms": 0.186,
+      "cost": 8.29,
+      "scans": [
+        "Index Scan (idx_wear_history_user_worn)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 3.55,
+    "sort_eliminated": true
+  },
+  {
+    "test_case": "outfit_clothing_reverse_lookup",
+    "target_table": "outfit_clothing",
+    "index_name": "idx_outfit_clothing_clothing_id",
+    "index_sql": "CREATE INDEX idx_outfit_clothing_clothing_id ON b_outfit_clothing (clothing_id, outfit_id)",
+    "query_sql": "SELECT outfit_id FROM b_outfit_clothing WHERE clothing_id = '336109e6-f988-45a7-a3bd-896d102740c3'",
+    "baseline": {
+      "exec_time_ms": 0.1,
+      "planning_time_ms": 0.064,
+      "cost": 43.2,
+      "scans": [
+        "Seq Scan (b_outfit_clothing)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.045,
+      "planning_time_ms": 0.131,
+      "cost": 17.38,
+      "scans": [
+        "Bitmap Heap Scan (b_outfit_clothing)",
+        "Bitmap Index Scan (idx_outfit_clothing_clothing_id)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 2.49,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "user_email_case_insensitive",
+    "target_table": "users",
+    "index_name": "idx_users_lower_email",
+    "index_sql": "CREATE INDEX idx_users_lower_email ON b_users (lower(email))",
+    "query_sql": "SELECT id, username, email FROM b_users WHERE lower(email) = 'test@example.com' LIMIT 1",
+    "baseline": {
+      "exec_time_ms": 0.299,
+      "planning_time_ms": 0.079,
+      "cost": 18.88,
+      "scans": [
+        "Seq Scan (b_users)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.034,
+      "planning_time_ms": 0.17,
+      "cost": 4.87,
+      "scans": [
+        "Index Scan (idx_users_lower_email)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 3.88,
+    "sort_eliminated": false
+  },
+  {
+    "test_case": "user_username_case_insensitive",
+    "target_table": "users",
+    "index_name": "idx_users_lower_username",
+    "index_sql": "CREATE INDEX idx_users_lower_username ON b_users (lower(username))",
+    "query_sql": "SELECT id, username FROM b_users WHERE lower(username) = 'test' LIMIT 1",
+    "baseline": {
+      "exec_time_ms": 0.283,
+      "planning_time_ms": 0.08,
+      "cost": 18.88,
+      "scans": [
+        "Seq Scan (b_users)"
+      ],
+      "has_sort": false
+    },
+    "optimized": {
+      "exec_time_ms": 0.037,
+      "planning_time_ms": 0.169,
+      "cost": 4.87,
+      "scans": [
+        "Index Scan (idx_users_lower_username)"
+      ],
+      "has_sort": false
+    },
+    "cost_reduction_ratio": 3.88,
+    "sort_eliminated": false
+  }
+]

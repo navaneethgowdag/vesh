@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, ForeignKey, Float
+from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -24,6 +24,11 @@ class Recommendation(Base):
     model_version = Column(String(100), default="deterministic-v1", nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+
+    __table_args__ = (
+        Index("idx_recommendations_user_occasion_created", "user_id", "occasion", "created_at"),
+        Index("idx_recommendations_outfit_id", "outfit_id"),
+    )
 
     # API compatibility properties
     @property
